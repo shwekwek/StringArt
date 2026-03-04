@@ -277,16 +277,16 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3);}
     <div class="ctrl">
       <div class="ctrl-label">
         <div class="ctrl-left">Nails<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">Nails around the circle. <b>More nails</b> = finer detail but more winding time. <b>Fewer lines</b> are needed per nail when nail count is high. <b>Typical:</b> 150–300 for 30cm board.</span></span></div>
-        <span class="ctrl-val" id="vn">250</span>
+        <span class="ctrl-val" id="vn">320</span>
       </div>
-      <input type="range" id="sn" min="50" max="400" value="250" step="5">
+      <input type="range" id="sn" min="50" max="400" value="320" step="5">
     </div>
     <div class="ctrl">
       <div class="ctrl-label">
         <div class="ctrl-left">Max lines<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">Total thread segments. More = denser darker image. The algorithm stops early if fully covered. <b>Rule of thumb:</b> ~12–15× the nail count is usually enough for a detailed portrait.</span></span></div>
-        <span class="ctrl-val" id="vl">3000</span>
+        <span class="ctrl-val" id="vl">5600</span>
       </div>
-      <input type="range" id="sl" min="500" max="8000" value="3000" step="100">
+      <input type="range" id="sl" min="500" max="8000" value="5600" step="100">
     </div>
     <div class="ctrl">
       <div class="ctrl-label">
@@ -300,7 +300,7 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3);}
         <div class="ctrl-left">Thread thickness<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box"><b>0.1–0.3</b> = fine thread · <b>0.4–0.8</b> = embroidery floss · <b>1.0+</b> = thick yarn. Lines layer up, so thinner looks most realistic.</span></span></div>
         <span class="ctrl-val" id="vt">0.4</span>
       </div>
-      <input type="range" id="st" min="0.05" max="3.0" value="0.4" step="0.05">
+      <input type="range" id="st" min="0.05" max="0.7" value="0.4" step="0.05">
     </div>
     <div class="ctrl">
       <div class="ctrl-label">
@@ -557,7 +557,7 @@ const PARAM_CFG=[
   {s:'sl',v:'vl',min:500,max:8000,step:100,float:false,regen:'full'},
   {s:'sf',v:'vf',min:5,max:80,step:1,float:false,regen:'full'},
   {s:'sg',v:'vg',min:3,max:80,step:1,float:false,regen:'full'},
-  {s:'st',v:'vt',min:0.05,max:3.0,step:0.05,float:true,regen:'render'},
+  {s:'st',v:'vt',min:0.05,max:0.7,step:0.05,float:true,regen:'render'},
 ];
 
 PARAM_CFG.forEach(({s,v,min,max,step,float,regen})=>{
@@ -747,13 +747,13 @@ function loadFile(f){
   rd.onload=e=>{
     const img=new Image();
     img.onload=()=>{
-      G.img=img;G.bw=false;G.cropOffX=0;G.cropOffY=0;G.cropZoom=1;
+      G.img=img;G.bw=true;G.cropOffX=0;G.cropOffY=0;G.cropZoom=1;
       // Reset bg removal on new image
       G.bgActive=false;G.bgMaskImg=null;segReady=false;
       $('btnBg').classList.remove('active','loading');
       $('bgIcon').textContent='\u25ea';$('bgLabel').textContent=' White Background';
       $('bgStatus').textContent='';$('bgStatus').className='bg-status';
-      $('bwChk').checked=false;$('lblColor').classList.add('on');$('lblBW').classList.remove('on');
+      $('bwChk').checked=true;$('lblColor').classList.remove('on');$('lblBW').classList.add('on');
       $('uph').style.display='none';$('origImg').src=e.target.result;$('origImg').style.display='block';
       $('bwRow').style.display='flex';$('bgRow').style.display='block';
       $('btnGen').disabled=false;$('btnCompare').disabled=false;$('btnOptimize').disabled=false;
@@ -1223,7 +1223,14 @@ function buildSvgLines(list, nailPos, imgSz){
 // Write the result SVG (lines only — no pixel scaling possible)
 function setSvgContent(svgEl, list, nailPos, imgSz, showNails){
   const SZ=SVG_SZ, sc=SZ/imgSz;
-  const thick=parseFloat($('st').value);
+  // thick = "target screen pixels per stroke" (user-facing value)
+  // We must convert to viewBox units: viewBox_stroke = thick_px * (SZ / displaySz)
+  // Get actual display size of the SVG element
+  const thickPx=parseFloat($('st').value); // user value = target screen px
+  const displaySz=svgEl.getAttribute('width')?parseFloat(svgEl.getAttribute('width')):Math.min(window.innerWidth-530,window.innerHeight-96);
+  // Convert screen px → viewBox units (viewBox is SZ wide, displayed at displaySz px)
+  const thickVB = thickPx * (SZ / Math.max(1, displaySz));
+
   const col=G.color;
   const [r,g,b]=hexRgb(col);
   const d=buildSvgLines(list,nailPos,imgSz);
@@ -1233,14 +1240,20 @@ function setSvgContent(svgEl, list, nailPos, imgSz, showNails){
       nailDots+=`<circle cx="${(n.x*sc).toFixed(1)}" cy="${(n.y*sc).toFixed(1)}" r="1.8" fill="rgba(0,0,0,0.3)"/>`;
     });
   }
-  const bgFill=G.bgActive?'#ffffff':BG;
+  const bgFill='#ffffff';
+
+  // Opacity scales with line count so darkness is consistent
+  const lineCount=Math.max(1, list.length-1);
+  const baseOpacity=Math.min(0.85, Math.max(0.06, 750/lineCount));
+  const opacity=baseOpacity.toFixed(3);
+
   svgEl.innerHTML=
     `<defs>`+
       `<clipPath id="cp${svgEl.id}"><circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2-1}"/></clipPath>`+
     `</defs>`+
     `<circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2}" fill="${bgFill}"/>`+
     `<g clip-path="url(#cp${svgEl.id})">`+
-      `<path d="${d}" fill="none" stroke="rgba(${r},${g},${b},0.18)" stroke-width="${thick}" stroke-linecap="round"/>`+
+      `<path d="${d}" fill="none" stroke="rgba(${r},${g},${b},${opacity})" stroke-width="${thickVB.toFixed(3)}" stroke-linecap="round"/>`+
       nailDots+
     `</g>`+
     `<circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2-1}" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="1.5"/>`;
@@ -1272,8 +1285,8 @@ function render(){
     // SVG — infinitely sharp vector at any zoom level
     cvRaster.style.display='none';
     cvSvg.style.display='block';
+    applySvgSize(cvSvg, G.zoom); // set width FIRST so setSvgContent can read it
     setSvgContent(cvSvg, G.nails, G.nailPos, sz, G.showNails);
-    applySvgSize(cvSvg, G.zoom);
   } else {
     // Raster views: original photo or error map
     cvSvg.style.display='none';
@@ -1281,7 +1294,7 @@ function render(){
     cvRaster.style.width=displaySz+'px';cvRaster.style.height=displaySz+'px';
     cvRaster.style.display='block';
     const ctx=cvRaster.getContext('2d');
-    ctx.fillStyle=BG;ctx.fillRect(0,0,displaySz,displaySz);
+    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,displaySz,displaySz);
     ctx.save();ctx.beginPath();ctx.arc(displaySz/2,displaySz/2,displaySz/2-1,0,Math.PI*2);ctx.clip();
     if(G.view==='original'){
       // Draw cropped image (respects bgActive white-background mask)
@@ -1310,13 +1323,13 @@ function renderCompare(){
   // Left SVG = Greedy
   cvRaster.style.display='none';
   cvSvg.style.display='block';
-  setSvgContent(cvSvg, G.greedyNails||G.nails, G.nailPos, G.imgSz, G.showNails);
   applySvgSize(cvSvg, G.zoom);
+  setSvgContent(cvSvg, G.greedyNails||G.nails, G.nailPos, G.imgSz, G.showNails);
 
   // Right SVG = Radon, positioned exactly over left, clipped to right portion
   cvCmpSvg.style.display='block';
-  setSvgContent(cvCmpSvg, G.radonNails||G.nails, G.nailPos, G.imgSz, G.showNails);
   applySvgSize(cvCmpSvg, G.zoom);
+  setSvgContent(cvCmpSvg, G.radonNails||G.nails, G.nailPos, G.imgSz, G.showNails);
 
   // Position overlay SVG on top of main SVG
   requestAnimationFrame(()=>{
@@ -1458,9 +1471,10 @@ $('ePNG').addEventListener('click',()=>{
   const ctx=ec.getContext('2d');
   const thick=parseFloat($('st').value)*2; // scale thickness for 2× size
   const[r,g,b]=hexRgb(G.color);
-  ctx.fillStyle=BG;ctx.fillRect(0,0,SZ,SZ);
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,SZ,SZ);
   ctx.save();ctx.beginPath();ctx.arc(SZ/2,SZ/2,SZ/2-1,0,Math.PI*2);ctx.clip();
-  ctx.strokeStyle=`rgba(${r},${g},${b},0.18)`;ctx.lineWidth=thick;ctx.beginPath();
+  const exportOpacity=Math.min(0.9,Math.max(0.04,550/Math.max(1,G.nails.length-1)));
+  ctx.strokeStyle=`rgba(${r},${g},${b},${exportOpacity.toFixed(3)})`;ctx.lineWidth=thick;ctx.beginPath();
   const np=G.nailPos,list=G.nails;
   for(let i=0;i<list.length-1;i++){const f=np[list[i]],t=np[list[i+1]];ctx.moveTo(f.x*sc,f.y*sc);ctx.lineTo(t.x*sc,t.y*sc);}
   ctx.stroke();ctx.restore();
@@ -1476,8 +1490,8 @@ $('eSVG').addEventListener('click',()=>{
   const[r,g,b]=hexRgb(col);
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${SZ}" height="${SZ}" viewBox="0 0 ${SZ} ${SZ}">`+
     `<defs><clipPath id="c"><circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2-1}"/></clipPath></defs>`+
-    `<circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2}" fill="${BG}"/>`+
-    `<g clip-path="url(#c)"><path d="${d}" fill="none" stroke="rgba(${r},${g},${b},0.18)" stroke-width="${thick}" stroke-linecap="round"/></g>`+
+    `<circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2}" fill="#ffffff"/>`+
+    `<g clip-path="url(#c)"><path d="${d}" fill="none" stroke="rgba(${r},${g},${b},${(Math.min(0.9,Math.max(0.04,550/Math.max(1,G.nails.length-1)))).toFixed(3)})" stroke-width="${thick}" stroke-linecap="round"/></g>`+
     `<circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2-1}" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="1.5"/>`+
     `</svg>`;
   const a=document.createElement('a');a.download='shweka-string-art.svg';
@@ -1499,6 +1513,18 @@ function applyZoom(){
 $('bZI').addEventListener('click',()=>{G.zoom=Math.min(4,G.zoom*1.25);applyZoom();});
 $('bZO').addEventListener('click',()=>{G.zoom=Math.max(0.25,G.zoom/1.25);applyZoom();});
 $('bZR').addEventListener('click',()=>{G.zoom=1;applyZoom();});
+
+// Redraw on window resize (e.g. maximizing the window)
+let _resizeTimer;
+window.addEventListener('resize',()=>{
+  clearTimeout(_resizeTimer);
+  _resizeTimer=setTimeout(()=>{
+    if(G.done){
+      if(G.compareMode)renderCompare();
+      else render();
+    }
+  },150);
+});
 </script>
 </body>
 </html>
