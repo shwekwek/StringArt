@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shweka Studio · String Art</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1.1675465747/selfie_segmentation.js" crossorigin="anonymous"></script>
+<style>
+:root{
+  --bg:#0e0e0f;--surface:#161618;--surface2:#1e1e21;
+  --border:#2a2a2e;--accent:#e8ff47;--accent2:#47c8ff;
+  --text:#f0f0f0;--dim:#555;--mid:#888;--r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:var(--accent);letter-spacing:-0.02em;line-height:1.1;}
+.logo-sub{font-family:'Syne',sans-serif;font-size:0.55rem;font-weight:400;color:var(--dim);letter-spacing:0.12em;text-transform:uppercase;}
+.main{display:flex;flex:1;overflow:hidden;}
+
+.panel{display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;}
+.panel-left{width:270px;min-width:270px;background:var(--surface);border-right:1px solid var(--border);}
+.panel-right{width:206px;min-width:206px;background:var(--surface);border-left:1px solid var(--border);}
+.section{padding:11px 13px;border-bottom:1px solid var(--border);}
+.sec-title{font-family:'Syne',sans-serif;font-size:0.55rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--dim);margin-bottom:9px;}
+
+/* TOOLTIPS */
+.tip-wrap{position:relative;display:inline-flex;align-items:center;}
+.tip-q{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;border-radius:50%;border:1px solid var(--dim);font-size:0.5rem;color:var(--dim);cursor:help;margin-left:4px;flex-shrink:0;transition:border-color .15s,color .15s;user-select:none;font-style:italic;}
+.tip-q:hover{border-color:var(--accent2);color:var(--accent2);}
+.tip-box{position:absolute;left:18px;top:50%;transform:translateY(-50%);background:#18181d;border:1px solid #333;border-radius:8px;padding:8px 10px;width:200px;font-size:0.59rem;color:#aaa;line-height:1.55;pointer-events:none;opacity:0;transition:opacity .15s;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,.7);white-space:normal;}
+.tip-wrap:hover .tip-box{opacity:1;}
+.tip-box b{color:var(--accent2);}
+
+/* THUMBNAIL PAIR */
+.thumb-row{display:flex;gap:8px;margin-bottom:8px;}
+.thumb-box{flex:1;display:flex;flex-direction:column;gap:4px;}
+.thumb-lbl{font-size:0.55rem;color:var(--dim);text-align:center;letter-spacing:.05em;}
+.upload-zone{border:1.5px dashed var(--border);border-radius:8px;cursor:pointer;transition:border-color .2s,background .2s;position:relative;overflow:hidden;aspect-ratio:1;background:var(--surface2);}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--accent);background:rgba(232,255,71,.03);}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:2;}
+.upload-ph{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:100%;text-align:center;padding:8px;}
+.upload-icon{font-size:1.3rem;}
+.upload-txt{font-size:.6rem;color:var(--mid);}
+.upload-hint{font-size:.53rem;color:var(--dim);}
+.orig-img{width:100%;height:100%;object-fit:cover;display:none;border-radius:6px;}
+.thumb-ov{position:absolute;inset:0;background:rgba(0,0,0,0);transition:background .2s;display:flex;align-items:center;justify-content:center;border-radius:6px;}
+.upload-zone:hover .thumb-ov{background:rgba(0,0,0,.5);}
+.thumb-ov span{color:#fff;font-size:.58rem;opacity:0;transition:opacity .2s;}
+.upload-zone:hover .thumb-ov span{opacity:1;}
+.crop-prev-wrap{aspect-ratio:1;position:relative;display:flex;align-items:center;justify-content:center;background:var(--surface2);border-radius:8px;border:1.5px solid var(--border);overflow:hidden;}
+.crop-prev-wrap.has-img{cursor:pointer;}
+.crop-prev-wrap.has-img:hover{border-color:var(--accent);}
+.crop-prev-img{width:85%;height:85%;border-radius:50%;object-fit:cover;display:none;box-shadow:0 0 0 1.5px rgba(255,255,255,.1);}
+.crop-prev-ph{font-size:.55rem;color:var(--dim);text-align:center;padding:8px;}
+.crop-edit-ov{position:absolute;inset:0;background:rgba(0,0,0,0);transition:background .2s;display:flex;align-items:center;justify-content:center;border-radius:8px;}
+.crop-prev-wrap.has-img:hover .crop-edit-ov{background:rgba(0,0,0,.45);}
+.crop-edit-ov span{color:#fff;font-size:.57rem;opacity:0;transition:opacity .2s;}
+.crop-prev-wrap.has-img:hover .crop-edit-ov span{opacity:1;}
+
+/* BW dual switch */
+.bw-row{display:flex;align-items:center;gap:7px;margin-bottom:0;}
+.bw-lbl{font-size:.62rem;flex:1;text-align:right;cursor:pointer;transition:color .15s;color:var(--dim);user-select:none;}
+.bw-lbl.on{color:var(--text);}
+.dt-sw{position:relative;width:36px;height:20px;flex-shrink:0;cursor:pointer;}
+.dt-sw input{opacity:0;width:0;height:0;position:absolute;}
+.dt-track{position:absolute;inset:0;background:var(--border);border-radius:20px;transition:background .2s;}
+.dt-thumb{position:absolute;width:14px;height:14px;border-radius:50%;background:var(--mid);top:3px;left:3px;transition:transform .2s,background .2s;}
+.dt-sw input:checked~.dt-track{background:rgba(232,255,71,.2);}
+.dt-sw input:checked~.dt-thumb{transform:translateX(16px);background:var(--accent);}
+
+/* WHITE BACKGROUND BUTTON */
+.btn-bg{width:100%;padding:7px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--mid);font-family:'DM Mono',monospace;font-size:.62rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.btn-bg:hover:not(:disabled){border-color:#ccc;color:var(--text);}
+.btn-bg.active{background:rgba(255,255,255,.08);border-color:#ddd;color:#fff;box-shadow:0 0 10px rgba(255,255,255,.08);}
+.btn-bg.loading{border-color:var(--accent2);color:var(--accent2);animation:bgpulse 1.1s ease-in-out infinite;}
+.btn-bg:disabled{opacity:.4;cursor:not-allowed;}
+@keyframes bgpulse{0%,100%{opacity:.6}50%{opacity:1}}
+.bg-status{font-size:.56rem;text-align:center;margin-top:4px;height:14px;transition:color .2s;}
+.bg-status.ok{color:var(--accent);}
+.bg-status.err{color:#ff6b6b;}
+.bg-status.loading{color:var(--accent2);}
+
+/* SLIDERS */
+.ctrl{margin-bottom:9px;}
+.ctrl-label{display:flex;justify-content:space-between;align-items:center;font-size:.64rem;color:var(--mid);margin-bottom:4px;}
+.ctrl-left{display:flex;align-items:center;}
+.ctrl-val{color:var(--accent);cursor:text;min-width:34px;text-align:right;border-radius:4px;padding:1px 3px;transition:background .15s,border .15s;border:1px solid transparent;}
+.ctrl-val:hover{background:rgba(232,255,71,.08);border-color:rgba(232,255,71,.2);}
+.ctrl-val[contenteditable=true]{background:var(--surface2);border-color:var(--accent);outline:none;cursor:text;}
+input[type=range]{width:100%;-webkit-appearance:none;height:3px;background:var(--border);border-radius:2px;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--accent);cursor:pointer;transition:transform .15s;}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3);}
+
+/* DUAL SEGMENT BUTTONS */
+.dual-seg{display:flex;background:var(--surface2);border-radius:7px;padding:3px;gap:2px;}
+.ds-btn{flex:1;padding:5px 8px;background:transparent;border:none;border-radius:5px;font-family:'DM Mono',monospace;font-size:.62rem;color:var(--dim);cursor:pointer;transition:all .15s;text-align:center;}
+.ds-btn.on{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.4);}
+.ds-btn.on.ca{color:var(--accent);}
+.ds-btn.on.cb{color:var(--accent2);}
+
+/* OPTIMIZE BUTTON */
+.btn-optimize{width:100%;padding:8px;background:var(--surface2);border:1px solid rgba(232,255,71,.3);border-radius:7px;color:var(--accent);font-family:'DM Mono',monospace;font-size:.63rem;cursor:pointer;transition:all .15s;text-align:center;margin-top:7px;}
+.btn-optimize:hover{background:rgba(232,255,71,.06);border-color:var(--accent);}
+.rollback-row{display:flex;align-items:center;gap:7px;margin-top:6px;display:none;}
+.btn-rollback{flex:1;padding:6px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--mid);font-family:'DM Mono',monospace;font-size:.6rem;cursor:pointer;transition:all .15s;}
+.btn-rollback:hover{border-color:var(--mid);color:var(--text);}
+.opt-hint{font-size:.57rem;color:var(--dim);text-align:center;flex:1;}
+
+/* REFINE BUTTON */
+.btn-refine{width:100%;padding:8px;background:var(--surface2);border:1px solid rgba(71,200,255,.3);border-radius:7px;color:var(--accent2);font-family:'DM Mono',monospace;font-size:.63rem;cursor:pointer;transition:all .15s;text-align:center;margin-top:6px;}
+.btn-refine:hover{background:rgba(71,200,255,.06);border-color:var(--accent2);}
+
+/* SWATCHES */
+.swatches{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px;}
+.swatch{width:21px;height:21px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .15s,border-color .15s;}
+.swatch:hover{transform:scale(1.15);}
+.swatch.on{border-color:var(--accent);}
+.swatch.dk{border-color:#3a3a3a;}
+.swatch.dk.on{border-color:var(--accent);}
+
+/* GENERATE */
+.btn-gen{width:100%;padding:11px;background:var(--accent);color:#0a0a0a;border:none;border-radius:var(--r);font-family:'Syne',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;transition:background .3s,opacity .2s,transform .15s;}
+.btn-gen:hover:not(:disabled){opacity:.88;transform:translateY(-1px);}
+.btn-gen:disabled{opacity:.3;cursor:not-allowed;transform:none;}
+.btn-gen.pulsing{animation:pulse .9s ease-in-out infinite;}
+@keyframes pulse{0%,100%{background:var(--accent)}50%{background:#b8cc00}}
+.prog-wrap{margin-top:7px;display:none;}
+.prog-bg{height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--accent);width:0%;transition:width .15s;}
+.prog-text{font-size:.56rem;color:var(--dim);margin-top:3px;text-align:center;}
+
+/* COMPARE */
+.btn-compare{width:100%;padding:8px;background:var(--surface2);border:1px solid rgba(71,200,255,.3);border-radius:7px;color:var(--accent2);font-family:'DM Mono',monospace;font-size:.63rem;cursor:pointer;transition:all .15s;margin-top:7px;}
+.btn-compare:hover{background:rgba(71,200,255,.06);border-color:var(--accent2);}
+.btn-compare.active{background:rgba(71,200,255,.15);border-color:var(--accent2);color:var(--accent2);box-shadow:0 0 12px rgba(71,200,255,.2);}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.stat-box{background:var(--surface2);border-radius:7px;padding:7px 9px;}
+.stat-val{font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;color:var(--accent);}
+.stat-lbl{font-size:.52rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-top:1px;}
+.score-box{background:rgba(71,200,255,.07);border:1px solid rgba(71,200,255,.2);border-radius:7px;padding:7px 9px;margin-top:5px;}
+.score-val{font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;color:var(--accent2);}
+.score-delta{font-size:.56rem;color:var(--accent2);margin-top:1px;}
+
+/* EXPORT */
+.exp-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.btn-exp{padding:7px 5px;background:var(--surface2);color:var(--mid);border:1px solid var(--border);border-radius:7px;font-family:'DM Mono',monospace;font-size:.6rem;cursor:pointer;transition:all .15s;text-align:center;}
+.btn-exp:hover{border-color:var(--accent);color:var(--accent);}
+.btn-exp.full{grid-column:1/-1;}
+.btn-exp.ard{border-color:rgba(71,200,255,.28);color:var(--accent2);}
+.btn-exp.ard:hover{border-color:var(--accent2);}
+.notice{background:rgba(71,200,255,.05);border:1px solid rgba(71,200,255,.12);border-radius:7px;padding:7px 9px;font-size:.57rem;color:var(--mid);line-height:1.5;margin-top:7px;}
+.notice strong{color:var(--accent2);}
+
+/* PRODUCTION TIME */
+.prod-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px;}
+.prod-box{background:var(--surface2);border-radius:7px;padding:7px 9px;}
+.prod-val{font-family:'Syne',sans-serif;font-size:.82rem;font-weight:700;color:var(--accent2);}
+.prod-lbl{font-size:.5rem;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-top:2px;}
+.prod-full{grid-column:1/-1;}
+.machine-input{display:flex;flex-direction:column;gap:5px;margin-bottom:7px;}
+.mi-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.mi-lbl{font-size:.6rem;color:var(--mid);flex:1;}
+.mi-val{width:60px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--accent);font-family:'DM Mono',monospace;font-size:.65rem;padding:3px 6px;text-align:right;}
+.mi-val:focus{outline:none;border-color:var(--accent);}
+.mi-unit{font-size:.57rem;color:var(--dim);width:22px;}
+
+/* CENTER */
+.panel-center{flex:1;display:flex;flex-direction:column;background:var(--bg);overflow:hidden;}
+.toolbar{padding:7px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.t-sep{width:1px;height:14px;background:var(--border);}
+.t-btn{padding:4px 9px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--mid);font-family:'DM Mono',monospace;font-size:.58rem;cursor:pointer;transition:all .15s;}
+.t-btn:hover{border-color:var(--accent);color:var(--accent);}
+.canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:16px;overflow:hidden;position:relative;}
+#cvSvg,#cvRaster{max-width:min(calc(100vw - 530px),calc(100vh - 96px));max-height:min(calc(100vw - 530px),calc(100vh - 96px));width:auto;height:auto;}
+#cvCmpSvg{position:absolute;border-radius:50%;display:none;pointer-events:none;}
+.cmp-div{position:absolute;width:2px;background:var(--accent);display:none;pointer-events:none;box-shadow:0 0 8px rgba(232,255,71,.5);}
+.cmp-handle{position:absolute;width:28px;height:28px;border-radius:50%;background:var(--accent);display:none;cursor:ew-resize;z-index:6;box-shadow:0 2px 8px rgba(0,0,0,.5);transform:translate(-50%,-50%);}
+.cmp-lbl{position:absolute;font-size:.57rem;color:rgba(0,0,0,.6);background:rgba(255,255,255,.85);padding:2px 7px;border-radius:4px;pointer-events:none;display:none;z-index:5;font-weight:600;}
+.ph{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;color:var(--dim);font-size:.7rem;text-align:center;}
+.ph-ring{width:180px;height:180px;border-radius:50%;border:1.5px dashed var(--border);position:relative;}
+.ph-nail{position:absolute;width:4px;height:4px;border-radius:50%;background:var(--border);transform:translate(-50%,-50%);animation:pdot 2.5s ease-in-out infinite;}
+@keyframes pdot{0%,100%{opacity:.1}50%{opacity:.65}}
+
+/* RIGHT */
+.right-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 13px 0;}
+.btn-hide{font-size:.55rem;color:var(--dim);background:none;border:none;cursor:pointer;font-family:'DM Mono',monospace;padding:2px;transition:color .15s;}
+.btn-hide:hover{color:var(--accent);}
+.nail-wrap{padding:6px 13px 13px;overflow-y:auto;flex:1;}
+.nail-list{font-size:.55rem;color:var(--dim);line-height:2;word-break:break-all;}
+.nail-list .hi{color:var(--accent);}
+.empty-msg{font-size:.59rem;color:var(--dim);text-align:center;padding:16px 13px;line-height:1.6;}
+
+/* CROP MODAL */
+#cropModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
+#cropModal.open{display:flex;}
+.crop-title{font-family:'Syne',sans-serif;font-size:.78rem;font-weight:700;color:var(--text);}
+.crop-sub{font-size:.59rem;color:var(--mid);margin-top:-6px;}
+.crop-cont{position:relative;width:380px;height:380px;border-radius:50%;overflow:hidden;border:2px solid var(--border);cursor:grab;background:#111;}
+.crop-cont:active{cursor:grabbing;}
+#cropCanvas{position:absolute;top:0;left:0;}
+.crop-overlay{position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 9999px rgba(0,0,0,.55);pointer-events:none;}
+.crop-controls{display:flex;align-items:center;gap:10px;}
+.crop-zlbl{font-size:.6rem;color:var(--mid);}
+.crop-btns{display:flex;gap:8px;}
+.btn-ca{padding:8px 18px;border-radius:7px;font-family:'DM Mono',monospace;font-size:.67rem;cursor:pointer;transition:all .15s;border:1px solid;}
+.btn-cancel{background:var(--surface2);border-color:var(--border);color:var(--mid);}
+.btn-cancel:hover{border-color:var(--mid);color:var(--text);}
+.btn-apply{background:var(--accent);border-color:var(--accent);color:#0a0a0a;font-weight:700;}
+.crop-hint{font-size:.57rem;color:var(--dim);}
+
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{width:12px;height:12px;border:2px solid rgba(0,0,0,.2);border-top-color:#0a0a0a;border-radius:50%;animation:spin .7s linear infinite;}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="logo">Shweka Studio</div>
+    <span class="logo-sub">String Art Generator</span>
+  </div>
+</header>
+<div class="main">
+
+<!-- ════ LEFT ════ -->
+<div class="panel panel-left">
+
+  <div class="section">
+    <div class="sec-title">Image</div>
+    <div class="thumb-row">
+      <div class="thumb-box">
+        <div class="thumb-lbl">Original</div>
+        <div class="upload-zone" id="uz">
+          <input type="file" id="fi" accept="image/*">
+          <div class="upload-ph" id="uph">
+            <span class="upload-icon">⊕</span>
+            <div class="upload-txt">Drop or click</div>
+            <div class="upload-hint">PNG·JPG·WEBP</div>
+          </div>
+          <img id="origImg" class="orig-img" alt="">
+          <div class="thumb-ov"><span>change</span></div>
+        </div>
+      </div>
+      <div class="thumb-box">
+        <div class="thumb-lbl">Framed</div>
+        <div class="crop-prev-wrap" id="cropPrevWrap">
+          <img id="cropPrevImg" class="crop-prev-img" alt="">
+          <div class="crop-prev-ph" id="cropPrevPh">click<br>to crop</div>
+          <div class="crop-edit-ov"><span>edit crop</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="bw-row" id="bwRow" style="display:none;">
+      <span class="bw-lbl on" id="lblColor" onclick="setBW(false)">Color</span>
+      <label class="dt-sw">
+        <input type="checkbox" id="bwChk">
+        <div class="dt-track"></div>
+        <div class="dt-thumb"></div>
+      </label>
+      <span class="bw-lbl" id="lblBW" onclick="setBW(true)">B&amp;W</span>
+    </div>
+    <div id="bgRow" style="display:none;margin-top:8px;">
+      <button class="btn-bg" id="btnBg">
+        <span id="bgIcon">&#9682;</span><span id="bgLabel"> White Background</span>
+      </button>
+      <div class="bg-status" id="bgStatus"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-title">Parameters</div>
+    <div class="ctrl">
+      <div class="ctrl-label">
+        <div class="ctrl-left">Nails<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">Nails around the circle. <b>More nails</b> = finer detail but more winding time. <b>Fewer lines</b> are needed per nail when nail count is high. <b>Typical:</b> 150–300 for 30cm board.</span></span></div>
+        <span class="ctrl-val" id="vn">250</span>
+      </div>
+      <input type="range" id="sn" min="50" max="400" value="250" step="5">
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-label">
+        <div class="ctrl-left">Max lines<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">Total thread segments. More = denser darker image. The algorithm stops early if fully covered. <b>Rule of thumb:</b> ~12–15× the nail count is usually enough for a detailed portrait.</span></span></div>
+        <span class="ctrl-val" id="vl">3000</span>
+      </div>
+      <input type="range" id="sl" min="500" max="8000" value="3000" step="100">
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-label">
+        <div class="ctrl-left">Line darkness<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">How much each drawn line "uses up" the darkness beneath it. <b>Higher</b> = even coverage. <b>Lower</b> = builds up very dark in shadow areas. Works best when related to Max lines — more lines needs less darkness per line.</span></span></div>
+        <span class="ctrl-val" id="vf">25</span>
+      </div>
+      <input type="range" id="sf" min="5" max="80" value="25" step="1">
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-label">
+        <div class="ctrl-left">Thread thickness<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box"><b>0.1–0.3</b> = fine thread · <b>0.4–0.8</b> = embroidery floss · <b>1.0+</b> = thick yarn. Lines layer up, so thinner looks most realistic.</span></span></div>
+        <span class="ctrl-val" id="vt">0.4</span>
+      </div>
+      <input type="range" id="st" min="0.05" max="3.0" value="0.4" step="0.05">
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-label">
+        <div class="ctrl-left">Min nail skip<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">Skip at least this many nails between connections. Prevents short ugly lines at edges. <b>~8% of nail count</b> is a good rule (e.g. 20 for 250 nails). Higher = all lines are longer chords.</span></span></div>
+        <span class="ctrl-val" id="vg">20</span>
+      </div>
+      <input type="range" id="sg" min="3" max="80" value="20" step="1">
+    </div>
+
+    <!-- SMART OPTIMIZE -->
+    <button class="btn-optimize" id="btnOptimize" disabled>✦ Smart Optimize</button>
+    <div class="rollback-row" id="rollbackRow">
+      <button class="btn-rollback" id="btnRollback">↩ Rollback</button>
+      <span class="opt-hint" id="optHint"></span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-title">Thread Color</div>
+    <div class="swatches" id="swatches">
+      <div class="swatch dk on" data-c="#111111" style="background:#111" title="Black"></div>
+      <div class="swatch dk" data-c="#555555" style="background:#666" title="Dark grey"></div>
+      <div class="swatch" data-c="#cc0000" style="background:#c00" title="Red"></div>
+      <div class="swatch" data-c="#0055cc" style="background:#0055cc" title="Blue"></div>
+      <div class="swatch" data-c="#007755" style="background:#077" title="Green"></div>
+      <div class="swatch" data-c="#884400" style="background:#884400" title="Brown"></div>
+      <div class="swatch" data-c="#880088" style="background:#808" title="Purple"></div>
+      <div class="swatch" data-c="#cc6600" style="background:#c60" title="Orange"></div>
+    </div>
+    <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:.63rem;color:var(--mid);">Nail markers<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">Small dots at each nail position. Doesn't affect export.</span></span></span>
+      <div class="dual-seg">
+        <button class="ds-btn" id="nailsHide" onclick="setNails(false)">Hide</button>
+        <button class="ds-btn on" id="nailsShow" onclick="setNails(true)">Show</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-title">Algorithm<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box"><b>Greedy:</b> at each step, samples every possible next nail by tracing its pixels — always picks the darkest chord. Simple and effective.<br><br><b>Radon:</b> same greedy loop, but uses a different error image — a backprojection of edge-enhanced image data. Tends to produce crisper lines and better contrast in portraits.</span></span></div>
+    <div class="dual-seg">
+      <button class="ds-btn on ca" id="algoGreedy" onclick="setAlgo('greedy')">Greedy</button>
+      <button class="ds-btn cb" id="algoRadon" onclick="setAlgo('radon')">Radon</button>
+    </div>
+    <button class="btn-compare" id="btnCompare" disabled>⇄ Compare side by side</button>
+  </div>
+
+  <div class="section">
+    <button class="btn-gen" id="btnGen" disabled>
+      <div id="btnIn">▶ Generate</div>
+    </button>
+    <div class="prog-wrap" id="pw">
+      <div class="prog-bg"><div class="prog-fill" id="pf"></div></div>
+      <div class="prog-text" id="pt">Starting...</div>
+    </div>
+    <button class="btn-refine" id="btnRefine" style="display:none;">⟳ Refine (improve result)</button>
+  </div>
+
+  <div class="section" id="statSec" style="display:none">
+    <div class="sec-title">Result</div>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-val" id="stl">—</div><div class="stat-lbl">Lines</div></div>
+      <div class="stat-box"><div class="stat-val" id="stn">—</div><div class="stat-lbl">Nails</div></div>
+      <div class="stat-box"><div class="stat-val" id="stt">—</div><div class="stat-lbl">Time (s)</div></div>
+      <div class="stat-box"><div class="stat-val" id="stm">—</div><div class="stat-lbl">~Thread m</div></div>
+    </div>
+    <div class="score-box" id="scoreBox" style="display:none">
+      <div class="score-val" id="scoreVal">—</div>
+      <div class="score-delta" id="scoreDelta">accuracy score</div>
+    </div>
+  </div>
+
+  <div class="section" id="expSec" style="display:none">
+    <div class="sec-title">Export</div>
+    <div class="exp-grid">
+      <button class="btn-exp" id="ePNG">PNG</button>
+      <button class="btn-exp" id="eSVG">SVG</button>
+      <button class="btn-exp full ard" id="eTXT">↓ Nail Sequence (.txt)</button>
+    </div>
+    <div class="notice"><strong>TXT:</strong> nail numbers CCW from top, ready for Arduino firmware.</div>
+  </div>
+
+  <div class="section" id="prodSec" style="display:none">
+    <div class="sec-title">Production Time<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">Estimated machine winding time based on your settings. Tune the machine parameters as your hardware improves — the nail sequence and line counts stay the same.</span></span></div>
+    <!-- Machine tuning inputs -->
+    <div class="machine-input">
+      <div class="mi-row">
+        <span class="mi-lbl">Board diameter</span>
+        <input class="mi-val" id="mDiam" type="number" value="30" min="5" max="150" step="1">
+        <span class="mi-unit">cm</span>
+      </div>
+      <div class="mi-row">
+        <span class="mi-lbl">Motor speed</span>
+        <input class="mi-val" id="mSpeed" type="number" value="60" min="1" max="720" step="1">
+        <span class="mi-unit">°/s</span>
+      </div>
+      <div class="mi-row">
+        <span class="mi-lbl">Thread feed speed</span>
+        <input class="mi-val" id="mFeed" type="number" value="5" min="1" max="50" step="0.5">
+        <span class="mi-unit">cm/s</span>
+      </div>
+      <div class="mi-row">
+        <span class="mi-lbl">Dwell per nail</span>
+        <input class="mi-val" id="mDwell" type="number" value="0.3" min="0" max="5" step="0.05">
+        <span class="mi-unit">sec</span>
+      </div>
+    </div>
+    <!-- Output stats grid -->
+    <div class="prod-grid">
+      <div class="prod-box">
+        <div class="prod-val" id="pTime">—</div>
+        <div class="prod-lbl">Est. total time</div>
+      </div>
+      <div class="prod-box">
+        <div class="prod-val" id="pThread">—</div>
+        <div class="prod-lbl">Thread length</div>
+      </div>
+      <div class="prod-box">
+        <div class="prod-val" id="pAvgDeg">—</div>
+        <div class="prod-lbl">Avg rotation/step</div>
+      </div>
+      <div class="prod-box">
+        <div class="prod-val" id="pMaxDeg">—</div>
+        <div class="prod-lbl">Max rotation/step</div>
+      </div>
+      <div class="prod-box prod-full">
+        <div class="prod-val" id="pAvgChord">—</div>
+        <div class="prod-lbl">Avg chord length</div>
+      </div>
+    </div>
+    <div class="notice" id="prodBreakdown" style="font-size:.55rem;line-height:1.7;"></div>
+  </div>
+
+</div><!-- /left -->
+
+<!-- ════ CENTER ════ -->
+<div class="panel-center">
+  <div class="toolbar">
+    <div class="dual-seg">
+      <button class="ds-btn on" id="vmR" onclick="setView('result')">Result</button>
+      <button class="ds-btn" id="vmO" onclick="setView('original')">Original</button>
+      <button class="ds-btn" id="vmE" onclick="setView('error')">Error map</button>
+    </div>
+    <div class="t-sep"></div>
+    <button class="t-btn" id="bZI">＋</button>
+    <button class="t-btn" id="bZO">－</button>
+    <button class="t-btn" id="bZR">fit</button>
+  </div>
+  <div class="canvas-wrap" id="cWrap">
+    <div class="ph" id="ph"><div class="ph-ring" id="phr"></div><span>Upload an image to begin</span></div>
+    <!-- Main display: SVG for result view (vector), canvas for original/error views -->
+    <svg id="cvSvg" xmlns="http://www.w3.org/2000/svg" style="display:none;border-radius:50%;box-shadow:0 0 60px rgba(0,0,0,.8);flex-shrink:0;"></svg>
+    <canvas id="cvRaster" style="display:none;border-radius:50%;box-shadow:0 0 60px rgba(0,0,0,.8);flex-shrink:0;"></canvas>
+    <!-- Compare overlay SVG (radon side) -->
+    <svg id="cvCmpSvg" xmlns="http://www.w3.org/2000/svg" style="display:none;position:absolute;border-radius:50%;pointer-events:none;"></svg>
+    <div class="cmp-div" id="cDiv"></div>
+    <div class="cmp-handle" id="cHandle"></div>
+    <div class="cmp-lbl" id="cLblL">Greedy</div>
+    <div class="cmp-lbl" id="cLblR">Radon</div>
+  </div>
+</div>
+
+<!-- ════ RIGHT ════ -->
+<div class="panel panel-right">
+  <div class="right-hdr">
+    <div class="sec-title" style="margin-bottom:0">Nail Sequence</div>
+    <button class="btn-hide" id="btnHide">hide</button>
+  </div>
+  <div id="emptyMsg" class="empty-msg">Generate a pattern to see the nail winding order.</div>
+  <div class="nail-wrap" id="nw" style="display:none"><div class="nail-list" id="nl"></div></div>
+</div>
+
+</div><!-- /main -->
+
+<!-- CROP MODAL -->
+<div id="cropModal">
+  <div class="crop-title">Crop &amp; Frame</div>
+  <div class="crop-sub">Drag to pan · Scroll to zoom</div>
+  <div class="crop-cont" id="cropCont">
+    <canvas id="cropCanvas" width="380" height="380"></canvas>
+    <div class="crop-overlay"></div>
+  </div>
+  <div class="crop-controls">
+    <span class="crop-zlbl">Zoom</span>
+    <input type="range" id="cropZoom" min="0.5" max="5" step="0.05" value="1" style="width:140px;">
+    <span class="crop-zlbl" id="cropZV">1.0×</span>
+  </div>
+  <div class="crop-btns">
+    <button class="btn-ca btn-cancel" id="btnCC">Cancel</button>
+    <button class="btn-ca btn-apply" id="btnCA">Apply</button>
+  </div>
+  <div class="crop-hint">The circle shows exactly what will be generated</div>
+</div>
+<canvas id="off" style="display:none"></canvas>
+
+<script>
+// ══════════════════════════
+//  STATE
+// ══════════════════════════
+const G={
+  img:null,bw:false,cropOffX:0,cropOffY:0,cropZoom:1,
+  nails:[],imgPx:null,errPx:null,imgSz:0,nailPos:null,
+  color:'#111111',algo:'greedy',showNails:true,
+  view:'result',zoom:1,done:false,running:false,showSeq:true,
+  compareMode:false,comparePct:50,greedyCv:null,radonCv:null,
+  // For rollback
+  prevParams:null,prevNails:null,prevErr:null,
+  // Accuracy score
+  score:null,prevScore:null,
+  // White background
+  bgActive:false,bgMaskImg:null,
+};
+const $=id=>document.getElementById(id);
+const cvSvg=$('cvSvg'),cvRaster=$('cvRaster'),off=$('off'),cvCmpSvg=$('cvCmpSvg');
+const BG='#f7f5f0';
+const SVG_SZ=600; // internal coordinate space for SVG viewBox
+
+// Placeholder nails
+(()=>{const r=$('phr');for(let i=0;i<40;i++){const a=(i/40)*Math.PI*2-Math.PI/2,d=document.createElement('div');d.className='ph-nail';d.style.left=(50+49*Math.cos(a))+'%';d.style.top=(50+49*Math.sin(a))+'%';d.style.animationDelay=(i*63)+'ms';r.appendChild(d);}})();
+
+// ══ DUAL TOGGLES ══
+function setAlgo(a){
+  G.algo=a;
+  $('algoGreedy').classList.toggle('on',a==='greedy');
+  $('algoRadon').classList.toggle('on',a==='radon');
+  if(G.img)scheduleAutoGen();
+}
+function setNails(v){G.showNails=v;$('nailsShow').classList.toggle('on',v);$('nailsHide').classList.toggle('on',!v);if(G.done)render();}
+function setView(v){
+  G.view=v;
+  ['vmR','vmO','vmE'].forEach(id=>$(id).classList.remove('on'));
+  ({result:'vmR',original:'vmO',error:'vmE'})[v] && $(({result:'vmR',original:'vmO',error:'vmE'})[v]).classList.add('on');
+  if(G.done)render();
+}
+function setBW(v){
+  G.bw=v;$('bwChk').checked=v;
+  $('lblColor').classList.toggle('on',!v);$('lblBW').classList.toggle('on',v);
+  if(G.bgActive&&seg&&segReady){G.bgMaskImg=null;segReady=false;runSegmentation();}
+  updateBothThumbs();scheduleAutoGen();
+}
+$('bwChk').addEventListener('change',()=>setBW($('bwChk').checked));
+
+// ══ SLIDERS — auto-regen on release + click-to-type ══
+let autoTimer=null;
+function scheduleAutoGen(){
+  if(!G.img)return;
+  clearTimeout(autoTimer);
+  autoTimer=setTimeout(()=>triggerGenerate(),80);
+}
+
+// Config for each param: slider id, display id, min, max, step, isFloat, regenType
+const PARAM_CFG=[
+  {s:'sn',v:'vn',min:50,max:400,step:5,float:false,regen:'full'},
+  {s:'sl',v:'vl',min:500,max:8000,step:100,float:false,regen:'full'},
+  {s:'sf',v:'vf',min:5,max:80,step:1,float:false,regen:'full'},
+  {s:'sg',v:'vg',min:3,max:80,step:1,float:false,regen:'full'},
+  {s:'st',v:'vt',min:0.05,max:3.0,step:0.05,float:true,regen:'render'},
+];
+
+PARAM_CFG.forEach(({s,v,min,max,step,float,regen})=>{
+  const slider=$(s),label=$(v);
+  let drag=false;
+
+  // Slider interaction
+  slider.addEventListener('mousedown',()=>{drag=true;});
+  slider.addEventListener('touchstart',()=>{drag=true;},{passive:true});
+  slider.addEventListener('input',()=>{
+    label.textContent=float?parseFloat(slider.value).toFixed(2).replace(/\.?0+$/,''):slider.value;
+    if(regen==='render'&&G.done&&!G.compareMode)render();
+  });
+  slider.addEventListener('mouseup',()=>{drag=false;if(regen==='full'&&G.img)scheduleAutoGen();});
+  slider.addEventListener('touchend',()=>{drag=false;if(regen==='full'&&G.img)scheduleAutoGen();});
+
+  // Click label to type a value
+  label.addEventListener('click',()=>{
+    label.contentEditable='true';
+    // Select all text
+    const range=document.createRange();range.selectNodeContents(label);
+    const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);
+    label.focus();
+  });
+  label.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();label.blur();}
+    if(e.key==='Escape'){
+      label.contentEditable='false';
+      label.textContent=float?parseFloat(slider.value).toFixed(2).replace(/\.?0+$/,''):slider.value;
+    }
+    // Allow only numbers, dot, backspace, arrows
+    if(!/[\d.\-]|Backspace|Delete|Arrow|Tab/.test(e.key)&&e.key.length===1)e.preventDefault();
+  });
+  label.addEventListener('blur',()=>{
+    label.contentEditable='false';
+    let val=parseFloat(label.textContent);
+    if(isNaN(val))val=parseFloat(slider.value);
+    val=Math.max(min,Math.min(max,float?val:Math.round(val/step)*step));
+    slider.value=val;
+    label.textContent=float?String(val).replace(/\.?0+$/,''):String(val);
+    if(regen==='full'&&G.img)scheduleAutoGen();
+    if(regen==='render'&&G.done&&!G.compareMode)render();
+  });
+});
+
+// ══ WHITE BACKGROUND (MediaPipe Selfie Segmentation) ══
+let seg=null,segReady=false,segLoading=false;
+
+// Compose: original image + white background using segmentation mask
+// MediaPipe segmentationMask is a canvas where:
+//   person pixels → R/G/B near 255, alpha near 255
+//   background pixels → R/G/B near 0, alpha near 0
+// We use the alpha channel as the primary mask signal.
+function buildMaskedCanvas(segCanvas){
+  const sz=512;
+
+  // Render the mask at sz×sz and read pixels
+  const maskC=document.createElement('canvas');maskC.width=sz;maskC.height=sz;
+  const maskCtx=maskC.getContext('2d');
+  maskCtx.drawImage(segCanvas,0,0,sz,sz);
+  const maskData=maskCtx.getImageData(0,0,sz,sz).data;
+
+  // Render the current cropped image at sz×sz
+  const imgC=document.createElement('canvas');imgC.width=sz;imgC.height=sz;
+  const imgCtx=imgC.getContext('2d');
+  const img=G.img,base=Math.min(img.width,img.height),view=base/G.cropZoom;
+  const srcX=(img.width-view)/2-G.cropOffX*(view/sz);
+  const srcY=(img.height-view)/2-G.cropOffY*(view/sz);
+  imgCtx.drawImage(img,srcX,srcY,view,view,0,0,sz,sz);
+  const imgData=imgCtx.getImageData(0,0,sz,sz).data;
+
+  // Detect which channel holds the mask (alpha or RGB)
+  // Sample center region to decide
+  let sumR=0,sumA=0,count=0;
+  for(let y=sz/4;y<3*sz/4;y+=8){for(let x=sz/4;x<3*sz/4;x+=8){
+    const pi=(y*sz+x)*4;sumR+=maskData[pi];sumA+=maskData[pi+3];count++;
+  }}
+  const avgR=sumR/count,avgA=sumA/count;
+  // Use the channel with more signal variation (not near 0 and not near 255 uniformly)
+  const useAlpha=Math.abs(avgA-127)<Math.abs(avgR-127)?true:avgA>10;
+  console.log('[BG] mask channel decision: R avg='+avgR.toFixed(0)+' A avg='+avgA.toFixed(0)+' useAlpha='+useAlpha);
+
+  // Pixel-wise composite
+  const out=new Uint8ClampedArray(sz*sz*4);
+  for(let i=0;i<sz*sz;i++){
+    const pi=i*4;
+    // person confidence: try alpha first, fall back to R channel
+    const raw=useAlpha?maskData[pi+3]:Math.max(maskData[pi],maskData[pi+1],maskData[pi+2]);
+    const t=raw/255; // 1=person, 0=background
+    out[pi+0]=Math.round(imgData[pi+0]*t+255*(1-t));
+    out[pi+1]=Math.round(imgData[pi+1]*t+255*(1-t));
+    out[pi+2]=Math.round(imgData[pi+2]*t+255*(1-t));
+    out[pi+3]=255;
+  }
+
+  const c=document.createElement('canvas');c.width=sz;c.height=sz;
+  c.getContext('2d').putImageData(new ImageData(out,sz,sz),0,0);
+  return c;
+}
+
+function runSegmentation(){
+  if(!G.img||!seg)return;
+  // Render current crop into a canvas to send to MediaPipe
+  const sz=512,c=document.createElement('canvas');c.width=sz;c.height=sz;
+  const ctx=c.getContext('2d');
+  const img=G.img,base=Math.min(img.width,img.height),view=base/G.cropZoom;
+  const srcX=(img.width-view)/2-G.cropOffX*(view/sz);
+  const srcY=(img.height-view)/2-G.cropOffY*(view/sz);
+  ctx.drawImage(img,srcX,srcY,view,view,0,0,sz,sz);
+  seg.send({image:c});
+}
+
+function initAndRunSegmentation(){
+  if(seg&&segReady){runSegmentation();return;}
+  if(typeof SelfieSegmentation==='undefined'){
+    setBgError('MediaPipe not loaded. Check internet connection.');return;
+  }
+  seg=new SelfieSegmentation({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1.1675465747/${f}`});
+  // modelSelection: 0 = selfie (portrait), 1 = general landscape
+  seg.setOptions({modelSelection:1,selfieMode:false});
+  seg.onResults(r=>{
+    console.log('[BG] onResults fired. mask type:', typeof r.segmentationMask, r.segmentationMask?.constructor?.name, 'bgActive:', G.bgActive);
+    if(!G.bgActive)return;
+    G.bgMaskImg=buildMaskedCanvas(r.segmentationMask);
+    segReady=true;segLoading=false;
+    $('btnBg').classList.remove('loading');
+    $('btnBg').classList.add('active');
+    $('bgIcon').textContent='⬜';
+    $('bgLabel').textContent=' White Background  ✓';
+    $('bgStatus').textContent='Background removed — generating…';
+    $('bgStatus').className='bg-status ok';
+    updateBothThumbs();
+    if(G.img)scheduleAutoGen();
+  });
+  segLoading=true;
+  seg.initialize().then(()=>{
+    console.log('[BG] MediaPipe initialized, running segmentation...');
+    runSegmentation();
+  }).catch(e=>{
+    console.error('[BG] init error:', e);
+    G.bgActive=false;segLoading=false;
+    setBgError('Model load failed: '+e.message);
+  });
+}
+
+function setBgError(msg){
+  $('btnBg').classList.remove('loading','active');
+  $('bgIcon').textContent='◪';
+  $('bgLabel').textContent=' White Background';
+  $('bgStatus').textContent=msg;
+  $('bgStatus').className='bg-status err';
+}
+
+$('btnBg').addEventListener('click',()=>{
+  if(!G.img)return;
+  if(G.bgActive){
+    // Toggle OFF — restore raw image
+    G.bgActive=false;G.bgMaskImg=null;
+    $('btnBg').classList.remove('active','loading');
+    $('bgIcon').textContent='◪';
+    $('bgLabel').textContent=' White Background';
+    $('bgStatus').textContent='';
+    $('bgStatus').className='bg-status';
+    updateBothThumbs();
+    if(G.img)scheduleAutoGen();
+    return;
+  }
+  // Toggle ON
+  G.bgActive=true;
+  $('btnBg').classList.add('loading');
+  $('bgIcon').textContent='◌';
+  $('bgLabel').textContent=' Detecting subject…';
+  $('bgStatus').textContent='Loading AI model (first run ~3–5s)…';
+  $('bgStatus').className='bg-status loading';
+  initAndRunSegmentation();
+});
+
+// ══ UPLOAD ══
+$('uz').addEventListener('dragover',e=>{e.preventDefault();$('uz').classList.add('drag-over');});
+$('uz').addEventListener('dragleave',()=>$('uz').classList.remove('drag-over'));
+$('uz').addEventListener('drop',e=>{e.preventDefault();$('uz').classList.remove('drag-over');if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0]);});
+$('fi').addEventListener('change',()=>{if($('fi').files[0])loadFile($('fi').files[0]);});
+
+function loadFile(f){
+  if(!f.type.startsWith('image/'))return;
+  const rd=new FileReader();
+  rd.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      G.img=img;G.bw=false;G.cropOffX=0;G.cropOffY=0;G.cropZoom=1;
+      // Reset bg removal on new image
+      G.bgActive=false;G.bgMaskImg=null;segReady=false;
+      $('btnBg').classList.remove('active','loading');
+      $('bgIcon').textContent='\u25ea';$('bgLabel').textContent=' White Background';
+      $('bgStatus').textContent='';$('bgStatus').className='bg-status';
+      $('bwChk').checked=false;$('lblColor').classList.add('on');$('lblBW').classList.remove('on');
+      $('uph').style.display='none';$('origImg').src=e.target.result;$('origImg').style.display='block';
+      $('bwRow').style.display='flex';$('bgRow').style.display='block';
+      $('btnGen').disabled=false;$('btnCompare').disabled=false;$('btnOptimize').disabled=false;
+      $('cropPrevWrap').classList.add('has-img');
+      resetResult();updateBothThumbs();triggerGenerate();
+    };
+    img.src=e.target.result;
+  };
+  rd.readAsDataURL(f);
+}
+
+function resetResult(){
+  G.done=false;G.compareMode=false;G.zoom=1;
+  cvSvg.style.display='none';cvRaster.style.display='none';cvCmpSvg.style.display='none';
+  $('cDiv').style.display='none';$('cHandle').style.display='none';
+  $('cLblL').style.display='none';$('cLblR').style.display='none';
+  $('ph').style.display='flex';
+  $('statSec').style.display='none';$('expSec').style.display='none';
+  $('emptyMsg').style.display='block';$('nw').style.display='none';
+  $('btnRefine').style.display='none';
+  $('rollbackRow').style.display='none';
+  $('btnCompare').classList.remove('active');
+  $('btnCompare').textContent='⇄ Compare side by side';
+  $('prodSec').style.display='none';
+}
+
+// ══ THUMBNAILS ══
+function updateBothThumbs(){if(!G.img)return;updateOrigThumb();updateCropThumb();}
+
+function updateOrigThumb(){
+  const c=off;c.width=200;c.height=200;const ctx=c.getContext('2d');
+  const s=Math.min(G.img.width,G.img.height);
+  if(G.bw)ctx.filter='grayscale(1)';
+  ctx.drawImage(G.img,(G.img.width-s)/2,(G.img.height-s)/2,s,s,0,0,200,200);
+  $('origImg').src=c.toDataURL('image/jpeg',.85);
+}
+
+function updateCropThumb(){
+  const c=off;c.width=200;c.height=200;const ctx=c.getContext('2d');
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,200,200);
+  drawCropped(ctx,200,G.bw);
+  const img=$('cropPrevImg');img.src=c.toDataURL('image/jpeg',.9);
+  img.style.display='block';$('cropPrevPh').style.display='none';
+}
+
+function drawCropped(ctx,sz,gray,forcedRaw){
+  // forcedRaw=true: always draw original image (used by crop modal, bg-preview)
+  if(!G.img)return;
+  ctx.save();if(gray)ctx.filter='grayscale(1)';
+  if(!forcedRaw&&G.bgActive&&G.bgMaskImg){
+    // Draw the pre-composited white-bg masked version (scaled to sz)
+    if(gray)ctx.filter='grayscale(1)';
+    ctx.drawImage(G.bgMaskImg,0,0,sz,sz);
+    ctx.restore();return;
+  }
+  const img=G.img,base=Math.min(img.width,img.height),view=base/G.cropZoom;
+  const srcX=(img.width-view)/2-G.cropOffX*(view/sz),srcY=(img.height-view)/2-G.cropOffY*(view/sz);
+  ctx.drawImage(img,srcX,srcY,view,view,0,0,sz,sz);ctx.restore();
+}
+
+// ══ CROP MODAL ══
+let cDrag=false,cSX=0,cSY=0,cOX=0,cOY=0;
+const cropCont=$('cropCont');
+$('cropPrevWrap').addEventListener('click',()=>{if(G.img)openCrop();});
+function openCrop(){renderCropCanvas();$('cropZoom').value=G.cropZoom;$('cropZV').textContent=G.cropZoom.toFixed(1)+'×';$('cropModal').classList.add('open');}
+$('btnCC').addEventListener('click',()=>$('cropModal').classList.remove('open'));
+$('btnCA').addEventListener('click',()=>{$('cropModal').classList.remove('open');if(G.bgActive&&seg){segReady=false;G.bgMaskImg=null;runSegmentation();}updateBothThumbs();resetResult();triggerGenerate();});
+$('cropZoom').addEventListener('input',()=>{G.cropZoom=parseFloat($('cropZoom').value);$('cropZV').textContent=G.cropZoom.toFixed(1)+'×';renderCropCanvas();});
+cropCont.addEventListener('mousedown',e=>{cDrag=true;cSX=e.clientX;cSY=e.clientY;cOX=G.cropOffX;cOY=G.cropOffY;cropCont.style.cursor='grabbing';});
+window.addEventListener('mousemove',e=>{if(!cDrag)return;G.cropOffX=cOX+(e.clientX-cSX);G.cropOffY=cOY+(e.clientY-cSY);renderCropCanvas();});
+window.addEventListener('mouseup',()=>{cDrag=false;cropCont.style.cursor='grab';});
+cropCont.addEventListener('wheel',e=>{e.preventDefault();G.cropZoom=Math.max(.5,Math.min(5,G.cropZoom-e.deltaY*.003));$('cropZoom').value=G.cropZoom;$('cropZV').textContent=G.cropZoom.toFixed(1)+'×';renderCropCanvas();},{passive:false});
+function renderCropCanvas(){const c=$('cropCanvas'),ctx=c.getContext('2d');ctx.fillStyle='#eee';ctx.fillRect(0,0,380,380);drawCropped(ctx,380,G.bw,true);}
+
+// ══ IMAGE → FLOAT ARRAY ══
+function prepareImage(sz){
+  off.width=sz;off.height=sz;
+  const ctx=off.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,sz,sz);
+  drawCropped(ctx,sz,G.bw);
+  const raw=ctx.getImageData(0,0,sz,sz).data;
+  const img=new Float32Array(sz*sz);
+  const cx=sz/2,cy=sz/2,R=sz/2;
+  for(let y=0;y<sz;y++)for(let x=0;x<sz;x++){
+    const i=y*sz+x,pi=i*4;
+    const gray=(0.299*raw[pi]+0.587*raw[pi+1]+0.114*raw[pi+2])/255;
+    const dx=x-cx,dy=y-cy;
+    img[i]=(dx*dx+dy*dy<=(R-1)*(R-1))?(1-gray):0;
+  }
+  return img;
+}
+
+function makeNails(N,sz){
+  const nails=[],cx=sz/2,cy=sz/2,nr=sz/2-2;
+  for(let i=0;i<N;i++){const a=(i/N)*Math.PI*2-Math.PI/2;nails.push({x:cx+nr*Math.cos(a),y:cy+nr*Math.sin(a)});}
+  return nails;
+}
+
+// ══ BRESENHAM ══
+function bresenham(x0,y0,x1,y1,sz){
+  const pts=[];
+  let dx=Math.abs(x1-x0),dy=Math.abs(y1-y0),sx=x0<x1?1:-1,sy=y0<y1?1:-1,e=dx-dy,x=x0,y=y0;
+  while(true){if(x>=0&&x<sz&&y>=0&&y<sz)pts.push(y*sz+x);if(x===x1&&y===y1)break;const e2=2*e;if(e2>-dy){e-=dy;x+=sx;}if(e2<dx){e+=dx;y+=sy;}}
+  return new Int32Array(pts);
+}
+
+function buildLC(nails,N,minG,sz){
+  const lc=[];for(let i=0;i<N;i++)lc.push({});
+  for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){
+    const diff=j-i,ad=Math.min(diff,N-diff);
+    if(ad<minG){lc[i][j]=null;continue;}
+    lc[i][j]=bresenham(Math.round(nails[i].x),Math.round(nails[i].y),Math.round(nails[j].x),Math.round(nails[j].y),sz);
+  }
+  return lc;
+}
+function getLine(lc,i,j){return i<j?lc[i][j]:lc[j][i];}
+
+// ══════════════════════════════════════════
+//  GREEDY ALGORITHM
+//  Standard pixel-sampling greedy
+// ══════════════════════════════════════════
+function runGreedy(img,nails,N,maxL,minG,fade,sz,cb){
+  const lc=buildLC(nails,N,minG,sz);
+  const err=new Float32Array(img);
+  const result=[0];let cur=0;
+  for(let iter=0;iter<maxL;iter++){
+    let best=-1,bestJ=-1;
+    for(let j=0;j<N;j++){
+      if(j===cur)continue;
+      const ad=Math.min(Math.abs(j-cur),N-Math.abs(j-cur));
+      if(ad<minG)continue;
+      const px=getLine(lc,cur,j);
+      if(!px||!px.length)continue;
+      let sum=0;for(let k=0;k<px.length;k++)sum+=err[px[k]];
+      if(sum/px.length>best){best=sum/px.length;bestJ=j;}
+    }
+    if(bestJ<0||best<0.002)break;
+    result.push(bestJ);
+    const px=getLine(lc,cur,bestJ);
+    for(let k=0;k<px.length;k++)err[px[k]]=Math.max(0,err[px[k]]-fade/500);
+    cur=bestJ;
+    if(iter%150===0)cb(iter,maxL);
+  }
+  return{result,err,lc};
+}
+
+// ══════════════════════════════════════════
+//  RADON-STYLE ALGORITHM
+//
+//  The key insight: rather than scoring on the
+//  raw error image, we score on an EDGE-ENHANCED
+//  version of the error. This is the actual useful
+//  connection to the Radon transform in CT — it
+//  favours lines that cross strong edges (dark→light
+//  transitions), which are the contour features
+//  that make portraits readable. We compute a
+//  simple Sobel edge map once, then weight the
+//  pixel scores by edge strength during selection.
+//  Subtraction still happens on the raw error image.
+// ══════════════════════════════════════════
+function runRadon(img,nails,N,maxL,minG,fade,sz,cb){
+  const lc=buildLC(nails,N,minG,sz);
+  
+  // Build edge-enhanced scoring image: combine raw + Sobel magnitude
+  const edge=new Float32Array(sz*sz);
+  for(let y=1;y<sz-1;y++)for(let x=1;x<sz-1;x++){
+    const gx=img[(y-1)*sz+(x+1)]+2*img[y*sz+(x+1)]+img[(y+1)*sz+(x+1)]
+             -img[(y-1)*sz+(x-1)]-2*img[y*sz+(x-1)]-img[(y+1)*sz+(x-1)];
+    const gy=img[(y+1)*sz+(x-1)]+2*img[(y+1)*sz+x]+img[(y+1)*sz+(x+1)]
+             -img[(y-1)*sz+(x-1)]-2*img[(y-1)*sz+x]-img[(y-1)*sz+(x+1)];
+    edge[y*sz+x]=Math.sqrt(gx*gx+gy*gy)/4;
+  }
+  // Score image = blend of raw darkness + edge
+  const score=new Float32Array(sz*sz);
+  for(let i=0;i<sz*sz;i++) score[i]=img[i]*0.6+edge[i]*0.4;
+
+  const err=new Float32Array(img);     // working copy for subtraction
+  const scoreW=new Float32Array(score); // working copy for scoring
+
+  const result=[0];let cur=0;
+  for(let iter=0;iter<maxL;iter++){
+    let best=-1,bestJ=-1;
+    for(let j=0;j<N;j++){
+      if(j===cur)continue;
+      const ad=Math.min(Math.abs(j-cur),N-Math.abs(j-cur));
+      if(ad<minG)continue;
+      const px=getLine(lc,cur,j);
+      if(!px||!px.length)continue;
+      let sum=0;for(let k=0;k<px.length;k++)sum+=scoreW[px[k]];
+      if(sum/px.length>best){best=sum/px.length;bestJ=j;}
+    }
+    if(bestJ<0||best<0.0015)break;
+    result.push(bestJ);
+    const px=getLine(lc,cur,bestJ);
+    const f=fade/500;
+    for(let k=0;k<px.length;k++){
+      err[px[k]]=Math.max(0,err[px[k]]-f);
+      scoreW[px[k]]=Math.max(0,scoreW[px[k]]-f);
+    }
+    cur=bestJ;
+    if(iter%150===0)cb(iter,maxL);
+  }
+  return{result,err,lc};
+}
+
+// ══ ACCURACY SCORE ══
+// Measures how well the rendered string art matches the original.
+// Renders string pattern to pixel array, compares with target image.
+// Returns 0–100 (higher = better match).
+function computeScore(nailList,nailPos,imgPx,sz){
+  const SZ=sz;
+  const rendered=new Float32Array(SZ*SZ); // starts at 0 (white)
+  const thick=0.5; // fixed thin line for scoring
+  // Draw lines into rendered (additive)
+  for(let i=0;i<nailList.length-1;i++){
+    const f=nailPos[nailList[i]],t=nailPos[nailList[i+1]];
+    const px=bresenham(Math.round(f.x),Math.round(f.y),Math.round(t.x),Math.round(t.y),SZ);
+    for(let k=0;k<px.length;k++) rendered[px[k]]=Math.min(1,rendered[px[k]]+0.15);
+  }
+  // Compare with original (both are 0=white/empty, 1=dark)
+  let mse=0,count=0;
+  const cx=SZ/2,cy=SZ/2,R=SZ/2;
+  for(let y=0;y<SZ;y++)for(let x=0;x<SZ;x++){
+    const dx=x-cx,dy=y-cy;
+    if(dx*dx+dy*dy>(R-1)*(R-1))continue;
+    const d=rendered[y*SZ+x]-imgPx[y*SZ+x];
+    mse+=d*d;count++;
+  }
+  mse/=count;
+  return Math.max(0,Math.round((1-Math.sqrt(mse))*100));
+}
+
+// ══ GENERATE ══
+function triggerGenerate(){
+  if(!G.img||G.running)return;
+  G.running=true;G.compareMode=false;
+  $('btnGen').disabled=true;$('btnCompare').disabled=true;
+  $('btnIn').innerHTML='<div class="spin" style="display:inline-block"></div> Generating...';
+  $('btnGen').classList.add('pulsing');
+  $('pw').style.display='block';prog(0,'Preparing...');
+  const t0=performance.now();
+  setTimeout(()=>{
+    const N=parseInt($('sn').value),maxL=parseInt($('sl').value);
+    const sz=500,minG=parseInt($('sg').value),fade=parseInt($('sf').value);
+    const img=prepareImage(sz),nails=makeNails(N,sz);
+    const algo=G.algo==='radon'?runRadon:runGreedy;
+    const{result,err,lc}=algo(img,nails,N,maxL,minG,fade,sz,(iter,max)=>{
+      prog(5+(iter/max)*88,'Lines: '+(iter+1)+' / '+max);
+    });
+    prog(95,'Scoring...');
+    const sc=computeScore(result,nails,img,sz);
+    finishGen(result,err,img,nails,N,sz,performance.now()-t0,sc,lc);
+  },40);
+}
+
+$('btnGen').addEventListener('click',()=>triggerGenerate());
+
+function prog(p,msg){$('pf').style.width=p+'%';$('pt').textContent=msg;}
+
+function finishGen(result,err,img,nails,N,sz,ms,sc,lc){
+  G.nails=result;G.errPx=err;G.imgPx=img;G.nailPos=nails;G.imgSz=sz;
+  G.done=true;G.running=false;G.score=sc;G.lineCache=lc;
+  prog(100,'Done!');
+  $('stl').textContent=result.length-1;$('stn').textContent=N;
+  $('stt').textContent=(ms/1000).toFixed(1);
+  $('stm').textContent=Math.round((result.length-1)*0.64*0.3);
+  $('statSec').style.display='block';$('expSec').style.display='block';
+  // Show score
+  $('scoreBox').style.display='block';
+  $('scoreVal').textContent=sc+'%';
+  $('scoreDelta').textContent='accuracy vs original';
+  $('emptyMsg').style.display='none';
+  if(G.showSeq){$('nw').style.display='block';renderNailPanel(result);}
+  $('ph').style.display='none';
+  cvRaster.style.display='none';cvCmpSvg.style.display='none';
+  $('cDiv').style.display='none';$('cHandle').style.display='none';
+  $('cLblL').style.display='none';$('cLblR').style.display='none';
+  render();
+  $('btnGen').disabled=false;$('btnCompare').disabled=false;
+  $('btnIn').innerHTML='▶ Regenerate';$('btnGen').classList.remove('pulsing');
+  $('btnRefine').style.display='block';
+  updateProdTime();
+  setTimeout(()=>$('pw').style.display='none',2000);
+}
+
+// ══ ITERATIVE REFINEMENT ══
+// After generation, do a second pass targeting the highest-error regions.
+// This simulates "AI learning by trial and error" — measures the gap
+// between rendered and original, then concentrates new lines there.
+$('btnRefine').addEventListener('click',()=>{
+  if(!G.done||G.running)return;
+  G.running=true;
+  $('btnRefine').textContent='⟳ Refining...';
+  $('btnRefine').disabled=true;
+  $('btnGen').disabled=true;
+  const t0=performance.now();
+  setTimeout(()=>{
+    const N=parseInt($('sn').value);
+    const maxExtra=Math.floor(parseInt($('sl').value)*0.3); // 30% more lines
+    const sz=G.imgSz,minG=parseInt($('sg').value),fade=parseInt($('sf').value);
+    const nails=G.nailPos;
+
+    // Compute residual: where is the rendered image still far from target?
+    // Render current result to pixel buffer
+    const rendered=new Float32Array(sz*sz);
+    for(let i=0;i<G.nails.length-1;i++){
+      const f=nails[G.nails[i]],t=nails[G.nails[i+1]];
+      const px=G.lineCache?getLine(G.lineCache,G.nails[i],G.nails[i+1]):
+                bresenham(Math.round(f.x),Math.round(f.y),Math.round(t.x),Math.round(t.y),sz);
+      if(px)for(let k=0;k<px.length;k++)rendered[px[k]]=Math.min(1,rendered[px[k]]+0.12);
+    }
+    // Residual = target darkness minus what's rendered (clamped to >0)
+    const residual=new Float32Array(sz*sz);
+    for(let i=0;i<sz*sz;i++)residual[i]=Math.max(0,G.imgPx[i]-rendered[i]);
+
+    // Run a short greedy pass on the residual
+    const{result:extra,err}=runGreedy(residual,nails,N,maxExtra,minG,fade,sz,(i,m)=>{});
+
+    // Append extra nails to existing sequence (connect from last nail)
+    const lastNail=G.nails[G.nails.length-1];
+    const extraConnected=[lastNail,...extra.slice(1)];
+    const combined=[...G.nails,...extraConnected.slice(1)];
+
+    // Recompute error image
+    const newErr=new Float32Array(G.imgPx);
+    const lc=buildLC(nails,N,minG,sz);
+    for(let i=0;i<combined.length-1;i++){
+      const px=getLine(lc,combined[i],combined[i+1]);
+      if(px)for(let k=0;k<px.length;k++)newErr[px[k]]=Math.max(0,newErr[px[k]]-fade/500);
+    }
+
+    const sc=computeScore(combined,nails,G.imgPx,sz);
+    const prev=G.score;
+    G.nails=combined;G.errPx=newErr;G.score=sc;G.lineCache=lc;
+
+    $('stl').textContent=combined.length-1;
+    $('scoreVal').textContent=sc+'%';
+    const delta=sc-prev;
+    $('scoreDelta').textContent=(delta>=0?'+':'')+delta+'% from refinement';
+    $('scoreDelta').style.color=delta>=0?'var(--accent)':'#ff6b6b';
+    if(G.showSeq){renderNailPanel(combined);}
+    render();
+    G.running=false;
+    $('btnRefine').textContent='⟳ Refine again';
+    $('btnRefine').disabled=false;
+    $('btnGen').disabled=false;
+    $('stt').textContent=(((performance.now()-t0)/1000)+parseFloat($('stt').textContent)).toFixed(1);
+  },40);
+});
+
+// ══ SMART OPTIMIZE ══
+// Analyzes the image and suggests better parameter values.
+// Relationships it considers:
+// - Nail count ↔ Max lines (12–16× ratio is optimal)  
+// - Line darkness ↔ Max lines (more lines → less fade needed)
+// - Min nail skip ↔ Nail count (~8% of N)
+$('btnOptimize').addEventListener('click',()=>{
+  if(!G.img)return;
+
+  // Save current params for rollback
+  G.prevParams={
+    sn:$('sn').value,sl:$('sl').value,sf:$('sf').value,
+    sg:$('sg').value,
+    vn:$('vn').textContent,vl:$('vl').textContent,
+    vf:$('vf').textContent,vg:$('vg').textContent,
+  };
+
+  // Analyze image: compute average darkness to guide params
+  off.width=100;off.height=100;
+  const ctx=off.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,100,100);
+  drawCropped(ctx,100,G.bw);
+  const raw=ctx.getImageData(0,0,100,100).data;
+  let darkSum=0,darkCount=0;
+  for(let i=0;i<10000;i++){const g=(raw[i*4]+raw[i*4+1]+raw[i*4+2])/3/255;darkSum+=(1-g);darkCount++;}
+  const avgDark=darkSum/darkCount; // 0=white image, 1=black image
+
+  // Compute suggested params
+  const suggestN=Math.round(Math.min(300,Math.max(150,200+avgDark*100))/5)*5;
+  const ratioLines=avgDark>0.5?14:12; // darker images need more lines
+  const suggestL=Math.round(Math.min(5000,suggestN*ratioLines)/100)*100;
+  const suggestFade=Math.round(avgDark>0.5?20:30); // dark images → less fade
+  const suggestG=Math.round(suggestN*0.08);
+
+  // Apply
+  $('sn').value=suggestN;$('vn').textContent=suggestN;
+  $('sl').value=suggestL;$('vl').textContent=suggestL;
+  $('sf').value=suggestFade;$('vf').textContent=suggestFade;
+  $('sg').value=suggestG;$('vg').textContent=suggestG;
+
+  $('optHint').textContent=`N=${suggestN} · ${suggestL} lines · fade ${suggestFade}`;
+  $('rollbackRow').style.display='flex';
+
+  triggerGenerate();
+});
+
+$('btnRollback').addEventListener('click',()=>{
+  if(!G.prevParams)return;
+  const p=G.prevParams;
+  $('sn').value=p.sn;$('vn').textContent=p.vn;
+  $('sl').value=p.sl;$('vl').textContent=p.vl;
+  $('sf').value=p.sf;$('vf').textContent=p.vf;
+  $('sg').value=p.sg;$('vg').textContent=p.vg;
+  $('rollbackRow').style.display='none';
+  triggerGenerate();
+});
+
+// ══ COMPARE ══
+$('btnCompare').addEventListener('click',()=>{
+  // If already in compare mode, toggle it off
+  if(G.compareMode){
+    G.compareMode=false;
+    $('btnCompare').classList.remove('active');
+    $('btnCompare').textContent='⇄ Compare side by side';
+    cvCmpSvg.style.display='none';
+    $('cDiv').style.display='none';$('cHandle').style.display='none';
+    $('cLblL').style.display='none';$('cLblR').style.display='none';
+    if(G.done)render();
+    return;
+  }
+  if(!G.img||G.running)return;
+  G.running=true;G.compareMode=true;
+  $('btnCompare').classList.add('active');
+  $('btnCompare').textContent='⇄ Exit compare';
+  $('btnGen').disabled=true;$('btnCompare').disabled=true;
+  $('btnIn').innerHTML='<div class="spin" style="display:inline-block"></div> Running both...';
+  $('btnGen').classList.add('pulsing');
+  $('pw').style.display='block';prog(0,'Running Greedy...');
+  const t0=performance.now();
+  setTimeout(()=>{
+    const N=parseInt($('sn').value),maxL=parseInt($('sl').value);
+    const sz=500,minG=parseInt($('sg').value),fade=parseInt($('sf').value);
+    const img=prepareImage(sz),nails=makeNails(N,sz);
+    const gr=runGreedy(img,nails,N,maxL,minG,fade,sz,(i,m)=>prog(2+(i/m)*44,'Greedy: '+(i+1)+'/'+m));
+    prog(50,'Running Radon...');
+    const rd=runRadon(img,nails,N,maxL,minG,fade,sz,(i,m)=>prog(50+(i/m)*46,'Radon: '+(i+1)+'/'+m));
+    prog(100,'Drag divider to compare');
+    G.greedyNails=gr.result;G.radonNails=rd.result;
+    G.nails=gr.result;G.errPx=gr.err;G.imgPx=img;G.nailPos=nails;G.imgSz=sz;G.done=true;G.running=false;
+    $('statSec').style.display='block';$('expSec').style.display='block';
+    $('stl').textContent=(gr.result.length-1)+' / '+(rd.result.length-1);
+    $('stn').textContent=N;$('stt').textContent=((performance.now()-t0)/1000).toFixed(1);
+    $('stm').textContent=Math.round(((gr.result.length+rd.result.length)/2-1)*0.64*0.3);
+    G.comparePct=50;
+    $('ph').style.display='none';
+    renderCompare();$('emptyMsg').style.display='none';
+    if(G.showSeq){$('nw').style.display='block';renderNailPanel(gr.result);}
+    $('btnGen').disabled=false;$('btnCompare').disabled=false;
+    $('btnIn').innerHTML='▶ Regenerate';$('btnGen').classList.remove('pulsing');
+    $('scoreBox').style.display='none';
+    updateProdTime();
+    setTimeout(()=>$('pw').style.display='none',2500);
+    setupCompareDrag();
+  },40);
+});
+
+// ══ SVG HELPERS ══
+// Build an SVG path string from a nail sequence
+function buildSvgLines(list, nailPos, imgSz){
+  const SZ=SVG_SZ, sc=SZ/imgSz;
+  const parts=[];
+  for(let i=0;i<list.length-1;i++){
+    const f=nailPos[list[i]],t=nailPos[list[i+1]];
+    parts.push(`M${(f.x*sc).toFixed(2)},${(f.y*sc).toFixed(2)}L${(t.x*sc).toFixed(2)},${(t.y*sc).toFixed(2)}`);
+  }
+  return parts.join('');
+}
+
+// Write the result SVG (lines only — no pixel scaling possible)
+function setSvgContent(svgEl, list, nailPos, imgSz, showNails){
+  const SZ=SVG_SZ, sc=SZ/imgSz;
+  const thick=parseFloat($('st').value);
+  const col=G.color;
+  const [r,g,b]=hexRgb(col);
+  const d=buildSvgLines(list,nailPos,imgSz);
+  let nailDots='';
+  if(showNails){
+    nailPos.forEach(n=>{
+      nailDots+=`<circle cx="${(n.x*sc).toFixed(1)}" cy="${(n.y*sc).toFixed(1)}" r="1.8" fill="rgba(0,0,0,0.3)"/>`;
+    });
+  }
+  const bgFill=G.bgActive?'#ffffff':BG;
+  svgEl.innerHTML=
+    `<defs>`+
+      `<clipPath id="cp${svgEl.id}"><circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2-1}"/></clipPath>`+
+    `</defs>`+
+    `<circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2}" fill="${bgFill}"/>`+
+    `<g clip-path="url(#cp${svgEl.id})">`+
+      `<path d="${d}" fill="none" stroke="rgba(${r},${g},${b},0.18)" stroke-width="${thick}" stroke-linecap="round"/>`+
+      nailDots+
+    `</g>`+
+    `<circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2-1}" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="1.5"/>`;
+}
+
+// Set the SVG's display size while keeping viewBox fixed (= infinite sharpness)
+function applySvgSize(svgEl, zoom){
+  const base=Math.min(
+    window.innerWidth-530,
+    window.innerHeight-96
+  );
+  const sz=Math.round(base*zoom);
+  svgEl.setAttribute('width',sz);
+  svgEl.setAttribute('height',sz);
+  svgEl.setAttribute('viewBox',`0 0 ${SVG_SZ} ${SVG_SZ}`);
+}
+
+// ══ RENDER ══
+// Single unified render path: always SVG for result (infinitely sharp),
+// always canvas for original/error. The SVG viewBox stays fixed at SVG_SZ,
+// only the element's pixel size changes with zoom.
+function render(){
+  if(!G.done||G.compareMode)return;
+  const sz=G.imgSz;
+  const baseDisplaySz=Math.round(Math.min(window.innerWidth-530,window.innerHeight-96));
+  const displaySz=Math.round(baseDisplaySz*G.zoom);
+
+  if(G.view==='result'){
+    // SVG — infinitely sharp vector at any zoom level
+    cvRaster.style.display='none';
+    cvSvg.style.display='block';
+    setSvgContent(cvSvg, G.nails, G.nailPos, sz, G.showNails);
+    applySvgSize(cvSvg, G.zoom);
+  } else {
+    // Raster views: original photo or error map
+    cvSvg.style.display='none';
+    cvRaster.width=displaySz;cvRaster.height=displaySz;
+    cvRaster.style.width=displaySz+'px';cvRaster.style.height=displaySz+'px';
+    cvRaster.style.display='block';
+    const ctx=cvRaster.getContext('2d');
+    ctx.fillStyle=BG;ctx.fillRect(0,0,displaySz,displaySz);
+    ctx.save();ctx.beginPath();ctx.arc(displaySz/2,displaySz/2,displaySz/2-1,0,Math.PI*2);ctx.clip();
+    if(G.view==='original'){
+      // Draw cropped image (respects bgActive white-background mask)
+      off.width=displaySz;off.height=displaySz;
+      const tc=off.getContext('2d');tc.fillStyle='#fff';tc.fillRect(0,0,displaySz,displaySz);
+      drawCropped(tc,displaySz,G.bw);
+      ctx.drawImage(off,0,0,displaySz,displaySz);
+    } else { // error map — scale from algorithm's pixel buffer
+      const scE=sz/displaySz;
+      const id=ctx.createImageData(displaySz,displaySz);
+      for(let y=0;y<displaySz;y++)for(let x=0;x<displaySz;x++){
+        const v=Math.min(1,G.errPx[Math.min(sz-1,Math.floor(y*scE))*sz+Math.min(sz-1,Math.floor(x*scE))]);
+        const c2=Math.floor(v*255),i=(y*displaySz+x)*4;
+        id.data[i]=c2;id.data[i+1]=Math.floor(c2*.3);id.data[i+2]=0;id.data[i+3]=255;
+      }
+      ctx.putImageData(id,0,0);
+    }
+    ctx.restore();
+    ctx.beginPath();ctx.arc(displaySz/2,displaySz/2,displaySz/2-1,0,Math.PI*2);
+    ctx.strokeStyle='rgba(0,0,0,.1)';ctx.lineWidth=1.5;ctx.stroke();
+  }
+}
+
+// ══ COMPARE (SVG-based, clipped with CSS) ══
+function renderCompare(){
+  // Left SVG = Greedy
+  cvRaster.style.display='none';
+  cvSvg.style.display='block';
+  setSvgContent(cvSvg, G.greedyNails||G.nails, G.nailPos, G.imgSz, G.showNails);
+  applySvgSize(cvSvg, G.zoom);
+
+  // Right SVG = Radon, positioned exactly over left, clipped to right portion
+  cvCmpSvg.style.display='block';
+  setSvgContent(cvCmpSvg, G.radonNails||G.nails, G.nailPos, G.imgSz, G.showNails);
+  applySvgSize(cvCmpSvg, G.zoom);
+
+  // Position overlay SVG on top of main SVG
+  requestAnimationFrame(()=>{
+    const cwr=$('cWrap'),cvR=cvSvg.getBoundingClientRect(),wR=cwr.getBoundingClientRect();
+    const oL=cvR.left-wR.left,oT=cvR.top-wR.top,dw=cvR.width,dh=cvR.height;
+    const clipX=dw*(G.comparePct/100);
+    cvCmpSvg.style.cssText=
+      `display:block;position:absolute;left:${oL}px;top:${oT}px;`+
+      `width:${dw}px;height:${dh}px;border-radius:50%;`+
+      `clip-path:inset(0 0 0 ${clipX}px);pointer-events:none;`;
+    const div=$('cDiv');div.style.cssText=`display:block;left:${oL+clipX}px;top:${oT}px;height:${dh}px;`;
+    const h=$('cHandle');h.style.cssText=`display:block;left:${oL+clipX}px;top:${oT+dh/2}px;`;
+    $('cLblL').style.cssText=`display:block;left:${oL+10}px;top:${oT+10}px;`;
+    $('cLblR').style.cssText=`display:block;left:${oL+dw-56}px;top:${oT+10}px;`;
+  });
+}
+
+function setupCompareDrag(){
+  $('cHandle').onmousedown=e=>{
+    e.preventDefault();
+    const move=ev=>{
+      const cvR=cvSvg.getBoundingClientRect();
+      G.comparePct=Math.max(5,Math.min(95,((ev.clientX-cvR.left)/cvR.width)*100));
+      renderCompare();
+    };
+    const up=()=>{window.removeEventListener('mousemove',move);window.removeEventListener('mouseup',up);};
+    window.addEventListener('mousemove',move);window.addEventListener('mouseup',up);
+  };
+}
+
+// ══ PRODUCTION TIME ══
+// Calculates machine winding time and mechanical stats from the nail sequence.
+// All machine parameters are tunable — this lets you calibrate once the hardware exists.
+function updateProdTime(){
+  if(!G.done||!G.nails||G.nails.length<2)return;
+  $('prodSec').style.display='block';
+
+  const N=parseInt($('sn').value);
+  const diam=parseFloat($('mDiam').value)||30;        // cm
+  const motorDegPerSec=parseFloat($('mSpeed').value)||60; // degrees/sec
+  const feedCmPerSec=parseFloat($('mFeed').value)||5;     // cm/sec
+  const dwellSec=parseFloat($('mDwell').value)||0.3;       // sec per nail
+
+  const R=diam/2; // radius in cm
+  const nailAngleDeg=360/N; // degrees between adjacent nails
+  const circumference=Math.PI*diam; // cm
+
+  const list=G.nails;
+  let totalRotDeg=0,totalChordCm=0,maxRot=0;
+  const lines=list.length-1;
+
+  for(let i=0;i<lines;i++){
+    const from=list[i],to=list[i+1];
+    // Clockwise angular distance (always take shortest arc)
+    const diff=Math.abs(to-from);
+    const shortArc=Math.min(diff,N-diff);
+    const rotDeg=shortArc*nailAngleDeg;
+    totalRotDeg+=rotDeg;
+    if(rotDeg>maxRot)maxRot=rotDeg;
+    // Chord length: 2R·sin(θ/2)
+    const theta=(rotDeg*Math.PI)/180;
+    const chord=2*R*Math.sin(theta/2);
+    totalChordCm+=chord;
+  }
+
+  const avgRotDeg=totalRotDeg/lines;
+  const avgChordCm=totalChordCm/lines;
+
+  // Time breakdown:
+  // - Rotation time: total degrees / motor speed
+  const rotTimeSec=totalRotDeg/motorDegPerSec;
+  // - Feed time: total thread length / feed speed
+  const feedTimeSec=totalChordCm/feedCmPerSec;
+  // - Dwell time: one dwell per nail visit
+  const dwellTimeSec=lines*dwellSec;
+  // - Total
+  const totalSec=rotTimeSec+feedTimeSec+dwellTimeSec;
+
+  // Format time nicely
+  function fmtTime(s){
+    if(s<60)return Math.round(s)+'s';
+    const m=Math.floor(s/60),sec=Math.round(s%60);
+    if(m<60)return m+'m '+(sec>0?sec+'s':'');
+    const h=Math.floor(m/60),min=m%60;
+    return h+'h '+(min>0?min+'m':'');
+  }
+
+  function fmtCm(cm){
+    return cm>=100?(cm/100).toFixed(1)+'m':Math.round(cm)+'cm';
+  }
+
+  $('pTime').textContent=fmtTime(totalSec);
+  $('pThread').textContent=fmtCm(totalChordCm);
+  $('pAvgDeg').textContent=avgRotDeg.toFixed(1)+'°';
+  $('pMaxDeg').textContent=maxRot.toFixed(0)+'°';
+  $('pAvgChord').textContent=fmtCm(avgChordCm)+' avg chord · '+fmtCm(totalChordCm)+' total';
+
+  $('prodBreakdown').innerHTML=
+    `<strong>Rotation:</strong> ${fmtTime(rotTimeSec)} &nbsp;·&nbsp; `+
+    `<strong>Thread feed:</strong> ${fmtTime(feedTimeSec)} &nbsp;·&nbsp; `+
+    `<strong>Nail dwell:</strong> ${fmtTime(dwellTimeSec)}<br>`+
+    `Board: ⌀${diam}cm · ${N} nails · ${lines.toLocaleString()} moves`;
+}
+
+// Re-calculate when any machine param changes
+['mDiam','mSpeed','mFeed','mDwell'].forEach(id=>{
+  $(id).addEventListener('input',()=>updateProdTime());
+  $(id).addEventListener('change',()=>updateProdTime());
+});
+
+function hexRgb(h){const r=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h);return r?[parseInt(r[1],16),parseInt(r[2],16),parseInt(r[3],16)]:[0,0,0];}
+
+// ══ SWATCHES ══
+document.querySelectorAll('.swatch').forEach(sw=>{
+  sw.addEventListener('click',()=>{
+    document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('on'));
+    sw.classList.add('on');G.color=sw.dataset.c;
+    if(G.done&&!G.compareMode)render();
+  });
+});
+
+// ══ NAIL PANEL ══
+function renderNailPanel(list){
+  let h='';const rec=Math.max(0,list.length-8);
+  for(let i=0;i<list.length;i++){h+=`<span${i>=rec?' class="hi"':''}>${list[i]}</span>`;if(i<list.length-1)h+='→';if(i>0&&i%8===0)h+='<br>';}
+  $('nl').innerHTML=h;setTimeout(()=>$('nw').scrollTop=$('nw').scrollHeight,50);
+}
+$('btnHide').addEventListener('click',()=>{
+  G.showSeq=!G.showSeq;$('btnHide').textContent=G.showSeq?'hide':'show';
+  $('nw').style.display=(G.showSeq&&G.done)?'block':'none';
+});
+
+// ══ EXPORT ══
+$('ePNG').addEventListener('click',()=>{
+  if(!G.done)return;
+  // Render to a fresh canvas at high res for export
+  const SZ=1200,sz=G.imgSz,sc=SZ/sz;
+  const ec=document.createElement('canvas');ec.width=SZ;ec.height=SZ;
+  const ctx=ec.getContext('2d');
+  const thick=parseFloat($('st').value)*2; // scale thickness for 2× size
+  const[r,g,b]=hexRgb(G.color);
+  ctx.fillStyle=BG;ctx.fillRect(0,0,SZ,SZ);
+  ctx.save();ctx.beginPath();ctx.arc(SZ/2,SZ/2,SZ/2-1,0,Math.PI*2);ctx.clip();
+  ctx.strokeStyle=`rgba(${r},${g},${b},0.18)`;ctx.lineWidth=thick;ctx.beginPath();
+  const np=G.nailPos,list=G.nails;
+  for(let i=0;i<list.length-1;i++){const f=np[list[i]],t=np[list[i+1]];ctx.moveTo(f.x*sc,f.y*sc);ctx.lineTo(t.x*sc,t.y*sc);}
+  ctx.stroke();ctx.restore();
+  ctx.beginPath();ctx.arc(SZ/2,SZ/2,SZ/2-1,0,Math.PI*2);
+  ctx.strokeStyle='rgba(0,0,0,.1)';ctx.lineWidth=2;ctx.stroke();
+  const a=document.createElement('a');a.download='shweka-string-art.png';a.href=ec.toDataURL();a.click();
+});
+$('eSVG').addEventListener('click',()=>{
+  if(!G.done)return;
+  const np=G.nailPos,list=G.nails,SZ=SVG_SZ,sc=SZ/G.imgSz;
+  const thick=parseFloat($('st').value),col=G.color;
+  const d=buildSvgLines(list,np,G.imgSz);
+  const[r,g,b]=hexRgb(col);
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${SZ}" height="${SZ}" viewBox="0 0 ${SZ} ${SZ}">`+
+    `<defs><clipPath id="c"><circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2-1}"/></clipPath></defs>`+
+    `<circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2}" fill="${BG}"/>`+
+    `<g clip-path="url(#c)"><path d="${d}" fill="none" stroke="rgba(${r},${g},${b},0.18)" stroke-width="${thick}" stroke-linecap="round"/></g>`+
+    `<circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2-1}" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="1.5"/>`+
+    `</svg>`;
+  const a=document.createElement('a');a.download='shweka-string-art.svg';
+  a.href=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));a.click();
+});
+$('eTXT').addEventListener('click',()=>{
+  if(!G.done)return;
+  const N=parseInt($('sn').value);
+  const t=`Shweka Studio - String Art Nail Sequence\n==========================================\nNails: ${N}, CCW from top (0 to ${N-1})\nLines: ${G.nails.length-1}\nBoard: 30cm diameter\n\nSEQUENCE:\n`+G.nails.join('\n');
+  const a=document.createElement('a');a.download=`nail-sequence-${N}.txt`;a.href=URL.createObjectURL(new Blob([t],{type:'text/plain'}));a.click();
+});
+
+// ══ ZOOM ══
+function applyZoom(){
+  if(!G.done)return;
+  if(G.compareMode){renderCompare();return;}
+  render(); // render() handles all views uniformly
+}
+$('bZI').addEventListener('click',()=>{G.zoom=Math.min(4,G.zoom*1.25);applyZoom();});
+$('bZO').addEventListener('click',()=>{G.zoom=Math.max(0.25,G.zoom/1.25);applyZoom();});
+$('bZR').addEventListener('click',()=>{G.zoom=1;applyZoom();});
+</script>
+</body>
+</html>
