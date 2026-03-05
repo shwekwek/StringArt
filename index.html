@@ -169,12 +169,14 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3);}
 .mi-unit{font-size:.57rem;color:var(--dim);width:22px;}
 
 /* CENTER */
-.panel-center{flex:1;display:flex;flex-direction:column;background:var(--bg);overflow:hidden;}
+.panel-center{flex:1;display:flex;flex-direction:column;background:var(--bg);overflow:hidden;min-width:0;}
 .toolbar{padding:7px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0;}
 .t-sep{width:1px;height:14px;background:var(--border);}
 .t-btn{padding:4px 9px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--mid);font-family:'DM Mono',monospace;font-size:.58rem;cursor:pointer;transition:all .15s;}
 .t-btn:hover{border-color:var(--accent);color:var(--accent);}
-.canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:16px;overflow:hidden;position:relative;}
+.canvas-wrap{flex:1;overflow:hidden;position:relative;background:var(--bg);display:flex;align-items:center;justify-content:center;}
+#cvInner{display:flex;align-items:center;justify-content:center;width:100%;height:100%;}
+#cvInner svg, #cvInner canvas{display:block;flex-shrink:0;}
 #cvSvg,#cvRaster{max-width:min(calc(100vw - 530px),calc(100vh - 96px));max-height:min(calc(100vw - 530px),calc(100vh - 96px));width:auto;height:auto;}
 #cvCmpSvg{position:absolute;border-radius:50%;display:none;pointer-events:none;}
 .cmp-div{position:absolute;width:2px;background:var(--accent);display:none;pointer-events:none;box-shadow:0 0 8px rgba(232,255,71,.5);}
@@ -199,10 +201,10 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3);}
 #cropModal.open{display:flex;}
 .crop-title{font-family:'Syne',sans-serif;font-size:.78rem;font-weight:700;color:var(--text);}
 .crop-sub{font-size:.59rem;color:var(--mid);margin-top:-6px;}
-.crop-cont{position:relative;width:380px;height:380px;border-radius:50%;overflow:hidden;border:2px solid var(--border);cursor:grab;background:#111;}
+.crop-cont{position:relative;width:380px;height:380px;border-radius:50%;overflow:hidden;border:2px solid rgba(255,255,255,0.25);cursor:grab;background:#111;}
 .crop-cont:active{cursor:grabbing;}
 #cropCanvas{position:absolute;top:0;left:0;}
-.crop-overlay{position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 9999px rgba(0,0,0,.55);pointer-events:none;}
+.crop-overlay{display:none;}
 .crop-controls{display:flex;align-items:center;gap:10px;}
 .crop-zlbl{font-size:.6rem;color:var(--mid);}
 .crop-btns{display:flex;gap:8px;}
@@ -291,9 +293,9 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3);}
     <div class="ctrl">
       <div class="ctrl-label">
         <div class="ctrl-left">Line darkness<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">How much each drawn line "uses up" the darkness beneath it. <b>Higher</b> = even coverage. <b>Lower</b> = builds up very dark in shadow areas. Works best when related to Max lines — more lines needs less darkness per line.</span></span></div>
-        <span class="ctrl-val" id="vf">25</span>
+        <span class="ctrl-val" id="vf">35</span>
       </div>
-      <input type="range" id="sf" min="5" max="80" value="25" step="1">
+      <input type="range" id="sf" min="5" max="80" value="35" step="1">
     </div>
     <div class="ctrl">
       <div class="ctrl-label">
@@ -451,9 +453,12 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3);}
   </div>
   <div class="canvas-wrap" id="cWrap">
     <div class="ph" id="ph"><div class="ph-ring" id="phr"></div><span>Upload an image to begin</span></div>
+    <!-- Inner container gets explicit pixel size set by JS so overflow:auto actually scrolls -->
+    <div id="cvInner">
     <!-- Main display: SVG for result view (vector), canvas for original/error views -->
-    <svg id="cvSvg" xmlns="http://www.w3.org/2000/svg" style="display:none;border-radius:50%;box-shadow:0 0 60px rgba(0,0,0,.8);flex-shrink:0;"></svg>
-    <canvas id="cvRaster" style="display:none;border-radius:50%;box-shadow:0 0 60px rgba(0,0,0,.8);flex-shrink:0;"></canvas>
+    <svg id="cvSvg" xmlns="http://www.w3.org/2000/svg" style="display:none;border-radius:50%;box-shadow:0 0 60px rgba(0,0,0,.8);"></svg>
+    <canvas id="cvRaster" style="display:none;border-radius:50%;box-shadow:0 0 60px rgba(0,0,0,.8);"></canvas>
+    </div>
     <!-- Compare overlay SVG (radon side) -->
     <svg id="cvCmpSvg" xmlns="http://www.w3.org/2000/svg" style="display:none;position:absolute;border-radius:50%;pointer-events:none;"></svg>
     <div class="cmp-div" id="cDiv"></div>
@@ -804,13 +809,14 @@ function drawCropped(ctx,sz,gray,forcedRaw){
   if(!G.img)return;
   ctx.save();if(gray)ctx.filter='grayscale(1)';
   if(!forcedRaw&&G.bgActive&&G.bgMaskImg){
-    // Draw the pre-composited white-bg masked version (scaled to sz)
     if(gray)ctx.filter='grayscale(1)';
     ctx.drawImage(G.bgMaskImg,0,0,sz,sz);
     ctx.restore();return;
   }
   const img=G.img,base=Math.min(img.width,img.height),view=base/G.cropZoom;
-  const srcX=(img.width-view)/2-G.cropOffX*(view/sz),srcY=(img.height-view)/2-G.cropOffY*(view/sz);
+  // cropOffX/Y are normalized fractions of view size (stored independently of canvas size)
+  const srcX=(img.width-view)/2 - G.cropOffX*view;
+  const srcY=(img.height-view)/2 - G.cropOffY*view;
   ctx.drawImage(img,srcX,srcY,view,view,0,0,sz,sz);ctx.restore();
 }
 
@@ -823,7 +829,7 @@ $('btnCC').addEventListener('click',()=>$('cropModal').classList.remove('open'))
 $('btnCA').addEventListener('click',()=>{$('cropModal').classList.remove('open');if(G.bgActive&&seg){segReady=false;G.bgMaskImg=null;runSegmentation();}updateBothThumbs();resetResult();triggerGenerate();});
 $('cropZoom').addEventListener('input',()=>{G.cropZoom=parseFloat($('cropZoom').value);$('cropZV').textContent=G.cropZoom.toFixed(1)+'×';renderCropCanvas();});
 cropCont.addEventListener('mousedown',e=>{cDrag=true;cSX=e.clientX;cSY=e.clientY;cOX=G.cropOffX;cOY=G.cropOffY;cropCont.style.cursor='grabbing';});
-window.addEventListener('mousemove',e=>{if(!cDrag)return;G.cropOffX=cOX+(e.clientX-cSX);G.cropOffY=cOY+(e.clientY-cSY);renderCropCanvas();});
+window.addEventListener('mousemove',e=>{if(!cDrag)return;const csz=380;G.cropOffX=cOX+(e.clientX-cSX)/csz;G.cropOffY=cOY+(e.clientY-cSY)/csz;renderCropCanvas();});
 window.addEventListener('mouseup',()=>{cDrag=false;cropCont.style.cursor='grab';});
 cropCont.addEventListener('wheel',e=>{e.preventDefault();G.cropZoom=Math.max(.5,Math.min(5,G.cropZoom-e.deltaY*.003));$('cropZoom').value=G.cropZoom;$('cropZV').textContent=G.cropZoom.toFixed(1)+'×';renderCropCanvas();},{passive:false});
 function renderCropCanvas(){const c=$('cropCanvas'),ctx=c.getContext('2d');ctx.fillStyle='#eee';ctx.fillRect(0,0,380,380);drawCropped(ctx,380,G.bw,true);}
@@ -878,6 +884,11 @@ function runGreedy(img,nails,N,maxL,minG,fade,sz,cb){
   const lc=buildLC(nails,N,minG,sz);
   const err=new Float32Array(img);
   const result=[0];let cur=0;
+  // Recent-nail penalty: track how many steps ago each nail was visited.
+  // Nails visited recently get their score multiplied down, breaking the
+  // "stuck in a loop" pattern that causes concentric ring artifacts.
+  const lastVisit=new Int32Array(N).fill(-999);
+  const PENALTY_WINDOW=12; // penalise nails visited in last 12 steps
   for(let iter=0;iter<maxL;iter++){
     let best=-1,bestJ=-1;
     for(let j=0;j<N;j++){
@@ -887,12 +898,17 @@ function runGreedy(img,nails,N,maxL,minG,fade,sz,cb){
       const px=getLine(lc,cur,j);
       if(!px||!px.length)continue;
       let sum=0;for(let k=0;k<px.length;k++)sum+=err[px[k]];
-      if(sum/px.length>best){best=sum/px.length;bestJ=j;}
+      let score=sum/px.length;
+      // Apply recency penalty: reduce score for recently-visited nails
+      const age=iter-lastVisit[j];
+      if(age<PENALTY_WINDOW) score*=(age/PENALTY_WINDOW);
+      if(score>best){best=score;bestJ=j;}
     }
     if(bestJ<0||best<0.002)break;
     result.push(bestJ);
     const px=getLine(lc,cur,bestJ);
     for(let k=0;k<px.length;k++)err[px[k]]=Math.max(0,err[px[k]]-fade/500);
+    lastVisit[cur]=iter;
     cur=bestJ;
     if(iter%150===0)cb(iter,maxL);
   }
@@ -1226,10 +1242,10 @@ function setSvgContent(svgEl, list, nailPos, imgSz, showNails){
   // thick = "target screen pixels per stroke" (user-facing value)
   // We must convert to viewBox units: viewBox_stroke = thick_px * (SZ / displaySz)
   // Get actual display size of the SVG element
-  const thickPx=parseFloat($('st').value); // user value = target screen px
-  const displaySz=svgEl.getAttribute('width')?parseFloat(svgEl.getAttribute('width')):Math.min(window.innerWidth-530,window.innerHeight-96);
-  // Convert screen px → viewBox units (viewBox is SZ wide, displayed at displaySz px)
-  const thickVB = thickPx * (SZ / Math.max(1, displaySz));
+  const thickPx=parseFloat($('st').value);
+  // Use BASE (zoom=1) display size for thickness — keeps lines same visual weight at all zoom levels
+  const baseSz=Math.min(window.innerWidth-530, window.innerHeight-96);
+  const thickVB=Math.min(0.4, thickPx*(SZ/Math.max(200,baseSz)));
 
   const col=G.color;
   const [r,g,b]=hexRgb(col);
@@ -1259,15 +1275,14 @@ function setSvgContent(svgEl, list, nailPos, imgSz, showNails){
     `<circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2-1}" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="1.5"/>`;
 }
 
-// Set the SVG's display size while keeping viewBox fixed (= infinite sharpness)
 function applySvgSize(svgEl, zoom){
-  const base=Math.min(
-    window.innerWidth-530,
-    window.innerHeight-96
-  );
-  const sz=Math.round(base*zoom);
+  const wrap=$('cWrap');
+  const maxSz=Math.min(wrap.clientWidth, wrap.clientHeight)-32;
+  const sz=Math.min(maxSz, Math.round(maxSz*zoom)); // never exceed fit size
   svgEl.setAttribute('width',sz);
   svgEl.setAttribute('height',sz);
+  svgEl.style.width=sz+'px';
+  svgEl.style.height=sz+'px';
   svgEl.setAttribute('viewBox',`0 0 ${SVG_SZ} ${SVG_SZ}`);
 }
 
@@ -1290,24 +1305,28 @@ function render(){
   } else {
     // Raster views: original photo or error map
     cvSvg.style.display='none';
-    cvRaster.width=displaySz;cvRaster.height=displaySz;
+    const wrap=$('cWrap');
+    const maxSz=Math.min(wrap.clientWidth,wrap.clientHeight)-32;
+    const displaySz=Math.min(maxSz, Math.round(maxSz*G.zoom));
+    const rasterSz=Math.min(4000,displaySz);
+    cvRaster.width=rasterSz;cvRaster.height=rasterSz;
     cvRaster.style.width=displaySz+'px';cvRaster.style.height=displaySz+'px';
     cvRaster.style.display='block';
     const ctx=cvRaster.getContext('2d');
-    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,displaySz,displaySz);
-    ctx.save();ctx.beginPath();ctx.arc(displaySz/2,displaySz/2,displaySz/2-1,0,Math.PI*2);ctx.clip();
+    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,rasterSz,rasterSz);
+    ctx.save();ctx.beginPath();ctx.arc(rasterSz/2,rasterSz/2,rasterSz/2-1,0,Math.PI*2);ctx.clip();
     if(G.view==='original'){
       // Draw cropped image (respects bgActive white-background mask)
-      off.width=displaySz;off.height=displaySz;
-      const tc=off.getContext('2d');tc.fillStyle='#fff';tc.fillRect(0,0,displaySz,displaySz);
-      drawCropped(tc,displaySz,G.bw);
-      ctx.drawImage(off,0,0,displaySz,displaySz);
+      off.width=rasterSz;off.height=rasterSz;
+      const tc=off.getContext('2d');tc.fillStyle='#fff';tc.fillRect(0,0,rasterSz,rasterSz);
+      drawCropped(tc,rasterSz,G.bw);
+      ctx.drawImage(off,0,0,rasterSz,rasterSz);
     } else { // error map — scale from algorithm's pixel buffer
-      const scE=sz/displaySz;
-      const id=ctx.createImageData(displaySz,displaySz);
-      for(let y=0;y<displaySz;y++)for(let x=0;x<displaySz;x++){
+      const scE=sz/rasterSz;
+      const id=ctx.createImageData(rasterSz,rasterSz);
+      for(let y=0;y<rasterSz;y++)for(let x=0;x<rasterSz;x++){
         const v=Math.min(1,G.errPx[Math.min(sz-1,Math.floor(y*scE))*sz+Math.min(sz-1,Math.floor(x*scE))]);
-        const c2=Math.floor(v*255),i=(y*displaySz+x)*4;
+        const c2=Math.floor(v*255),i=(y*rasterSz+x)*4;
         id.data[i]=c2;id.data[i+1]=Math.floor(c2*.3);id.data[i+2]=0;id.data[i+3]=255;
       }
       ctx.putImageData(id,0,0);
@@ -1510,8 +1529,8 @@ function applyZoom(){
   if(G.compareMode){renderCompare();return;}
   render(); // render() handles all views uniformly
 }
-$('bZI').addEventListener('click',()=>{G.zoom=Math.min(4,G.zoom*1.25);applyZoom();});
-$('bZO').addEventListener('click',()=>{G.zoom=Math.max(0.25,G.zoom/1.25);applyZoom();});
+$('bZI').addEventListener('click',()=>{const z=Math.min(1,G.zoom*1.25);if(z!==G.zoom){G.zoom=z;applyZoom();}});
+$('bZO').addEventListener('click',()=>{const z=Math.max(0.25,G.zoom/1.25);if(z!==G.zoom){G.zoom=z;applyZoom();}});
 $('bZR').addEventListener('click',()=>{G.zoom=1;applyZoom();});
 
 // Redraw on window resize (e.g. maximizing the window)
@@ -1525,6 +1544,21 @@ window.addEventListener('resize',()=>{
     }
   },150);
 });
+
+// Mouse scroll zoom on the display area
+const displayArea=document.querySelector('.canvas-wrap');
+if(displayArea){
+  displayArea.addEventListener('wheel',e=>{
+    if(!G.done)return;
+    e.preventDefault();
+    const delta=e.deltaY>0?-1:1;
+    const factor=1+(delta*0.12);
+    const newZoom=Math.max(0.25,Math.min(1,G.zoom*factor));
+    if(newZoom===G.zoom)return; // already at limit, do nothing
+    G.zoom=newZoom;
+    applyZoom();
+  },{passive:false});
+}
 </script>
 </body>
 </html>
