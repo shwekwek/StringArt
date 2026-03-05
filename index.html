@@ -260,7 +260,7 @@ body.is-mobile .mob-active{display:flex!important;}
   <div>
     <div class="logo">Shweka Studio</div>
     <span class="logo-sub">String Art Generator</span>
-    <span class="logo-sub" style="margin-left:6px;color:var(--accent);opacity:0.6;">v0.11</span>
+    <span class="logo-sub" style="margin-left:6px;color:var(--accent);opacity:0.6;">v0.12</span>
   </div>
 </header>
 <div class="main">
@@ -1085,7 +1085,7 @@ function finishGen(result,err,img,nails,N,sz,ms,sc,lc){
   G.nails=result;G.errPx=err;G.imgPx=img;G.nailPos=nails;G.imgSz=sz;
   G.done=true;G.running=false;G.score=sc;G.lineCache=lc;
   prog(100,'Done!');
-  if(window.innerWidth<=768) mobTab('result'); // show result on mobile
+  // On mobile: switch to result tab BEFORE render so panel-center has clientWidth > 0
   $('stl').textContent=result.length-1;$('stn').textContent=N;
   $('stt').textContent=(ms/1000).toFixed(1);
   $('stm').textContent=Math.round((result.length-1)*0.64*0.3);
@@ -1100,7 +1100,14 @@ function finishGen(result,err,img,nails,N,sz,ms,sc,lc){
   cvRaster.style.display='none';cvCmpSvg.style.display='none';
   $('cDiv').style.display='none';$('cHandle').style.display='none';
   $('cLblL').style.display='none';$('cLblR').style.display='none';
-  render();
+  // On mobile: switch tab first so panel-center is visible before render()
+  // (panel-center was display:none, so clientWidth=0 until layout repaints)
+  if(window.innerWidth<=768){
+    mobTab('result');
+    requestAnimationFrame(()=>requestAnimationFrame(()=>render()));
+  } else {
+    render();
+  }
   $('btnGen').disabled=false;$('btnCompare').disabled=false;
   $('btnIn').innerHTML='▶ Regenerate';$('btnGen').classList.remove('pulsing');
   $('btnRefine').style.display='block';
@@ -1680,7 +1687,13 @@ function mobTab(tab){
   center.classList.remove('mob-active');
   right.classList.remove('mob-active');
   if(tab==='settings') left.classList.add('mob-active');
-  if(tab==='result')   center.classList.add('mob-active');
+  if(tab==='result'){
+    center.classList.add('mob-active');
+    // Re-render after layout paints so clientWidth is valid
+    if(G.done) requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      if(G.compareMode) renderCompare(); else render();
+    }));
+  }
   if(tab==='sequence') right.classList.add('mob-active');
 }
 
