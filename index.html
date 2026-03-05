@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Shweka Studio · String Art</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1.1675465747/selfie_segmentation.js" crossorigin="anonymous"></script>
@@ -182,7 +182,7 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3);}
 .cmp-div{position:absolute;width:2px;background:var(--accent);display:none;pointer-events:none;box-shadow:0 0 8px rgba(232,255,71,.5);}
 .cmp-handle{position:absolute;width:28px;height:28px;border-radius:50%;background:var(--accent);display:none;cursor:ew-resize;z-index:6;box-shadow:0 2px 8px rgba(0,0,0,.5);transform:translate(-50%,-50%);}
 .cmp-lbl{position:absolute;font-size:.57rem;color:rgba(0,0,0,.6);background:rgba(255,255,255,.85);padding:2px 7px;border-radius:4px;pointer-events:none;display:none;z-index:5;font-weight:600;}
-.ph{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;color:var(--dim);font-size:.7rem;text-align:center;}
+.ph{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;color:var(--dim);font-size:.7rem;text-align:center;pointer-events:none;}
 .ph-ring{width:180px;height:180px;border-radius:50%;border:1.5px dashed var(--border);position:relative;}
 .ph-nail{position:absolute;width:4px;height:4px;border-radius:50%;background:var(--border);transform:translate(-50%,-50%);animation:pdot 2.5s ease-in-out infinite;}
 @keyframes pdot{0%,100%{opacity:.1}50%{opacity:.65}}
@@ -214,10 +214,45 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3);}
 .btn-apply{background:var(--accent);border-color:var(--accent);color:#0a0a0a;font-weight:700;}
 .crop-hint{font-size:.57rem;color:var(--dim);}
 
-::-webkit-scrollbar{width:3px;}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
-@keyframes spin{to{transform:rotate(360deg)}}
-.spin{width:12px;height:12px;border:2px solid rgba(0,0,0,.2);border-top-color:#0a0a0a;border-radius:50%;animation:spin .7s linear infinite;}
+/* ── MOBILE TAB BAR ── */
+.mob-tabs{display:none;}
+.mob-camera-btn{display:none;}
+
+@media (max-width: 768px) {
+  body{height:100dvh;}
+  header{padding:8px 14px;}
+  .logo{font-size:.85rem;}
+  .main{flex-direction:column;overflow:hidden;}
+  .mob-tabs{display:flex;}
+  .mob-camera-btn{display:flex;}
+  .toolbar{padding:6px 10px;}
+  .canvas-wrap{padding:8px;}
+  .section{padding:10px 14px;}
+  .mob-tabs{
+    flex-shrink:0;background:var(--surface);border-top:1px solid var(--border);height:56px;
+  }
+  .mob-tab{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:3px;background:none;border:none;color:var(--mid);cursor:pointer;
+    font-family:'DM Mono',monospace;font-size:.55rem;letter-spacing:.05em;transition:color .15s;
+  }
+  .mob-tab svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+  .mob-tab.active{color:var(--accent);}
+  .mob-camera-btn{
+    align-items:center;justify-content:center;gap:6px;
+    width:100%;margin-top:8px;padding:9px;
+    background:var(--surface2);border:1.5px dashed var(--border);
+    border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:.7rem;cursor:pointer;
+  }
+  .mob-camera-btn:active{background:rgba(232,255,71,.06);border-color:var(--accent);}
+}
+
+/* Panel hiding only when JS confirms mobile (body.is-mobile) */
+body.is-mobile .panel-left{width:100%!important;min-width:0!important;border-right:none!important;border-bottom:1px solid var(--border);display:none;flex-direction:column;overflow-y:auto;flex-shrink:0;max-height:calc(100dvh - 110px);}
+body.is-mobile .panel-center{display:none;flex:1;min-height:0;}
+body.is-mobile .panel.panel-right{width:100%!important;min-width:0!important;border-left:none!important;border-top:1px solid var(--border);display:none;flex:1;overflow:hidden;}
+body.is-mobile .mob-active{display:flex!important;}
+
 </style>
 </head>
 <body>
@@ -247,6 +282,10 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3);}
           <img id="origImg" class="orig-img" alt="">
           <div class="thumb-ov"><span>change</span></div>
         </div>
+        <button class="mob-camera-btn" id="camBtn" onclick="openCamera()">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Take photo / selfie
+        </button>
       </div>
       <div class="thumb-box">
         <div class="thumb-lbl">Framed</div>
@@ -479,6 +518,22 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3);}
 </div>
 
 </div><!-- /main -->
+
+<!-- ── MOBILE BOTTOM TABS ── -->
+<nav class="mob-tabs" id="mobTabs">
+  <button class="mob-tab" id="mtSettings" onclick="mobTab('settings')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Settings
+  </button>
+  <button class="mob-tab active" id="mtResult" onclick="mobTab('result')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+    Result
+  </button>
+  <button class="mob-tab" id="mtSequence" onclick="mobTab('sequence')">
+    <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    Sequence
+  </button>
+</nav>
 
 <!-- CROP MODAL -->
 <div id="cropModal">
@@ -748,6 +803,7 @@ $('fi').addEventListener('change',()=>{if($('fi').files[0])loadFile($('fi').file
 
 function loadFile(f){
   if(!f.type.startsWith('image/'))return;
+  if(window.innerWidth<=768) mobTab('settings'); // show params on mobile after upload
   const rd=new FileReader();
   rd.onload=e=>{
     const img=new Image();
@@ -1032,6 +1088,7 @@ function finishGen(result,err,img,nails,N,sz,ms,sc,lc){
   G.nails=result;G.errPx=err;G.imgPx=img;G.nailPos=nails;G.imgSz=sz;
   G.done=true;G.running=false;G.score=sc;G.lineCache=lc;
   prog(100,'Done!');
+  if(window.innerWidth<=768) mobTab('result'); // show result on mobile
   $('stl').textContent=result.length-1;$('stn').textContent=N;
   $('stt').textContent=(ms/1000).toFixed(1);
   $('stm').textContent=Math.round((result.length-1)*0.64*0.3);
@@ -1559,6 +1616,64 @@ if(displayArea){
     applyZoom();
   },{passive:false});
 }
+
+// ── MOBILE TABS ──
+function mobTab(tab){
+  if(window.innerWidth>768) return; // desktop: don't touch layout
+  // Update tab button styles
+  ['settings','result','sequence'].forEach(t=>{
+    const btn=document.getElementById('mt'+t.charAt(0).toUpperCase()+t.slice(1));
+    if(btn) btn.classList.toggle('active', t===tab);
+  });
+  // Show/hide panels
+  const left=document.querySelector('.panel-left');
+  const center=document.querySelector('.panel-center');
+  const right=document.querySelector('.panel.panel-right');
+  left.classList.remove('mob-active');
+  center.classList.remove('mob-active');
+  right.classList.remove('mob-active');
+  if(tab==='settings') left.classList.add('mob-active');
+  if(tab==='result')   center.classList.add('mob-active');
+  if(tab==='sequence') right.classList.add('mob-active');
+}
+
+// Init mobile: show result panel by default
+function initMobile(){
+  const isMob = window.innerWidth<=768;
+  document.body.classList.toggle('is-mobile', isMob);
+  if(isMob) mobTab('result');
+}
+window.addEventListener('resize',()=>{
+  const isMob = window.innerWidth<=768;
+  document.body.classList.toggle('is-mobile', isMob);
+  if(!isMob){
+    // Restore desktop — remove mob-active classes
+    document.querySelector('.panel-left').classList.remove('mob-active');
+    document.querySelector('.panel-center').classList.remove('mob-active');
+    document.querySelector('.panel.panel-right').classList.remove('mob-active');
+  } else {
+    mobTab('result');
+  }
+});
+initMobile();
+
+// ── CAMERA / FILE PICKER ──
+function openCamera(){
+  // Create a temporary input that asks for camera specifically
+  const input=document.createElement('input');
+  input.type='file';
+  input.accept='image/*';
+  input.capture='user'; // front camera (selfie); change to 'environment' for back
+  input.onchange=e=>{
+    if(e.target.files&&e.target.files[0]){
+      // Reuse existing file handler
+      document.getElementById('fi').files; // just for reference
+      loadFile(e.target.files[0]);
+    }
+  };
+  input.click();
+}
+
 </script>
 </body>
 </html>
