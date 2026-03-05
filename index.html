@@ -201,7 +201,7 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3);}
 #cropModal.open{display:flex;}
 .crop-title{font-family:'Syne',sans-serif;font-size:.78rem;font-weight:700;color:var(--text);}
 .crop-sub{font-size:.59rem;color:var(--mid);margin-top:-6px;}
-.crop-cont{position:relative;width:380px;height:380px;border-radius:50%;overflow:hidden;border:2px solid rgba(255,255,255,0.25);cursor:grab;background:#111;}
+.crop-cont{position:relative;width:min(380px,85vw);height:min(380px,85vw);border-radius:50%;overflow:hidden;border:2px solid rgba(255,255,255,0.25);cursor:grab;background:#111;}
 .crop-cont:active{cursor:grabbing;}
 #cropCanvas{position:absolute;top:0;left:0;}
 .crop-overlay{display:none;}
@@ -885,6 +885,40 @@ cropCont.addEventListener('mousedown',e=>{cDrag=true;cSX=e.clientX;cSY=e.clientY
 window.addEventListener('mousemove',e=>{if(!cDrag)return;const csz=380;G.cropOffX=cOX+(e.clientX-cSX)/csz;G.cropOffY=cOY+(e.clientY-cSY)/csz;renderCropCanvas();});
 window.addEventListener('mouseup',()=>{cDrag=false;cropCont.style.cursor='grab';});
 cropCont.addEventListener('wheel',e=>{e.preventDefault();G.cropZoom=Math.max(.5,Math.min(5,G.cropZoom-e.deltaY*.003));$('cropZoom').value=G.cropZoom;$('cropZV').textContent=G.cropZoom.toFixed(1)+'×';renderCropCanvas();},{passive:false});
+
+// ── CROP MODAL: touch pan + pinch-zoom ──
+let _cpDrag=false,_cpSX=0,_cpSY=0,_cpOX=0,_cpOY=0,_cpPinchDist=null;
+function _cpTouchDist(t1,t2){const dx=t1.clientX-t2.clientX,dy=t1.clientY-t2.clientY;return Math.sqrt(dx*dx+dy*dy);}
+cropCont.addEventListener('touchstart',e=>{
+  if(e.touches.length===2){
+    _cpPinchDist=_cpTouchDist(e.touches[0],e.touches[1]);
+    _cpDrag=false;
+  } else if(e.touches.length===1){
+    _cpDrag=true;_cpPinchDist=null;
+    _cpSX=e.touches[0].clientX;_cpSY=e.touches[0].clientY;
+    _cpOX=G.cropOffX;_cpOY=G.cropOffY;
+  }
+  e.preventDefault();
+},{passive:false});
+cropCont.addEventListener('touchmove',e=>{
+  if(e.touches.length===2 && _cpPinchDist!==null){
+    const d=_cpTouchDist(e.touches[0],e.touches[1]);
+    G.cropZoom=Math.max(.5,Math.min(5,G.cropZoom*(d/_cpPinchDist)));
+    _cpPinchDist=d;
+    $('cropZoom').value=G.cropZoom;$('cropZV').textContent=G.cropZoom.toFixed(1)+'×';
+    renderCropCanvas();
+  } else if(e.touches.length===1 && _cpDrag){
+    const csz=380;
+    G.cropOffX=_cpOX+(e.touches[0].clientX-_cpSX)/csz;
+    G.cropOffY=_cpOY+(e.touches[0].clientY-_cpSY)/csz;
+    renderCropCanvas();
+  }
+  e.preventDefault();
+},{passive:false});
+cropCont.addEventListener('touchend',e=>{
+  if(e.touches.length<2) _cpPinchDist=null;
+  if(e.touches.length===0) _cpDrag=false;
+},{passive:true});
 function renderCropCanvas(){const c=$('cropCanvas'),ctx=c.getContext('2d');ctx.fillStyle='#eee';ctx.fillRect(0,0,380,380);drawCropped(ctx,380,G.bw,true);}
 
 // ══ IMAGE → FLOAT ARRAY ══
@@ -1085,7 +1119,6 @@ function finishGen(result,err,img,nails,N,sz,ms,sc,lc){
   G.nails=result;G.errPx=err;G.imgPx=img;G.nailPos=nails;G.imgSz=sz;
   G.done=true;G.running=false;G.score=sc;G.lineCache=lc;
   prog(100,'Done!');
-  // On mobile: switch to result tab BEFORE render so panel-center has clientWidth > 0
   $('stl').textContent=result.length-1;$('stn').textContent=N;
   $('stt').textContent=(ms/1000).toFixed(1);
   $('stm').textContent=Math.round((result.length-1)*0.64*0.3);
@@ -1100,8 +1133,8 @@ function finishGen(result,err,img,nails,N,sz,ms,sc,lc){
   cvRaster.style.display='none';cvCmpSvg.style.display='none';
   $('cDiv').style.display='none';$('cHandle').style.display='none';
   $('cLblL').style.display='none';$('cLblR').style.display='none';
-  // On mobile: switch tab first so panel-center is visible before render()
-  // (panel-center was display:none, so clientWidth=0 until layout repaints)
+  // Mobile: switch to result tab first so panel-center is visible,
+  // then render after two rAF frames so clientWidth > 0
   if(window.innerWidth<=768){
     mobTab('result');
     requestAnimationFrame(()=>requestAnimationFrame(()=>render()));
@@ -1689,7 +1722,7 @@ function mobTab(tab){
   if(tab==='settings') left.classList.add('mob-active');
   if(tab==='result'){
     center.classList.add('mob-active');
-    // Re-render after layout paints so clientWidth is valid
+    // Re-render after layout paints so SVG/canvas sizes correctly
     if(G.done) requestAnimationFrame(()=>requestAnimationFrame(()=>{
       if(G.compareMode) renderCompare(); else render();
     }));
