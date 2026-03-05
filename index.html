@@ -229,7 +229,7 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3);}
   .canvas-wrap{padding:8px;}
   .section{padding:10px 14px;}
   .mob-tabs{
-    flex-shrink:0;background:var(--surface);border-top:1px solid var(--border);height:56px;
+    flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);border-top:none;height:48px;
   }
   .mob-tab{
     flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -264,6 +264,22 @@ body.is-mobile .mob-active{display:flex!important;}
 </header>
 <div class="main">
 
+<!-- ── MOBILE TOP TABS ── -->
+<nav class="mob-tabs" id="mobTabs">
+  <button class="mob-tab active" id="mtSettings" onclick="mobTab('settings')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Settings
+  </button>
+  <button class="mob-tab" id="mtResult" onclick="mobTab('result')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+    Result
+  </button>
+  <button class="mob-tab" id="mtSequence" onclick="mobTab('sequence')">
+    <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    Sequence
+  </button>
+</nav>
+
 <!-- ════ LEFT ════ -->
 <div class="panel panel-left">
 
@@ -282,10 +298,6 @@ body.is-mobile .mob-active{display:flex!important;}
           <img id="origImg" class="orig-img" alt="">
           <div class="thumb-ov"><span>change</span></div>
         </div>
-        <button class="mob-camera-btn" id="camBtn" onclick="openCamera()">
-          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          Take photo / selfie
-        </button>
       </div>
       <div class="thumb-box">
         <div class="thumb-lbl">Framed</div>
@@ -518,22 +530,6 @@ body.is-mobile .mob-active{display:flex!important;}
 </div>
 
 </div><!-- /main -->
-
-<!-- ── MOBILE BOTTOM TABS ── -->
-<nav class="mob-tabs" id="mobTabs">
-  <button class="mob-tab" id="mtSettings" onclick="mobTab('settings')">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-    Settings
-  </button>
-  <button class="mob-tab active" id="mtResult" onclick="mobTab('result')">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-    Result
-  </button>
-  <button class="mob-tab" id="mtSequence" onclick="mobTab('sequence')">
-    <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-    Sequence
-  </button>
-</nav>
 
 <!-- CROP MODAL -->
 <div id="cropModal">
@@ -1611,10 +1607,60 @@ if(displayArea){
     const delta=e.deltaY>0?-1:1;
     const factor=1+(delta*0.12);
     const newZoom=Math.max(0.25,Math.min(1,G.zoom*factor));
-    if(newZoom===G.zoom)return; // already at limit, do nothing
+    if(newZoom===G.zoom)return;
     G.zoom=newZoom;
     applyZoom();
   },{passive:false});
+
+  // ── TOUCH: pinch-to-zoom + pan ──
+  let _touches={};
+  let _lastPinchDist=null;
+  let _panStart=null;
+  let _scrollStart=null;
+
+  function getTouchDist(t1,t2){
+    const dx=t1.clientX-t2.clientX, dy=t1.clientY-t2.clientY;
+    return Math.sqrt(dx*dx+dy*dy);
+  }
+
+  displayArea.addEventListener('touchstart',e=>{
+    if(!G.done)return;
+    if(e.touches.length===2){
+      // Pinch start
+      _lastPinchDist=getTouchDist(e.touches[0],e.touches[1]);
+      _panStart=null;
+    } else if(e.touches.length===1){
+      // Pan start
+      _panStart={x:e.touches[0].clientX, y:e.touches[0].clientY};
+      _scrollStart={left:displayArea.scrollLeft, top:displayArea.scrollTop};
+      _lastPinchDist=null;
+    }
+  },{passive:true});
+
+  displayArea.addEventListener('touchmove',e=>{
+    if(!G.done)return;
+    if(e.touches.length===2 && _lastPinchDist!==null){
+      // Pinch zoom
+      e.preventDefault();
+      const dist=getTouchDist(e.touches[0],e.touches[1]);
+      const factor=dist/_lastPinchDist;
+      _lastPinchDist=dist;
+      const newZoom=Math.max(0.25,Math.min(1,G.zoom*factor));
+      if(newZoom!==G.zoom){G.zoom=newZoom;applyZoom();}
+    } else if(e.touches.length===1 && _panStart && _scrollStart){
+      // Pan (only useful when zoomed in, i.e. overflow is scrollable)
+      e.preventDefault();
+      const dx=e.touches[0].clientX-_panStart.x;
+      const dy=e.touches[0].clientY-_panStart.y;
+      displayArea.scrollLeft=_scrollStart.left-dx;
+      displayArea.scrollTop=_scrollStart.top-dy;
+    }
+  },{passive:false});
+
+  displayArea.addEventListener('touchend',e=>{
+    if(e.touches.length<2) _lastPinchDist=null;
+    if(e.touches.length===0){_panStart=null;_scrollStart=null;}
+  },{passive:true});
 }
 
 // ── MOBILE TABS ──
@@ -1641,7 +1687,7 @@ function mobTab(tab){
 function initMobile(){
   const isMob = window.innerWidth<=768;
   document.body.classList.toggle('is-mobile', isMob);
-  if(isMob) mobTab('result');
+  if(isMob) mobTab('settings');
 }
 window.addEventListener('resize',()=>{
   const isMob = window.innerWidth<=768;
