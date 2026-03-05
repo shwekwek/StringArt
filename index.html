@@ -260,6 +260,7 @@ body.is-mobile .mob-active{display:flex!important;}
   <div>
     <div class="logo">Shweka Studio</div>
     <span class="logo-sub">String Art Generator</span>
+    <span class="logo-sub" style="margin-left:6px;color:var(--accent);opacity:0.6;">v0.11</span>
   </div>
 </header>
 <div class="main">
@@ -1297,7 +1298,7 @@ function setSvgContent(svgEl, list, nailPos, imgSz, showNails){
   // Get actual display size of the SVG element
   const thickPx=parseFloat($('st').value);
   // Use BASE (zoom=1) display size for thickness — keeps lines same visual weight at all zoom levels
-  const baseSz=Math.min(window.innerWidth-530, window.innerHeight-96);
+  const baseSz=Math.min($('cWrap').clientWidth, $('cWrap').clientHeight)-32;
   const thickVB=Math.min(0.4, thickPx*(SZ/Math.max(200,baseSz)));
 
   const col=G.color;
@@ -1346,7 +1347,7 @@ function applySvgSize(svgEl, zoom){
 function render(){
   if(!G.done||G.compareMode)return;
   const sz=G.imgSz;
-  const baseDisplaySz=Math.round(Math.min(window.innerWidth-530,window.innerHeight-96));
+  const baseDisplaySz=Math.round(Math.min($('cWrap').clientWidth,$('cWrap').clientHeight)-32);
   const displaySz=Math.round(baseDisplaySz*G.zoom);
 
   if(G.view==='result'){
