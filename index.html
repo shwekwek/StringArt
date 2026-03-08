@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SA v0.27 · Shweka Studio</title>
+<title>SA v0.36 · Shweka Studio</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -408,8 +408,10 @@ body.pb-back-view .pb-view{color:var(--accent);border-color:var(--accent);}
 /* ── IMAGE PREVIEW CIRCLE (after upload, before generate) ── */
 .img-preview-wrap{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  pointer-events:none;
+  pointer-events:auto;
+  cursor:grab;
 }
+.img-preview-wrap:active{cursor:grabbing;}
 .img-preview-canvas{
   border-radius:50%;display:block;
   box-shadow:0 4px 24px rgba(0,0,0,.15);
@@ -484,7 +486,7 @@ body.pb-back-view .pb-view{color:var(--accent);border-color:var(--accent);}
   border-style:solid !important;
   box-shadow:0 0 0 6px rgba(90,122,240,.12);
 }
-.ph-upload-inner{display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;}
+.ph-upload-inner{display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:auto;}
 .ph-txt{font-size:.9rem;font-weight:600;color:var(--text);}
 .ph-hint{font-size:.75rem;color:var(--dim);}
 /* bigger on image tab */
@@ -529,12 +531,19 @@ body.view-image .ph-hint{font-size:.8rem;}
 }
 .img-preview-wrap:hover .img-prev-hover-ov span{opacity:1;}
 /* Only show hover on image tab */
+.img-prev-hover-ov{pointer-events:none !important;}
 body:not(.view-image) .img-prev-hover-ov{display:none;}
 
 /* ── IMAGE TAB: full-width canvas, no left panel ── */
-body.view-image .panel-left { display: none !important; }
+/* panel-left always visible — same width on all tabs keeps circle position stable */
+body.view-image .panel-left { border-right: 1px solid var(--border); }
+body.view-image .panel-left > * { opacity: 0.18; pointer-events: none; }
+body.view-image .panel-left input[type=range] { pointer-events: none; }
+body.view-image .panel-left button { pointer-events: none; }
 body.view-image .panel-center { flex: 1; }
-body.view-image .toolbar { display: none; } /* hide top toolbar on image tab */
+/* toolbar always visible so tab buttons work */
+body.view-image .zoom-btns { display: none; } /* hide zoom buttons on image tab */
+body.view-image #playBar { display: none; } /* playbar only relevant on string art */
 body.view-image .canvas-wrap { background: var(--bg); }
 
 /* ── IMAGE TAB: floating controls below circle ── */
@@ -587,14 +596,41 @@ body.view-image .canvas-wrap { background: var(--bg); }
   transition: opacity .3s;
 }
 .img-zoom-hint.visible { opacity: 1; }
+
+/* ── Image tab help bar ── */
+.img-help-bar{
+  position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+  background:rgba(255,255,255,0.88);backdrop-filter:blur(8px);
+  border:1px solid var(--border);border-radius:20px;
+  padding:7px 18px;font-size:.72rem;color:#555;white-space:nowrap;
+  pointer-events:none;opacity:0;transition:opacity .3s;
+}
+body.view-image .img-help-bar{ opacity:1; }
+
+/* ── Upload button inside circle ── */
+.ph-upload-btn {
+  margin-top: 4px;
+  padding: 8px 28px;
+  border-radius: 20px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: .85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter .15s;
+  pointer-events: auto;
+}
+.ph-upload-btn:hover { filter: brightness(1.12); }
 </style>
 </head>
-<body>
+<body class="view-image">
 <header>
   <div>
     <div class="logo">Shweka Studio</div>
     <span class="logo-sub">String Art Generator</span>
-    <span class="logo-sub" style="margin-left:6px;color:var(--accent);opacity:0.6;">v0.27</span>
+    <span class="logo-sub" style="margin-left:6px;color:var(--accent);opacity:0.6;">v0.36</span>
   </div>
 </header>
 <div class="main">
@@ -616,7 +652,7 @@ body.view-image .canvas-wrap { background: var(--bg); }
 </nav>
 
 <!-- ════ LEFT ════ -->
-<div class="panel panel-left" style="display:none;">
+<div class="panel panel-left">
 
 
   <!-- GENERATE BUTTON (above tabs, unified) -->
@@ -847,19 +883,22 @@ body.view-image .canvas-wrap { background: var(--bg); }
       <button class="ds-btn" id="vmR" onclick="setView('result')">String Art</button>
       <button class="ds-btn" id="vmE" onclick="setView('error')">Error map</button>
     </div>
-    <div class="t-sep"></div>
-    <button class="t-btn" id="bZI">＋</button>
-    <button class="t-btn" id="bZO">－</button>
-    <button class="t-btn" id="bZR">fit</button>
-    <div class="t-sep" id="backViewSep" style="display:none"></div>
-    <button class="t-btn" id="tbBackView" onclick="pbToggleView()" style="display:none;color:var(--accent2);border-color:rgba(10,143,110,.3);">↺ Flip Plate</button>
+    <div class="zoom-btns" style="display:flex;align-items:center;gap:8px;">
+      <div class="t-sep"></div>
+      <button class="t-btn" id="bZI">＋</button>
+      <button class="t-btn" id="bZO">－</button>
+      <button class="t-btn" id="bZR">fit</button>
+      <div class="t-sep" id="backViewSep" style="display:none"></div>
+      <button class="t-btn" id="tbBackView" onclick="pbToggleView()" style="display:none;color:var(--accent2);border-color:rgba(10,143,110,.3);">↺ Flip Plate</button>
+    </div>
   </div>
   <div class="canvas-wrap" id="cWrap">
     <!-- Image tab: circle IS the upload/crop zone -->
     <div class="ph ph-upload" id="ph">
       <div class="ph-upload-inner" id="phInner">
-        <div class="ph-txt">Drop image here</div>
-        <div class="ph-hint">or click to upload</div>
+        <div class="ph-txt">Drop an image</div>
+        <div class="ph-hint">or</div>
+        <button class="ph-upload-btn" onclick="event.stopPropagation();document.getElementById('fi').click()">Upload</button>
       </div>
     </div>
     <!-- Image preview circle: shown on Image tab after upload -->
@@ -873,6 +912,9 @@ body.view-image .canvas-wrap { background: var(--bg); }
     </div>
     <!-- Zoom hint (image tab) -->
     <div class="img-zoom-hint" id="imgZoomHint">100%</div>
+    <div class="img-help-bar" id="imgHelpBar">
+      <span id="imgHelpText">Drop an image onto the circle, or click Upload</span>
+    </div>
     <!-- Floating controls bar: shown on image tab -->
     <div class="img-tab-controls" id="imgTabControls">
       <!-- fi is inside ph label click handler — file input lives here hidden -->
@@ -975,7 +1017,7 @@ body.view-image .canvas-wrap { background: var(--bg); }
 //  STATE
 // ══════════════════════════
 const G={
-  img:null,bw:false,cropOffX:0,cropOffY:0,cropZoom:1,
+  img:null,bw:false,cropOffX:0,cropOffY:0,cropZoom:1,circleSize:0,
   nails:[],imgPx:null,errPx:null,imgSz:0,nailPos:null,
   color:'#111111',algo:'greedy',showNails:true,
   view:'image',zoom:1,done:false,running:false,showSeq:true,
@@ -994,7 +1036,7 @@ const BG='#f7f5f0';
 const SVG_SZ=600; // internal coordinate space for SVG viewBox
 
 // Placeholder nails
-(()=>{const r=$('phr');for(let i=0;i<40;i++){const a=(i/40)*Math.PI*2-Math.PI/2,d=document.createElement('div');d.className='ph-nail';d.style.left=(50+49*Math.cos(a))+'%';d.style.top=(50+49*Math.sin(a))+'%';d.style.animationDelay=(i*63)+'ms';r.appendChild(d);}})();
+(()=>{const r=$('phr');if(!r)return;for(let i=0;i<40;i++){const a=(i/40)*Math.PI*2-Math.PI/2,d=document.createElement('div');d.className='ph-nail';d.style.left=(50+49*Math.cos(a))+'%';d.style.top=(50+49*Math.sin(a))+'%';d.style.animationDelay=(i*63)+'ms';r.appendChild(d);}})();
 
 // ══ DUAL TOGGLES ══
 function toggleSeqDrawer(){
@@ -1052,16 +1094,15 @@ function setView(v){
   document.body.classList.add('view-'+v);
   ['vmR','vmO','vmE'].forEach(id=>$(id).classList.remove('on'));
   ({result:'vmR',image:'vmO',error:'vmE'})[v] && $(({result:'vmR',image:'vmO',error:'vmE'})[v]).classList.add('on');
-  // Directly control panel-left — reliable regardless of CSS specificity
-  const _pl=document.querySelector('.panel-left');
-  if(_pl) _pl.style.display = v==='image' ? 'none' : 'flex';
+  // panel-left always stays visible (same width on all tabs)
 
 
   if(v==='image'){
     // Image tab: show upload circle or image preview
     cvSvg.style.display='none'; cvRaster.style.display='none';
     // Restore upload placeholder content
-    if($('phInner')) $('phInner').innerHTML='<div class="ph-txt">Drop image here</div><div class="ph-hint">or click to upload</div>';
+    if($('phInner')) $('phInner').innerHTML='<div class="ph-txt">Drop an image</div><div class="ph-hint">or</div><button class="ph-upload-btn" onclick="event.stopPropagation();document.getElementById(\'fi\').click()">Upload</button>';
+    applyCircleSize(); // restore persisted circle size
     if(G.img){
       $('ph').style.display='none';
       showImgPreview();
@@ -1077,9 +1118,10 @@ function setView(v){
       $('ph').style.display='none';
       render();
     } else if(G.img){
-      // Have image but no result yet
-      $('phInner').innerHTML='<div class="ph-txt" style="font-size:.9rem">Click Generate to create</div><div class="ph-hint">String Art</div>';
+      // Have image — auto-generate when switching to String Art tab
+      $('phInner').innerHTML='<div class="ph-txt" style="font-size:.9rem">Generating...</div><div class="ph-hint">String Art</div>';
       $('ph').style.display='flex';
+      if(!G.running) triggerGenerate();
     } else {
       $('phInner').innerHTML='<div class="ph-txt" style="font-size:.9rem">Upload an image first</div><div class="ph-hint">Switch to the Image tab</div>';
       $('ph').style.display='flex';
@@ -1096,6 +1138,7 @@ function setView(v){
 let autoTimer=null;
 function scheduleAutoGen(){
   if(!G.img)return;
+  if(G.view==='image')return; // never generate while browsing image tab
   clearTimeout(autoTimer);
   autoTimer=setTimeout(()=>triggerGenerate(),80);
 }
@@ -1245,14 +1288,31 @@ $('ph').addEventListener('click',()=>{
 // ── Scroll to zoom on image tab ──
 let _zoomHintTimer=null;
 cWrapEl.addEventListener('wheel',e=>{
-  if(G.view!=='image'||!G.img) return;
+  if(G.view!=='image') return;
   e.preventDefault();
-  const delta = e.deltaY < 0 ? 0.1 : -0.1;
-  G.cropZoom = Math.max(0.5, Math.min(5, G.cropZoom + delta));
-  if($('cropZoom')) $('cropZoom').value = G.cropZoom;
-  showZoomHint();
-  showImgPreview();
-  scheduleAutoGen();
+  const wrap=$('imgPreviewWrap');
+  const ph=$('ph');
+  // Detect if cursor is inside the circle
+  const circleEl = (G.img && wrap && wrap.style.display!=='none') ? wrap : ph;
+  const rect = circleEl.getBoundingClientRect();
+  const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+  const dist=Math.sqrt((e.clientX-cx)**2+(e.clientY-cy)**2);
+  const radius=rect.width/2;
+  if(dist<=radius && G.img){
+    // Inside circle: crop zoom
+    const delta = e.deltaY < 0 ? 0.1 : -0.1;
+    G.cropZoom = Math.max(0.5, Math.min(5, G.cropZoom + delta));
+    if($('cropZoom')) $('cropZoom').value = G.cropZoom;
+    showZoomHint();
+    showImgPreview();
+  } else {
+    // Outside circle: resize the circle
+    const factor = e.deltaY < 0 ? 1.08 : 0.92;
+    const maxSz = Math.min(cWrapEl.clientWidth, cWrapEl.clientHeight) - 40;
+    G.circleSize = Math.max(120, Math.min(maxSz, G.circleSize * factor));
+    applyCircleSize();
+    showSizeHint();
+  }
 },{passive:false});
 
 // ── Pinch to zoom on mobile (image tab) ──
@@ -1269,7 +1329,6 @@ cWrapEl.addEventListener('touchmove',e=>{
   _pinchDist = d;
   showZoomHint();
   showImgPreview();
-  scheduleAutoGen();
 },{passive:true});
 
 // ── Drag to pan on image tab ──
@@ -1281,25 +1340,65 @@ if(imgWrap){
     _panActive=true; _panSX=e.clientX; _panSY=e.clientY;
     _panOX=G.cropOffX; _panOY=G.cropOffY;
     imgWrap.style.cursor='grabbing';
+    document.body.style.cursor='grabbing';
     e.preventDefault();
   });
 }
 window.addEventListener('mousemove',e=>{
   if(!_panActive) return;
   if(!G.img) return;
-  const img=G.img, base=Math.min(img.width,img.height), view=base/G.cropZoom;
-  const previewSz = Math.min($('cWrap').clientWidth,$('cWrap').clientHeight)-32;
-  const pxPerCanvasPx = view/previewSz;
-  G.cropOffX = _panOX - (e.clientX-_panSX)*pxPerCanvasPx;
-  G.cropOffY = _panOY - (e.clientY-_panSY)*pxPerCanvasPx;
+  const previewSz = Math.min($('cWrap').clientWidth,$('cWrap').clientHeight)-32 || 300;
+  // cropOffX/Y are fractions (same space as crop modal, which divides by 380)
+  // Here we divide by previewSz so panning feels 1:1 with the displayed circle
+  G.cropOffX = _panOX + (e.clientX-_panSX)/previewSz;
+  G.cropOffY = _panOY + (e.clientY-_panSY)/previewSz;
+  // Clamp to ±0.45 so image stays in frame
+  G.cropOffX = Math.max(-0.45, Math.min(0.45, G.cropOffX));
+  G.cropOffY = Math.max(-0.45, Math.min(0.45, G.cropOffY));
   showImgPreview();
 });
 window.addEventListener('mouseup',()=>{
   if(!_panActive) return;
   _panActive=false;
   if(imgWrap) imgWrap.style.cursor='';
-  scheduleAutoGen();
+  document.body.style.cursor='';
+  // Don't auto-gen on pan end — user controls when to generate
 });
+
+function updateHelpBar(){
+  const el=$('imgHelpText');
+  if(!el) return;
+  if(G.img){
+    el.innerHTML='<b>Scroll inside</b> to crop &nbsp;·&nbsp; <b>Scroll outside</b> to resize &nbsp;·&nbsp; <b>Drag</b> to pan &nbsp;·&nbsp; Drop or <b>Upload</b> to replace';
+  } else {
+    el.innerHTML='Drop an image onto the circle, or click <b>Upload</b>';
+  }
+}
+
+function applyCircleSize(){
+  if(!G.circleSize){
+    const cw=cWrapEl.clientWidth||window.innerWidth-310;
+    const ch=cWrapEl.clientHeight||window.innerHeight-100;
+    G.circleSize=Math.max(120, Math.min(cw,ch)-40);
+  }
+  const sz=Math.round(G.circleSize);
+  const ph=$('ph');
+  const wrap=$('imgPreviewWrap');
+  const cv=$('imgPreviewCanvas');
+  if(ph){ ph.style.width=sz+'px'; ph.style.height=sz+'px'; }
+  if(wrap){ wrap.style.width=sz+'px'; wrap.style.height=sz+'px'; }
+  if(cv && cv.width!==sz){ cv.width=sz; cv.height=sz; }
+  if(G.img) _drawImgPreview();
+}
+
+function showSizeHint(){
+  const el=$('imgZoomHint');
+  if(!el) return;
+  el.textContent=Math.round(G.circleSize)+'px';
+  el.classList.add('visible');
+  clearTimeout(_zoomHintTimer);
+  _zoomHintTimer=setTimeout(()=>el.classList.remove('visible'),1200);
+}
 
 function showZoomHint(){
   const el=$('imgZoomHint');
@@ -1322,7 +1421,6 @@ function resetCropInline(){
   if($('cropZoom'))$('cropZoom').value=1;
   showZoomHint();
   showImgPreview();
-  scheduleAutoGen();
 }
 
 function loadFile(f){
@@ -1340,9 +1438,11 @@ function loadFile(f){
       if($('btnOptimize')) $('btnOptimize').disabled=false;
       // Show floating image controls
       showImageControls(true);
+      updateHelpBar();
       // Stay on image tab
       if(G.view!=='image') setView('image');
-      resetResult();showImgPreview();scheduleAutoGen();
+      else showImgPreview(); // already on image tab, just show
+      resetResult();
     };
     img.src=e.target.result;
   };
@@ -1674,11 +1774,12 @@ function _drawImgPreview(){
   const wrap=$('imgPreviewWrap');
   const cv=$('imgPreviewCanvas');
   if(!wrap||!cv) return;
-  // Use cWrap size if available, fallback to 300
+  // Use G.circleSize (user-controlled) or fit to cWrap
   const cWrap=$('cWrap');
   const cw=cWrap?cWrap.clientWidth:0, ch=cWrap?cWrap.clientHeight:0;
-  const avail=Math.min(cw||400, ch||400)-40;
-  const sz=Math.max(150, Math.min(avail, 500));
+  const maxSz=Math.min(cw||400, ch||400)-40;
+  if(!G.circleSize) G.circleSize=maxSz;
+  const sz=Math.max(120, Math.min(G.circleSize, maxSz));
   if(cv.width!==sz){ cv.width=sz; cv.height=sz; }
   wrap.style.width=sz+'px'; wrap.style.height=sz+'px';
   const ctx=cv.getContext('2d');
@@ -1858,6 +1959,15 @@ function triggerGenerate(){
 // Init tab panels
 setView('image');
 showImageControls(false);
+// Init circle size to max after layout is ready
+function _initCircleSize(){
+  const cw=cWrapEl.clientWidth||window.innerWidth-310;
+  const ch=cWrapEl.clientHeight||window.innerHeight-100;
+  const sz=Math.max(120,Math.min(cw,ch)-40);
+  if(sz>G.circleSize){ G.circleSize=sz; applyCircleSize(); }
+}
+requestAnimationFrame(()=>requestAnimationFrame(_initCircleSize));
+window.addEventListener('load',_initCircleSize);
 if($('btnGen')) $('btnGen').addEventListener('click',()=>triggerGenerate());
 
 function prog(p,msg){
@@ -1883,8 +1993,15 @@ function finishGen(result,err,img,nails,N,sz,ms,sc,lc){
     G._cacheKey=null;
   }
   prog(100,'Done!');
+  // Switch to String Art tab cleanly — set state directly, don't call setView (avoids race)
+  G.view='result';
+  document.body.className=document.body.className.replace(/view-\S+/g,'').trim();
+  document.body.classList.add('view-result');
+  ['vmR','vmO','vmE'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on');});
+  const vmR=document.getElementById('vmR'); if(vmR) vmR.classList.add('on');
+  const _pl=document.querySelector('.panel-left'); if(_pl) _pl.style.display='';
   pbInit(); // initialise playback bar
-  if(window.innerWidth<=768) mobTab('result'); // show result on mobile
+  if(window.innerWidth<=768) mobTab('result');
   $('stl').textContent=result.length-1;$('stn').textContent=N;
   $('stt').textContent=(ms/1000).toFixed(1);
   $('stm').textContent=Math.round((result.length-1)*0.64*0.3);
@@ -1901,12 +2018,14 @@ function finishGen(result,err,img,nails,N,sz,ms,sc,lc){
   cvRaster.style.display='none';cvCmpSvg.style.display='none';
   $('cDiv').style.display='none';$('cHandle').style.display='none';
   $('cLblL').style.display='none';$('cLblR').style.display='none';
-  if(window.innerWidth<=768){
-    mobTab('result');
-    requestAnimationFrame(()=>requestAnimationFrame(()=>render()));
-  } else {
+  if(window.innerWidth<=768) mobTab('result');
+  // Always defer render — let DOM settle after ph hide + cvSvg show
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
     render();
-  }
+    // Also ensure playbar is visible (pbInit may have been blocked by CSS timing)
+    const pb=document.getElementById('playBar');
+    if(pb && G.done) pb.style.display='flex';
+  }));
   // Re-enable per-algo button
   const _isBackF=G.algo==='back';
   const _btnIdF='btnGenGreedy';
