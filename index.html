@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SA v0.23 · Shweka Studio</title>
+<title>SA v0.27 · Shweka Studio</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -166,7 +166,8 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3);}
 .cmp-handle{position:absolute;width:28px;height:28px;border-radius:50%;background:var(--accent);display:none;cursor:ew-resize;z-index:6;box-shadow:0 2px 8px rgba(0,0,0,.5);transform:translate(-50%,-50%);}
 .cmp-lbl{position:absolute;font-size:.57rem;color:rgba(0,0,0,.6);background:rgba(255,255,255,.85);padding:2px 7px;border-radius:4px;pointer-events:none;display:none;z-index:5;font-weight:600;}
 .ph{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;color:#999;font-size:.7rem;text-align:center;pointer-events:none;}
-.ph-ring{width:180px;height:180px;border-radius:50%;border:1.5px dashed #bbb;position:relative;}
+.ph.ph-upload{pointer-events:auto;}
+.ph-ring{display:none;}
 .ph-nail{position:absolute;width:4px;height:4px;border-radius:50%;background:var(--border);transform:translate(-50%,-50%);animation:pdot 2.5s ease-in-out infinite;}
 @keyframes pdot{0%,100%{opacity:.1}50%{opacity:.65}}
 
@@ -462,6 +463,130 @@ body.pb-back-view .pb-view{color:var(--accent);border-color:var(--accent);}
 .reset-popup-btns .rp-yes:hover{filter:brightness(1.1);}
 .reset-popup-btns .rp-no{background:var(--surface2);}
 .reset-popup-btns .rp-no:hover{border-color:var(--text);}
+
+/* ── IMAGE TAB: upload circle ── */
+.ph-upload{
+  cursor:pointer;
+  width:280px;height:280px;
+  border-radius:50%;
+  border:2px dashed #c0c4d0;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:10px;
+  background:transparent;
+  transition:background .2s, border-color .2s;
+  pointer-events:auto;
+}
+.ph-upload:hover{border-color:var(--accent);background:rgba(90,122,240,.04);}
+.ph-upload.drag-over{
+  background:#fff !important;
+  border-color:var(--accent) !important;
+  border-style:solid !important;
+  box-shadow:0 0 0 6px rgba(90,122,240,.12);
+}
+.ph-upload-inner{display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;}
+.ph-txt{font-size:.9rem;font-weight:600;color:var(--text);}
+.ph-hint{font-size:.75rem;color:var(--dim);}
+/* bigger on image tab */
+body.view-image .ph-upload{width:320px;height:320px;}
+body.view-image .ph-txt{font-size:1rem;}
+body.view-image .ph-hint{font-size:.8rem;}
+
+/* ── UPLOAD NEW BUTTON (in left panel Image tab) ── */
+.btn-upload-new{
+  display:flex;align-items:center;justify-content:center;
+  width:100%;padding:9px 12px;border-radius:8px;
+  background:var(--accent);color:#fff;border:none;
+  font-family:'Inter',sans-serif;font-size:.82rem;font-weight:600;
+  cursor:pointer;transition:filter .15s;gap:6px;
+  text-align:center;
+}
+.btn-upload-new:hover{filter:brightness(1.1);}
+
+/* ── CROP OPEN BUTTON ── */
+.btn-crop-open{
+  width:100%;margin-top:10px;padding:7px 12px;border-radius:7px;
+  background:var(--surface2);border:1px solid var(--border);
+  font-family:'Inter',sans-serif;font-size:.8rem;color:var(--text);
+  cursor:pointer;transition:all .15s;
+}
+.btn-crop-open:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ── IMAGE TAB: inline zoom feedback ── */
+#cropZoomInline{width:100%;}
+
+/* ── IMAGE PREVIEW HOVER OVERLAY (Image tab) ── */
+.img-prev-hover-ov{
+  position:absolute;inset:0;border-radius:50%;
+  background:rgba(26,26,46,.0);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:background .2s;
+}
+.img-preview-wrap:hover .img-prev-hover-ov{background:rgba(26,26,46,.45);}
+.img-prev-hover-ov span{
+  color:#fff;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:600;
+  opacity:0;transition:opacity .2s;pointer-events:none;
+}
+.img-preview-wrap:hover .img-prev-hover-ov span{opacity:1;}
+/* Only show hover on image tab */
+body:not(.view-image) .img-prev-hover-ov{display:none;}
+
+/* ── IMAGE TAB: full-width canvas, no left panel ── */
+body.view-image .panel-left { display: none !important; }
+body.view-image .panel-center { flex: 1; }
+body.view-image .toolbar { display: none; } /* hide top toolbar on image tab */
+body.view-image .canvas-wrap { background: var(--bg); }
+
+/* ── IMAGE TAB: floating controls below circle ── */
+.img-tab-controls {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  z-index: 20;
+  white-space: nowrap;
+}
+.img-ctrl-btn {
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(8px);
+  font-family: 'Inter', sans-serif;
+  font-size: .78rem;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  transition: all .15s;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.img-ctrl-btn:hover { border-color: var(--accent); color: var(--accent); background: #fff; }
+.img-ctrl-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.img-ctrl-btn.primary:hover { filter: brightness(1.1); }
+.img-ctrl-btn.has-image { display: none; } /* shown only after image loaded */
+
+/* zoom hint label */
+.img-zoom-hint {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: .65rem;
+  color: var(--dim);
+  background: rgba(255,255,255,.85);
+  padding: 3px 10px;
+  border-radius: 10px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .3s;
+}
+.img-zoom-hint.visible { opacity: 1; }
 </style>
 </head>
 <body>
@@ -469,7 +594,7 @@ body.pb-back-view .pb-view{color:var(--accent);border-color:var(--accent);}
   <div>
     <div class="logo">Shweka Studio</div>
     <span class="logo-sub">String Art Generator</span>
-    <span class="logo-sub" style="margin-left:6px;color:var(--accent);opacity:0.6;">v0.23</span>
+    <span class="logo-sub" style="margin-left:6px;color:var(--accent);opacity:0.6;">v0.27</span>
   </div>
 </header>
 <div class="main">
@@ -491,31 +616,8 @@ body.pb-back-view .pb-view{color:var(--accent);border-color:var(--accent);}
 </nav>
 
 <!-- ════ LEFT ════ -->
-<div class="panel panel-left">
+<div class="panel panel-left" style="display:none;">
 
-  <!-- IMAGE SECTION -->
-  <div class="section section-image">
-    <!-- Upload zone: shown when no image -->
-    <div class="upload-zone" id="uz">
-      <input type="file" id="fi" accept="image/*">
-      <div class="upload-ph" id="uph">
-        <span class="upload-icon">⊕</span>
-        <div class="upload-txt">Drop or click to upload</div>
-        <div class="upload-hint">PNG · JPG · WEBP</div>
-      </div>
-      <img id="origImg" class="orig-img" alt="">
-      <div class="thumb-ov"><span>change image</span></div>
-    </div>
-    <!-- Framed preview: shown after upload, click to re-crop -->
-    <div class="crop-prev-wrap" id="cropPrevWrap" style="display:none;">
-      <img id="cropPrevImg" class="crop-prev-img" alt="">
-      <div class="crop-edit-ov" onclick="openCrop()"><span>✎ Adjust crop</span></div>
-      <label class="change-img-btn" title="Upload new image">
-        <input type="file" id="fi2" accept="image/*" style="display:none;">
-        ↺ change
-      </label>
-    </div>
-  </div>
 
   <!-- GENERATE BUTTON (above tabs, unified) -->
   <div class="section section-gen-top" id="genTopSec">
@@ -725,6 +827,8 @@ body.pb-back-view .pb-view{color:var(--accent);border-color:var(--accent);}
     </div>
   </div><!-- /paneBack -->
 
+
+
   <!-- hidden legacy ids needed by JS -->
   <div style="display:none">
     <div id="statSec"><div id="stl"></div><div id="stn"></div><div id="stt"></div><div id="stm"></div></div>
@@ -739,8 +843,8 @@ body.pb-back-view .pb-view{color:var(--accent);border-color:var(--accent);}
 <div class="panel-center">
   <div class="toolbar">
     <div class="dual-seg">
-      <button class="ds-btn on" id="vmR" onclick="setView('result')">Result</button>
-      <button class="ds-btn" id="vmO" onclick="setView('original')">Original</button>
+      <button class="ds-btn on" id="vmO" onclick="setView('image')">Image</button>
+      <button class="ds-btn" id="vmR" onclick="setView('result')">String Art</button>
       <button class="ds-btn" id="vmE" onclick="setView('error')">Error map</button>
     </div>
     <div class="t-sep"></div>
@@ -751,11 +855,39 @@ body.pb-back-view .pb-view{color:var(--accent);border-color:var(--accent);}
     <button class="t-btn" id="tbBackView" onclick="pbToggleView()" style="display:none;color:var(--accent2);border-color:rgba(10,143,110,.3);">↺ Flip Plate</button>
   </div>
   <div class="canvas-wrap" id="cWrap">
-    <div class="ph" id="ph"><div class="ph-ring" id="phr"></div><span>Upload an image to begin</span></div>
-    <!-- Image preview circle: shown after upload, before first generate -->
+    <!-- Image tab: circle IS the upload/crop zone -->
+    <div class="ph ph-upload" id="ph">
+      <div class="ph-upload-inner" id="phInner">
+        <div class="ph-txt">Drop image here</div>
+        <div class="ph-hint">or click to upload</div>
+      </div>
+    </div>
+    <!-- Image preview circle: shown on Image tab after upload -->
     <div class="img-preview-wrap" id="imgPreviewWrap" style="display:none;">
       <canvas id="imgPreviewCanvas" class="img-preview-canvas"></canvas>
       <div class="img-preview-ring"></div>
+      <!-- Hover overlay: click to open crop (Image tab) -->
+      <div class="img-prev-hover-ov" id="imgPrevHoverOv" onclick="openCrop()">
+        <span>✎ Adjust crop</span>
+      </div>
+    </div>
+    <!-- Zoom hint (image tab) -->
+    <div class="img-zoom-hint" id="imgZoomHint">100%</div>
+    <!-- Floating controls bar: shown on image tab -->
+    <div class="img-tab-controls" id="imgTabControls">
+      <!-- fi is inside ph label click handler — file input lives here hidden -->
+      <input type="file" id="fi" accept="image/*" style="display:none;">
+      <!-- After image: change + crop + reset -->
+      <label class="img-ctrl-btn has-image" id="ctrlChange" title="Upload new image" style="display:none;">
+        <input type="file" id="fi2" accept="image/*" style="display:none;">
+        ↺ Change
+      </label>
+      <button class="img-ctrl-btn has-image" id="ctrlCrop" onclick="openCrop()" style="display:none;">
+        ✎ Crop &amp; Pan
+      </button>
+      <button class="img-ctrl-btn has-image" id="ctrlResetCrop" style="display:none;" onclick="resetCropInline()">
+        ↩ Reset
+      </button>
     </div>
     <!-- Algo title overlay: shown after generate -->
     <div class="algo-title-overlay" id="algoTitleOverlay" style="display:none;"></div>
@@ -846,7 +978,7 @@ const G={
   img:null,bw:false,cropOffX:0,cropOffY:0,cropZoom:1,
   nails:[],imgPx:null,errPx:null,imgSz:0,nailPos:null,
   color:'#111111',algo:'greedy',showNails:true,
-  view:'result',zoom:1,done:false,running:false,showSeq:true,
+  view:'image',zoom:1,done:false,running:false,showSeq:true,
   compareMode:false,comparePct:50,greedyCv:null,radonCv:null,
   // Result cache — keyed by algo+image+params so switching algo reuses stored result
   cache:{greedy:null,back:null},
@@ -914,10 +1046,49 @@ function toggleCollapse(id){
 }
 function setNails(v){G.showNails=v;$('nailsShow').classList.toggle('on',v);$('nailsHide').classList.toggle('on',!v);if(G.done)render();}
 function setView(v){
+  const prev=G.view;
   G.view=v;
+  document.body.className=document.body.className.replace(/view-\S+/g,'').trim();
+  document.body.classList.add('view-'+v);
   ['vmR','vmO','vmE'].forEach(id=>$(id).classList.remove('on'));
-  ({result:'vmR',original:'vmO',error:'vmE'})[v] && $(({result:'vmR',original:'vmO',error:'vmE'})[v]).classList.add('on');
-  if(G.done)render();
+  ({result:'vmR',image:'vmO',error:'vmE'})[v] && $(({result:'vmR',image:'vmO',error:'vmE'})[v]).classList.add('on');
+  // Directly control panel-left — reliable regardless of CSS specificity
+  const _pl=document.querySelector('.panel-left');
+  if(_pl) _pl.style.display = v==='image' ? 'none' : 'flex';
+
+
+  if(v==='image'){
+    // Image tab: show upload circle or image preview
+    cvSvg.style.display='none'; cvRaster.style.display='none';
+    // Restore upload placeholder content
+    if($('phInner')) $('phInner').innerHTML='<div class="ph-txt">Drop image here</div><div class="ph-hint">or click to upload</div>';
+    if(G.img){
+      $('ph').style.display='none';
+      showImgPreview();
+    } else {
+      $('ph').style.display='flex';
+      if($('imgPreviewWrap')) $('imgPreviewWrap').style.display='none';
+    }
+    if($('algoTitleOverlay')) $('algoTitleOverlay').style.display='none';
+  } else if(v==='result'){
+    // String Art tab: show result or placeholder
+    if($('imgPreviewWrap')) $('imgPreviewWrap').style.display='none';
+    if(G.done){
+      $('ph').style.display='none';
+      render();
+    } else if(G.img){
+      // Have image but no result yet
+      $('phInner').innerHTML='<div class="ph-txt" style="font-size:.9rem">Click Generate to create</div><div class="ph-hint">String Art</div>';
+      $('ph').style.display='flex';
+    } else {
+      $('phInner').innerHTML='<div class="ph-txt" style="font-size:.9rem">Upload an image first</div><div class="ph-hint">Switch to the Image tab</div>';
+      $('ph').style.display='flex';
+    }
+  } else {
+    // Error map
+    if($('imgPreviewWrap')) $('imgPreviewWrap').style.display='none';
+    if(G.done) render();
+  }
 }
 
 
@@ -1047,11 +1218,112 @@ function showResetPopup(px,py,curVal,dfltVal,isFloat,sid,slider,label,step,min,m
 }
 
 // ══ UPLOAD ══
-$('uz').addEventListener('dragover',e=>{e.preventDefault();$('uz').classList.add('drag-over');});
-$('uz').addEventListener('dragleave',()=>$('uz').classList.remove('drag-over'));
-$('uz').addEventListener('drop',e=>{e.preventDefault();$('uz').classList.remove('drag-over');if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0]);});
+// ── File inputs ──
 $('fi').addEventListener('change',()=>{if($('fi').files[0])loadFile($('fi').files[0]);});
 if($('fi2'))$('fi2').addEventListener('change',()=>{if($('fi2').files[0])loadFile($('fi2').files[0]);});
+
+// ── Canvas drop zone (image tab) ──
+const cWrapEl=$('cWrap');
+cWrapEl.addEventListener('dragover',e=>{
+  if(G.view!=='image') return;
+  e.preventDefault();
+  $('ph').classList.add('drag-over');
+});
+cWrapEl.addEventListener('dragleave',()=>$('ph').classList.remove('drag-over'));
+cWrapEl.addEventListener('drop',e=>{
+  if(G.view!=='image') return;
+  e.preventDefault();
+  $('ph').classList.remove('drag-over');
+  if(e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+});
+
+// ── Click on placeholder = upload ──
+$('ph').addEventListener('click',()=>{
+  if(G.view==='image') $('fi').click();
+});
+
+// ── Scroll to zoom on image tab ──
+let _zoomHintTimer=null;
+cWrapEl.addEventListener('wheel',e=>{
+  if(G.view!=='image'||!G.img) return;
+  e.preventDefault();
+  const delta = e.deltaY < 0 ? 0.1 : -0.1;
+  G.cropZoom = Math.max(0.5, Math.min(5, G.cropZoom + delta));
+  if($('cropZoom')) $('cropZoom').value = G.cropZoom;
+  showZoomHint();
+  showImgPreview();
+  scheduleAutoGen();
+},{passive:false});
+
+// ── Pinch to zoom on mobile (image tab) ──
+let _pinchDist=null;
+cWrapEl.addEventListener('touchstart',e=>{
+  if(G.view!=='image'||!G.img||e.touches.length!==2) return;
+  _pinchDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+},{passive:true});
+cWrapEl.addEventListener('touchmove',e=>{
+  if(G.view!=='image'||!G.img||e.touches.length!==2||!_pinchDist) return;
+  const d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+  const scale = d / _pinchDist;
+  G.cropZoom = Math.max(0.5, Math.min(5, G.cropZoom * scale));
+  _pinchDist = d;
+  showZoomHint();
+  showImgPreview();
+  scheduleAutoGen();
+},{passive:true});
+
+// ── Drag to pan on image tab ──
+let _panActive=false, _panSX=0, _panSY=0, _panOX=0, _panOY=0;
+const imgWrap=$('imgPreviewWrap');
+if(imgWrap){
+  imgWrap.addEventListener('mousedown',e=>{
+    if(G.view!=='image'||!G.img) return;
+    _panActive=true; _panSX=e.clientX; _panSY=e.clientY;
+    _panOX=G.cropOffX; _panOY=G.cropOffY;
+    imgWrap.style.cursor='grabbing';
+    e.preventDefault();
+  });
+}
+window.addEventListener('mousemove',e=>{
+  if(!_panActive) return;
+  if(!G.img) return;
+  const img=G.img, base=Math.min(img.width,img.height), view=base/G.cropZoom;
+  const previewSz = Math.min($('cWrap').clientWidth,$('cWrap').clientHeight)-32;
+  const pxPerCanvasPx = view/previewSz;
+  G.cropOffX = _panOX - (e.clientX-_panSX)*pxPerCanvasPx;
+  G.cropOffY = _panOY - (e.clientY-_panSY)*pxPerCanvasPx;
+  showImgPreview();
+});
+window.addEventListener('mouseup',()=>{
+  if(!_panActive) return;
+  _panActive=false;
+  if(imgWrap) imgWrap.style.cursor='';
+  scheduleAutoGen();
+});
+
+function showZoomHint(){
+  const el=$('imgZoomHint');
+  if(!el) return;
+  el.textContent=Math.round(G.cropZoom*100)+'%';
+  el.classList.add('visible');
+  clearTimeout(_zoomHintTimer);
+  _zoomHintTimer=setTimeout(()=>el.classList.remove('visible'),1200);
+}
+
+function showImageControls(hasImage){
+  const change=$('ctrlChange'), crop=$('ctrlCrop'), reset=$('ctrlResetCrop');
+  if(change) change.style.display = hasImage ? '' : 'none';
+  if(crop)   crop.style.display   = hasImage ? '' : 'none';
+  if(reset)  reset.style.display  = hasImage ? '' : 'none';
+}
+
+function resetCropInline(){
+  G.cropOffX=0;G.cropOffY=0;G.cropZoom=1;
+  if($('cropZoom'))$('cropZoom').value=1;
+  showZoomHint();
+  showImgPreview();
+  scheduleAutoGen();
+}
 
 function loadFile(f){
   if(!f.type.startsWith('image/'))return;
@@ -1061,14 +1333,16 @@ function loadFile(f){
     const img=new Image();
     img.onload=()=>{
       G.img=img;G.bw=true;G.cropOffX=0;G.cropOffY=0;G.cropZoom=1;
-      // Show framed preview, hide upload zone
-      $('uz').style.display='none';
-      $('cropPrevWrap').style.display='block';
-      $('btnGenGreedy').disabled=false;$('btnGenBack').disabled=false;
+      // Enable generate button
+      $('btnGenGreedy').disabled=false;
       if($('btnGen'))$('btnGen').disabled=false;
       if($('btnCompare'))$('btnCompare').disabled=false;
-      $('btnOptimize').disabled=false;
-      resetResult();updateBothThumbs();showImgPreview();scheduleAutoGen();
+      if($('btnOptimize')) $('btnOptimize').disabled=false;
+      // Show floating image controls
+      showImageControls(true);
+      // Stay on image tab
+      if(G.view!=='image') setView('image');
+      resetResult();showImgPreview();scheduleAutoGen();
     };
     img.src=e.target.result;
   };
@@ -1081,8 +1355,8 @@ function resetResult(){
   cvSvg.style.display='none';cvRaster.style.display='none';cvCmpSvg.style.display='none';
   $('cDiv').style.display='none';$('cHandle').style.display='none';
   $('cLblL').style.display='none';$('cLblR').style.display='none';
-  if(G.img){showImgPreview();}else{$('ph').style.display='flex';}
-  if($('imgPreviewWrap')&&!G.img) $('imgPreviewWrap').style.display='none';
+  if(G.img && G.view==='image'){showImgPreview();}
+  else if(!G.img){$('ph').style.display='flex';if($('imgPreviewWrap'))$('imgPreviewWrap').style.display='none';}
   if($('statSec'))$('statSec').style.display='none';
   $('emptyMsg').style.display='block';$('nw').style.display='none';
   $('btnRefine').style.display='none';
@@ -1092,7 +1366,7 @@ function resetResult(){
 }
 
 // ══ THUMBNAILS ══
-function updateBothThumbs(){if(!G.img)return;updateOrigThumb();updateCropThumb();}
+function updateBothThumbs(){if(!G.img)return;if($('origImg'))updateOrigThumb();if($('cropPrevImg'))updateCropThumb();}
 
 function updateOrigThumb(){
   const c=off;c.width=200;c.height=200;const ctx=c.getContext('2d');
@@ -1106,8 +1380,8 @@ function updateCropThumb(){
   const c=off;c.width=200;c.height=200;const ctx=c.getContext('2d');
   ctx.fillStyle='#fff';ctx.fillRect(0,0,200,200);
   drawCropped(ctx,200,G.bw);
-  const img=$('cropPrevImg');img.src=c.toDataURL('image/jpeg',.9);
-  img.style.display='block';
+  const img=$('cropPrevImg');
+  if(img){img.src=c.toDataURL('image/jpeg',.9);img.style.display='block';}
 }
 
 function drawCropped(ctx,sz,gray,forcedRaw){
@@ -1446,6 +1720,7 @@ function showImgPreview(){
   if(!G.img) return;
   const wrap=$('imgPreviewWrap');
   if(!wrap) return;
+  if(G.view!=='image') return; // only show preview on image tab
   $('ph').style.display='none';
   wrap.style.display='block';
   // Try immediately, then retry after layout settles
@@ -1580,6 +1855,9 @@ function triggerGenerate(){
 }
 
 // unified button handled by triggerFromBtn()
+// Init tab panels
+setView('image');
+showImageControls(false);
 if($('btnGen')) $('btnGen').addEventListener('click',()=>triggerGenerate());
 
 function prog(p,msg){
