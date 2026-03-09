@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SA v0.38 · Shweka Studio</title>
+<title>SA v0.40 · Shweka Studio</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -607,6 +607,7 @@ body.view-image .canvas-wrap { background: var(--bg); }
   pointer-events:none;opacity:0;transition:opacity .3s;
 }
 body.view-image .img-help-bar{ opacity:1; }
+body.view-result .img-help-bar{ opacity:1; }
 
 /* ── Upload button inside circle ── */
 .ph-upload-btn {
@@ -624,14 +625,56 @@ body.view-image .img-help-bar{ opacity:1; }
   pointer-events: auto;
 }
 .ph-upload-btn:hover { filter: brightness(1.12); }
+
+/* ── Tab background colors ── */
+body.view-image   { --tab-bg: #eef4ff; }
+body.view-result  { --tab-bg: #f0fff8; }
+body.view-error   { --tab-bg: #fff8ee; }
+body.view-image .panel-center { background: var(--tab-bg) !important; }
+body.view-result .panel-center { background: var(--tab-bg) !important; }
+body.view-error .panel-center { background: var(--tab-bg) !important; }
+body.view-image .canvas-wrap,
+body.view-result .canvas-wrap,
+body.view-error .canvas-wrap { background: var(--tab-bg) !important; }
+
+/* ── Big Generate button above circle ── */
+.big-gen-wrap {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  padding: 14px 0 8px;
+  flex-shrink: 0;
+}
+body.view-image.has-image .big-gen-wrap { display: flex; }
+.btn-big-gen {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 14px 48px;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(90,122,240,0.35);
+  transition: transform .12s, box-shadow .12s, background .15s;
+}
+.btn-big-gen:hover { transform: translateY(-2px); box-shadow: 0 7px 24px rgba(90,122,240,0.45); }
+.btn-big-gen:active { transform: translateY(0); }
+
+/* Active tab button gets tab color */
+body.view-image   #vmO { background: #5a7af0; color: #fff; border-color: #5a7af0; }
+body.view-result  #vmR { background: #0a8f6e; color: #fff; border-color: #0a8f6e; }
+body.view-error   #vmE { background: #d97706; color: #fff; border-color: #d97706; }
 </style>
 </head>
 <body class="view-image">
 <header>
-  <div>
-    <div class="logo">Shweka Studio</div>
-    <span class="logo-sub">String Art Generator</span>
-    <span class="logo-sub" style="margin-left:6px;color:var(--accent);opacity:0.6;">v0.38</span>
+  <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:nowrap;">
+    <div class="logo" style="font-size:1.15rem;white-space:nowrap;">String Art Generator</div>
+    <span class="logo-sub" style="font-size:0.65rem;white-space:nowrap;">by Shweka Studio</span>
+    <span class="logo-sub" style="font-size:0.6rem;color:var(--accent);opacity:0.7;white-space:nowrap;">v0.40</span>
   </div>
 </header>
 <div class="main">
@@ -893,6 +936,7 @@ body.view-image .img-help-bar{ opacity:1; }
       <button class="t-btn" id="tbBackView" onclick="pbToggleView()" style="display:none;color:var(--accent2);border-color:rgba(10,143,110,.3);">↺ Flip Plate</button>
     </div>
   </div>
+  <div class="big-gen-wrap"><button class="btn-big-gen" onclick="onBigGenerate()">▶ Generate</button></div>
   <div class="canvas-wrap" id="cWrap">
     <!-- Image tab: circle IS the upload/crop zone -->
     <div class="ph ph-upload" id="ph">
@@ -1115,10 +1159,11 @@ function setView(v){
   } else if(v==='result'){
     // String Art tab: show result or placeholder
     if($('imgPreviewWrap')) $('imgPreviewWrap').style.display='none';
+    if($('imgHelpText')) $('imgHelpText').textContent='';
     if(G.done){
       $('ph').style.display='none';
       cvSvg.style.display='block';
-      requestAnimationFrame(()=>render());
+      render();
     } else if(G.img){
       // Have image — auto-generate when switching to String Art tab
       $('phInner').innerHTML='<div class="ph-txt" style="font-size:.9rem">Generating...</div><div class="ph-hint">String Art</div>';
@@ -1131,7 +1176,7 @@ function setView(v){
   } else {
     // Error map
     if($('imgPreviewWrap')) $('imgPreviewWrap').style.display='none';
-    if(G.done){ cvRaster.style.display='block'; requestAnimationFrame(()=>render()); }
+    if(G.done){ cvRaster.style.display='block'; render(); }
   }
 }
 
@@ -1428,6 +1473,8 @@ function resetCropInline(){
 function loadFile(f){
   if(!f.type.startsWith('image/'))return;
   if(window.innerWidth<=768) mobTab('settings'); // show params on mobile after upload
+    document.body.classList.add('has-image');
+    updateHelpBar();
   const rd=new FileReader();
   rd.onload=e=>{
     const img=new Image();
@@ -1454,7 +1501,7 @@ function loadFile(f){
 function resetResult(){
   G.done=false;G.compareMode=false;G.zoom=1;
   G.cache={greedy:null,back:null};
-  document.body.classList.remove('pb-ready'); // invalidate cache on new image
+  document.body.classList.remove('pb-ready'); document.body.classList.remove('has-image');
   cvSvg.style.display='none';cvRaster.style.display='none';cvCmpSvg.style.display='none';
   $('cDiv').style.display='none';$('cHandle').style.display='none';
   $('cLblL').style.display='none';$('cLblR').style.display='none';
@@ -1862,6 +1909,13 @@ function updateGenBtn(){
     lbl.textContent='▶ Generate Front';
   }
 }
+
+function onBigGenerate(){
+  // Switch to result tab then trigger generation
+  setView('result');
+  if(!G.running) triggerGenerate();
+}
+
 function triggerGenerate(){
   if(!G.img) return;
   // Allow switching to Front while Back runs in background
@@ -1996,40 +2050,36 @@ function finishGen(result,err,img,nails,N,sz,ms,sc,lc){
     G._cacheKey=null;
   }
   prog(100,'Done!');
-  // Switch to String Art tab cleanly — set state directly, don't call setView (avoids race)
+  // ── Switch to String Art tab ──
   G.view='result';
   document.body.className=document.body.className.replace(/view-\S+/g,'').trim();
   document.body.classList.add('view-result');
   ['vmR','vmO','vmE'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on');});
   const vmR=document.getElementById('vmR'); if(vmR) vmR.classList.add('on');
-  const _pl=document.querySelector('.panel-left'); if(_pl) _pl.style.display='';
-  pbInit(); // initialise playback bar
-  if(window.innerWidth<=768) mobTab('result');
-  $('stl').textContent=result.length-1;$('stn').textContent=N;
+  // ── Hide image-tab elements ──
+  $('ph').style.display='none';
+  if($('imgPreviewWrap')) $('imgPreviewWrap').style.display='none';
+  cvRaster.style.display='none'; cvCmpSvg.style.display='none';
+  $('cDiv').style.display='none'; $('cHandle').style.display='none';
+  $('cLblL').style.display='none'; $('cLblR').style.display='none';
+  // ── Stats ──
+  $('stl').textContent=result.length-1; $('stn').textContent=N;
   $('stt').textContent=(ms/1000).toFixed(1);
   $('stm').textContent=Math.round((result.length-1)*0.64*0.3);
-  // statSec/expSec inside panels now
-  // Show score
   $('scoreBox').style.display='block';
   $('scoreVal').textContent=sc+'%';
   $('scoreDelta').textContent='accuracy vs original';
   $('emptyMsg').style.display='none';
-  if(G.showSeq){$('nw').style.display='block';renderNailPanel(result);}
-  $('ph').style.display='none';
-  if($('imgPreviewWrap')) $('imgPreviewWrap').style.display='none';
+  if(G.showSeq){$('nw').style.display='block'; renderNailPanel(result);}
   if($('algoTitleOverlay')){$('algoTitleOverlay').style.display='block';$('algoTitleOverlay').textContent=(G.algo==='back'?'Back Allowed':'Front (Greedy)')+' · '+((G.nails?G.nails.length:0)-1)+' lines';}
-  cvRaster.style.display='none';cvCmpSvg.style.display='none';
-  $('cDiv').style.display='none';$('cHandle').style.display='none';
-  $('cLblL').style.display='none';$('cLblR').style.display='none';
-  // Force show result on both mobile and desktop
-  if(window.innerWidth<=768){
-    mobTab('result');
-  }
-  // Render after layout settles
-  cvSvg.style.display='block';
-  requestAnimationFrame(()=>render());
-  // Ensure playbar visible (inline style overrides CSS)
+  // ── Init playback bar ──
+  pbInit();
   document.body.classList.add('pb-ready');
+  // ── Mobile: switch panel ──
+  if(window.innerWidth<=768) mobTab('result');
+  // ── RENDER: one clean synchronous call, no RAF races ──
+  cvSvg.style.display='block';
+  render();
   // Re-enable per-algo button
   const _isBackF=G.algo==='back';
   const _btnIdF='btnGenGreedy';
@@ -2619,7 +2669,7 @@ function runBackAllowed(img,nails,N,maxL,minG,fade,sz,onDone){
 // ══════════════════════════════════════════
 //  PLAYBACK BAR
 // ══════════════════════════════════════════
-const PB={
+var PB={
   playing:false,
   frame:null,
   pos:0,
