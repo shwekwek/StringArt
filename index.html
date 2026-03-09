@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SA v0.40 · Shweka Studio</title>
+<title>SA v0.46 · Shweka Studio</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -674,7 +674,7 @@ body.view-error   #vmE { background: #d97706; color: #fff; border-color: #d97706
   <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:nowrap;">
     <div class="logo" style="font-size:1.15rem;white-space:nowrap;">String Art Generator</div>
     <span class="logo-sub" style="font-size:0.65rem;white-space:nowrap;">by Shweka Studio</span>
-    <span class="logo-sub" style="font-size:0.6rem;color:var(--accent);opacity:0.7;white-space:nowrap;">v0.40</span>
+    <span class="logo-sub" style="font-size:0.6rem;color:var(--accent);opacity:0.7;white-space:nowrap;">v0.46</span>
   </div>
 </header>
 <div class="main">
@@ -929,9 +929,9 @@ body.view-error   #vmE { background: #d97706; color: #fff; border-color: #d97706
     </div>
     <div class="zoom-btns" style="display:flex;align-items:center;gap:8px;">
       <div class="t-sep"></div>
-      <button class="t-btn" id="bZI">＋</button>
-      <button class="t-btn" id="bZO">－</button>
-      <button class="t-btn" id="bZR">fit</button>
+      <button class="t-btn" id="bZI" onclick="zoomIn()">＋</button>
+      <button class="t-btn" id="bZO" onclick="zoomOut()">－</button>
+      <button class="t-btn" id="bZR" onclick="zoomFit()">fit</button>
       <div class="t-sep" id="backViewSep" style="display:none"></div>
       <button class="t-btn" id="tbBackView" onclick="pbToggleView()" style="display:none;color:var(--accent2);border-color:rgba(10,143,110,.3);">↺ Flip Plate</button>
     </div>
@@ -947,7 +947,7 @@ body.view-error   #vmE { background: #d97706; color: #fff; border-color: #d97706
       </div>
     </div>
     <!-- Image preview circle: shown on Image tab after upload -->
-    <div class="img-preview-wrap" id="imgPreviewWrap" style="display:none;">
+    <div class="img-preview-wrap" id="imgPreviewWrap" style="display:none;" ondblclick="document.getElementById('fi').click()">
       <canvas id="imgPreviewCanvas" class="img-preview-canvas"></canvas>
       <div class="img-preview-ring"></div>
       <!-- Hover overlay: click to open crop (Image tab) -->
@@ -1058,6 +1058,16 @@ body.view-error   #vmE { background: #d97706; color: #fff; border-color: #d97706
 <canvas id="off" style="display:none"></canvas>
 
 <script>
+// Playback state — declared first so pbInit() can always access it
+var PB={
+  playing:false,
+  frame:null,
+  pos:0,
+  total:0,
+  backView:false, // updated per-algo in pbInit
+  lastTime:0,
+  speed:1,          // current speed multiplier (1–200)
+};
 // ══════════════════════════
 //  STATE
 // ══════════════════════════
@@ -1143,6 +1153,8 @@ function setView(v){
 
 
   if(v==='image'){
+    // Sync: if coming from result/error, match circle size to SVG size
+    if(prev==='result'||prev==='error') syncZoomToCircle();
     // Image tab: show upload circle or image preview
     cvSvg.style.display='none'; cvRaster.style.display='none';
     // Restore upload placeholder content
@@ -1157,6 +1169,8 @@ function setView(v){
     }
     if($('algoTitleOverlay')) $('algoTitleOverlay').style.display='none';
   } else if(v==='result'){
+    // Sync: if coming from image, match SVG zoom to circle size
+    if(prev==='image') syncCircleToZoom();
     // String Art tab: show result or placeholder
     if($('imgPreviewWrap')) $('imgPreviewWrap').style.display='none';
     if($('imgHelpText')) $('imgHelpText').textContent='';
@@ -1175,6 +1189,7 @@ function setView(v){
     }
   } else {
     // Error map
+    if(prev==='image') syncCircleToZoom();
     if($('imgPreviewWrap')) $('imgPreviewWrap').style.display='none';
     if(G.done){ cvRaster.style.display='block'; render(); }
   }
@@ -1332,33 +1347,36 @@ $('ph').addEventListener('click',()=>{
   if(G.view==='image') $('fi').click();
 });
 
-// ── Scroll to zoom on image tab ──
+// ── Scroll to zoom — image tab: crop/resize; result/error: zoom SVG ──
 let _zoomHintTimer=null;
 cWrapEl.addEventListener('wheel',e=>{
-  if(G.view!=='image') return;
   e.preventDefault();
-  const wrap=$('imgPreviewWrap');
-  const ph=$('ph');
-  // Detect if cursor is inside the circle
-  const circleEl = (G.img && wrap && wrap.style.display!=='none') ? wrap : ph;
-  const rect = circleEl.getBoundingClientRect();
-  const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
-  const dist=Math.sqrt((e.clientX-cx)**2+(e.clientY-cy)**2);
-  const radius=rect.width/2;
-  if(dist<=radius && G.img){
-    // Inside circle: crop zoom
-    const delta = e.deltaY < 0 ? 0.1 : -0.1;
-    G.cropZoom = Math.max(0.5, Math.min(5, G.cropZoom + delta));
-    if($('cropZoom')) $('cropZoom').value = G.cropZoom;
-    showZoomHint();
-    showImgPreview();
-  } else {
-    // Outside circle: resize the circle
-    const factor = e.deltaY < 0 ? 1.08 : 0.92;
-    const maxSz = Math.min(cWrapEl.clientWidth, cWrapEl.clientHeight) - 40;
-    G.circleSize = Math.max(120, Math.min(maxSz, G.circleSize * factor));
-    applyCircleSize();
-    showSizeHint();
+  if(G.view==='image'){
+    const wrap=$('imgPreviewWrap');
+    const ph=$('ph');
+    const circleEl = (G.img && wrap && wrap.style.display!=='none') ? wrap : ph;
+    const rect = circleEl.getBoundingClientRect();
+    const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+    const dist=Math.sqrt((e.clientX-cx)**2+(e.clientY-cy)**2);
+    const radius=rect.width/2;
+    if(dist<=radius && G.img){
+      const delta = e.deltaY < 0 ? 0.1 : -0.1;
+      G.cropZoom = Math.max(0.5, Math.min(5, G.cropZoom + delta));
+      if($('cropZoom')) $('cropZoom').value = G.cropZoom;
+      showZoomHint();
+      showImgPreview();
+    } else {
+      const factor = e.deltaY < 0 ? 1.08 : 0.92;
+      const maxSz = Math.min(cWrapEl.clientWidth, cWrapEl.clientHeight) - 40;
+      G.circleSize = Math.max(120, Math.min(maxSz, G.circleSize * factor));
+      applyCircleSize();
+      showSizeHint();
+    }
+  } else if(G.done){
+    // Result / error tab: scroll zooms the SVG
+    const factor = e.deltaY < 0 ? 1.15 : 1/1.15;
+    const newZ = Math.max(0.25, Math.min(4, G.zoom * factor));
+    if(newZ !== G.zoom){ G.zoom = newZ; applyZoom(); }
   }
 },{passive:false});
 
@@ -1416,7 +1434,7 @@ function updateHelpBar(){
   const el=$('imgHelpText');
   if(!el) return;
   if(G.img){
-    el.innerHTML='<b>Scroll inside</b> to crop &nbsp;·&nbsp; <b>Scroll outside</b> to resize &nbsp;·&nbsp; <b>Drag</b> to pan &nbsp;·&nbsp; Drop or <b>Upload</b> to replace';
+    el.innerHTML='<b>Scroll inside</b> to crop &nbsp;·&nbsp; <b>Scroll outside</b> to resize &nbsp;·&nbsp; <b>Drag</b> to pan &nbsp;·&nbsp; <b>Double-click</b> to change image';
   } else {
     el.innerHTML='Drop an image onto the circle, or click <b>Upload</b>';
   }
@@ -1911,9 +1929,57 @@ function updateGenBtn(){
 }
 
 function onBigGenerate(){
-  // Switch to result tab then trigger generation
-  setView('result');
+  if(!G.img) return;
   if(!G.running) triggerGenerate();
+  // finishGen will switch to result tab when done
+}
+
+
+// ══ UNIFIED ZOOM — works on all tabs ══
+function zoomIn(){
+  if(G.view==='image'){
+    const maxSz=Math.min(cWrapEl.clientWidth,cWrapEl.clientHeight)-40;
+    G.circleSize=Math.min(maxSz, Math.round(G.circleSize*1.25));
+    applyCircleSize(); showSizeHint();
+  } else {
+    G.zoom=Math.min(4,G.zoom*1.25); applyZoom();
+  }
+}
+function zoomOut(){
+  if(G.view==='image'){
+    G.circleSize=Math.max(120, Math.round(G.circleSize/1.25));
+    applyCircleSize(); showSizeHint();
+  } else {
+    G.zoom=Math.max(0.25,G.zoom/1.25); applyZoom();
+  }
+}
+function zoomFit(){
+  if(G.view==='image'){
+    const maxSz=Math.min(cWrapEl.clientWidth,cWrapEl.clientHeight)-40;
+    G.circleSize=maxSz; applyCircleSize(); showSizeHint();
+  } else {
+    G.zoom=1; applyZoom();
+  }
+}
+
+// Sync circle size ↔ SVG zoom when switching tabs
+// so the visual circle always appears the same size
+function syncZoomToCircle(){
+  // Called when leaving result/error tab → going to image tab
+  // Read current SVG size and set G.circleSize to match
+  const svgW = cvSvg.getAttribute('width');
+  if(svgW) G.circleSize = parseInt(svgW);
+  else {
+    const maxSz=Math.min(cWrapEl.clientWidth,cWrapEl.clientHeight)-40;
+    G.circleSize = Math.round(maxSz * G.zoom);
+  }
+}
+function syncCircleToZoom(){
+  // Called when leaving image tab → going to result/error tab
+  // Set G.zoom so SVG renders at same size as circle was
+  const maxSz=Math.min(cWrapEl.clientWidth,cWrapEl.clientHeight)-32;
+  if(maxSz>0 && G.circleSize>0) G.zoom=Math.min(4,Math.max(0.1,G.circleSize/maxSz));
+  else G.zoom=1;
 }
 
 function triggerGenerate(){
@@ -2072,14 +2138,13 @@ function finishGen(result,err,img,nails,N,sz,ms,sc,lc){
   $('emptyMsg').style.display='none';
   if(G.showSeq){$('nw').style.display='block'; renderNailPanel(result);}
   if($('algoTitleOverlay')){$('algoTitleOverlay').style.display='block';$('algoTitleOverlay').textContent=(G.algo==='back'?'Back Allowed':'Front (Greedy)')+' · '+((G.nails?G.nails.length:0)-1)+' lines';}
-  // ── Init playback bar ──
-  pbInit();
-  document.body.classList.add('pb-ready');
   // ── Mobile: switch panel ──
   if(window.innerWidth<=768) mobTab('result');
-  // ── RENDER: one clean synchronous call, no RAF races ──
+  // ── RENDER first — must happen before pbInit so a crash there can't block it ──
   cvSvg.style.display='block';
   render();
+  // ── Init playback bar ──
+  try { pbInit(); document.body.classList.add('pb-ready'); } catch(e) { console.warn('pbInit:', e); }
   // Re-enable per-algo button
   const _isBackF=G.algo==='back';
   const _btnIdF='btnGenGreedy';
@@ -2669,15 +2734,6 @@ function runBackAllowed(img,nails,N,maxL,minG,fade,sz,onDone){
 // ══════════════════════════════════════════
 //  PLAYBACK BAR
 // ══════════════════════════════════════════
-var PB={
-  playing:false,
-  frame:null,
-  pos:0,
-  total:0,
-  backView:false, // updated per-algo in pbInit
-  lastTime:0,
-  speed:1,          // current speed multiplier (1–200)
-};
 
 function pbToggleSpeedPopup(){
   $('pbSpeedPopup').classList.toggle('open');
@@ -2889,9 +2945,7 @@ function applyZoom(){
   if(G.compareMode){renderCompare();return;}
   render(); // render() handles all views uniformly
 }
-$('bZI').addEventListener('click',()=>{const z=Math.min(1,G.zoom*1.25);if(z!==G.zoom){G.zoom=z;applyZoom();}});
-$('bZO').addEventListener('click',()=>{const z=Math.max(0.25,G.zoom/1.25);if(z!==G.zoom){G.zoom=z;applyZoom();}});
-$('bZR').addEventListener('click',()=>{G.zoom=1;applyZoom();});
+// zoom buttons now use inline onclick
 
 // Redraw on window resize (e.g. maximizing the window)
 let _resizeTimer;
