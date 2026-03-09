@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SA v0.36 · Shweka Studio</title>
+<title>SA v0.38 · Shweka Studio</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -240,6 +240,7 @@ body.is-mobile .mob-active{display:flex!important;}
   flex-shrink:0;
   box-shadow:0 -2px 8px rgba(0,0,0,.06);
 }
+body:not(.pb-ready) #playBar > * { visibility:hidden; }
 .pb-left{display:flex;align-items:center;gap:8px;flex-shrink:0;}
 .pb-center{flex:1;display:flex;align-items:center;}
 .pb-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
@@ -543,7 +544,7 @@ body.view-image .panel-left button { pointer-events: none; }
 body.view-image .panel-center { flex: 1; }
 /* toolbar always visible so tab buttons work */
 body.view-image .zoom-btns { display: none; } /* hide zoom buttons on image tab */
-body.view-image #playBar { display: none; } /* playbar only relevant on string art */
+/* playBar always visible for stable layout — contents hidden when not applicable */
 body.view-image .canvas-wrap { background: var(--bg); }
 
 /* ── IMAGE TAB: floating controls below circle ── */
@@ -630,7 +631,7 @@ body.view-image .img-help-bar{ opacity:1; }
   <div>
     <div class="logo">Shweka Studio</div>
     <span class="logo-sub">String Art Generator</span>
-    <span class="logo-sub" style="margin-left:6px;color:var(--accent);opacity:0.6;">v0.36</span>
+    <span class="logo-sub" style="margin-left:6px;color:var(--accent);opacity:0.6;">v0.38</span>
   </div>
 </header>
 <div class="main">
@@ -966,7 +967,7 @@ body.view-image .img-help-bar{ opacity:1; }
 </div><!-- /main -->
 
 <!-- ════ PLAYBACK BAR ════ -->
-<div id="playBar" style="display:none;">
+<div id="playBar">
   <div class="pb-left">
     <button class="pb-btn" id="pbPlay" onclick="pbTogglePlay()" title="Play">▶</button>
     <div class="pb-speed-wrap" id="pbSpeedWrap">
@@ -1116,7 +1117,8 @@ function setView(v){
     if($('imgPreviewWrap')) $('imgPreviewWrap').style.display='none';
     if(G.done){
       $('ph').style.display='none';
-      render();
+      cvSvg.style.display='block';
+      requestAnimationFrame(()=>render());
     } else if(G.img){
       // Have image — auto-generate when switching to String Art tab
       $('phInner').innerHTML='<div class="ph-txt" style="font-size:.9rem">Generating...</div><div class="ph-hint">String Art</div>';
@@ -1129,7 +1131,7 @@ function setView(v){
   } else {
     // Error map
     if($('imgPreviewWrap')) $('imgPreviewWrap').style.display='none';
-    if(G.done) render();
+    if(G.done){ cvRaster.style.display='block'; requestAnimationFrame(()=>render()); }
   }
 }
 
@@ -1451,7 +1453,8 @@ function loadFile(f){
 
 function resetResult(){
   G.done=false;G.compareMode=false;G.zoom=1;
-  G.cache={greedy:null,back:null}; // invalidate cache on new image
+  G.cache={greedy:null,back:null};
+  document.body.classList.remove('pb-ready'); // invalidate cache on new image
   cvSvg.style.display='none';cvRaster.style.display='none';cvCmpSvg.style.display='none';
   $('cDiv').style.display='none';$('cHandle').style.display='none';
   $('cLblL').style.display='none';$('cLblR').style.display='none';
@@ -2018,14 +2021,15 @@ function finishGen(result,err,img,nails,N,sz,ms,sc,lc){
   cvRaster.style.display='none';cvCmpSvg.style.display='none';
   $('cDiv').style.display='none';$('cHandle').style.display='none';
   $('cLblL').style.display='none';$('cLblR').style.display='none';
-  if(window.innerWidth<=768) mobTab('result');
-  // Always defer render — let DOM settle after ph hide + cvSvg show
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    render();
-    // Also ensure playbar is visible (pbInit may have been blocked by CSS timing)
-    const pb=document.getElementById('playBar');
-    if(pb && G.done) pb.style.display='flex';
-  }));
+  // Force show result on both mobile and desktop
+  if(window.innerWidth<=768){
+    mobTab('result');
+  }
+  // Render after layout settles
+  cvSvg.style.display='block';
+  requestAnimationFrame(()=>render());
+  // Ensure playbar visible (inline style overrides CSS)
+  document.body.classList.add('pb-ready');
   // Re-enable per-algo button
   const _isBackF=G.algo==='back';
   const _btnIdF='btnGenGreedy';
@@ -2655,6 +2659,7 @@ function pbInit(){
   $('pbSlider').value = PB.total;
   $('pbCount').textContent = PB.total+' of '+PB.total+' lines';
   $('playBar').style.display='flex';
+  document.body.classList.add('pb-ready');
   // Show back view button only for back algo
   $('pbViewBtn').style.display = G.algo==='back'?'flex':'none';
   PB.backView=(G.algo==='back'); // Back algo defaults to flipped (back-of-board view)
