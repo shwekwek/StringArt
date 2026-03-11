@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SA v0.46 · Shweka Studio</title>
+<title>SA v0.59 · Shweka Studio</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -200,36 +200,12 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3);}
   body{height:100dvh;}
   header{padding:8px 14px;}
   .logo{font-size:.85rem;}
-  .main{flex-direction:column;overflow:hidden;}
-  .mob-tabs{display:flex;}
-  .mob-camera-btn{display:flex;}
   .toolbar{padding:6px 10px;}
   .canvas-wrap{padding:8px;}
   .section{padding:10px 14px;}
-  .mob-tabs{
-    flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);border-top:none;height:48px;box-shadow:0 2px 8px rgba(0,0,0,.06);
-  }
-  .mob-tab{
-    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    gap:3px;background:none;border:none;color:var(--mid);cursor:pointer;
-    font-family:'Inter',sans-serif;font-size:.55rem;letter-spacing:.05em;transition:color .15s;
-  }
-  .mob-tab svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
-  .mob-tab.active{color:var(--accent);}
-  .mob-camera-btn{
-    align-items:center;justify-content:center;gap:6px;
-    width:100%;margin-top:8px;padding:9px;
-    background:var(--surface2);border:1.5px dashed var(--border);
-    border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;font-size:.7rem;cursor:pointer;
-  }
-  .mob-camera-btn:active{background:rgba(232,255,71,.06);border-color:var(--accent);}
 }
 
-/* Panel hiding only when JS confirms mobile (body.is-mobile) */
-body.is-mobile .panel-left{width:100%!important;min-width:0!important;border-right:none!important;border-bottom:1px solid var(--border);display:none;flex-direction:column;overflow-y:auto;flex-shrink:0;max-height:calc(100dvh - 110px);}
-body.is-mobile .panel-center{display:none;flex:1;min-height:0;}
-body.is-mobile .seq-drawer{display:none!important;}
-body.is-mobile .mob-active{display:flex!important;}
+/* Panel hiding only when JS confirms mobile (body.is-mobile) — REMOVED, layout is unified */
 
 
 /* ════ PLAYBACK BAR ════ */
@@ -667,6 +643,11 @@ body.view-image.has-image .big-gen-wrap { display: flex; }
 body.view-image   #vmO { background: #5a7af0; color: #fff; border-color: #5a7af0; }
 body.view-result  #vmR { background: #0a8f6e; color: #fff; border-color: #0a8f6e; }
 body.view-error   #vmE { background: #d97706; color: #fff; border-color: #d97706; }
+
+/* ── WIND TAB ── */
+#cvWind{cursor:pointer;}
+#cvWind:active{opacity:0.92;}
+body.view-wind #vmW{background:#e85d00;color:#fff;border-color:#e85d00;}
 </style>
 </head>
 <body class="view-image">
@@ -674,26 +655,12 @@ body.view-error   #vmE { background: #d97706; color: #fff; border-color: #d97706
   <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:nowrap;">
     <div class="logo" style="font-size:1.15rem;white-space:nowrap;">String Art Generator</div>
     <span class="logo-sub" style="font-size:0.65rem;white-space:nowrap;">by Shweka Studio</span>
-    <span class="logo-sub" style="font-size:0.6rem;color:var(--accent);opacity:0.7;white-space:nowrap;">v0.46</span>
+    <span class="logo-sub" style="font-size:0.6rem;color:var(--accent);opacity:0.7;white-space:nowrap;">v0.59</span>
   </div>
 </header>
 <div class="main">
 
 <!-- ── MOBILE TOP TABS ── -->
-<nav class="mob-tabs" id="mobTabs">
-  <button class="mob-tab active" id="mtSettings" onclick="mobTab('settings')">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-    Settings
-  </button>
-  <button class="mob-tab" id="mtResult" onclick="mobTab('result')">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-    Result
-  </button>
-  <button class="mob-tab" id="mtSequence" onclick="mobTab('sequence')">
-    <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-    Sequence
-  </button>
-</nav>
 
 <!-- ════ LEFT ════ -->
 <div class="panel panel-left">
@@ -702,7 +669,7 @@ body.view-error   #vmE { background: #d97706; color: #fff; border-color: #d97706
   <!-- GENERATE BUTTON (above tabs, unified) -->
   <div class="section section-gen-top" id="genTopSec">
     <button class="btn-gen btn-gen-unified" id="btnGenGreedy" disabled onclick="triggerFromBtn()">
-      <div id="btnInGreedy">▶ Generate Front</div>
+      <div id="btnInGreedy">▶ Generate</div>
     </button>
     <div class="prog-wrap" id="pwGreedy" style="display:none;">
       <div class="prog-bg"><div class="prog-fill" id="pfGreedy"></div></div>
@@ -710,8 +677,8 @@ body.view-error   #vmE { background: #d97706; color: #fff; border-color: #d97706
     </div>
   </div>
 
-  <!-- ALGO TABS -->
-  <div class="algo-tabs" id="algoTabBar">
+  <!-- ALGO TABS (hidden) -->
+  <div class="algo-tabs" id="algoTabBar" style="display:none;">
     <button class="algo-tab active-front" id="algoTabGreedy" onclick="setAlgo('greedy')">Front</button>
     <button class="algo-tab" id="algoTabBack" onclick="setAlgo('back')">Back</button>
   </div>
@@ -926,6 +893,7 @@ body.view-error   #vmE { background: #d97706; color: #fff; border-color: #d97706
       <button class="ds-btn on" id="vmO" onclick="setView('image')">Image</button>
       <button class="ds-btn" id="vmR" onclick="setView('result')">String Art</button>
       <button class="ds-btn" id="vmE" onclick="setView('error')">Error map</button>
+      <button class="ds-btn" id="vmW" onclick="setView('wind')" style="display:none">🧵 Wind</button>
     </div>
     <div class="zoom-btns" style="display:flex;align-items:center;gap:8px;">
       <div class="t-sep"></div>
@@ -976,13 +944,22 @@ body.view-error   #vmE { background: #d97706; color: #fff; border-color: #d97706
         ↩ Reset
       </button>
     </div>
-    <!-- Algo title overlay: shown after generate -->
-    <div class="algo-title-overlay" id="algoTitleOverlay" style="display:none;"></div>
+    <!-- Wind tab overlay -->
+    <!-- Wind nail number display -->
+    <div id="windNailNum" style="display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:'Space Grotesk',sans-serif;font-size:clamp(2.5rem,8vw,5rem);font-weight:700;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,.7),0 0 40px rgba(0,0,0,.4);pointer-events:none;z-index:10;line-height:1;text-align:center;"></div>
+    <div id="windStepInfo" style="display:none;position:absolute;left:50%;bottom:18%;transform:translateX(-50%);font-family:'Inter',sans-serif;font-size:0.75rem;color:rgba(255,255,255,0.8);text-shadow:0 1px 6px rgba(0,0,0,.6);pointer-events:none;z-index:10;white-space:nowrap;background:rgba(0,0,0,0.35);padding:4px 10px;border-radius:20px;"></div>
+    <div id="windTapHint" style="display:none;position:absolute;left:50%;top:18%;transform:translateX(-50%);font-family:'Inter',sans-serif;font-size:0.7rem;color:rgba(255,255,255,0.6);text-shadow:0 1px 4px rgba(0,0,0,.5);pointer-events:none;z-index:10;white-space:nowrap;">tap circle to advance</div>
+    <!-- Wind nav buttons -->
+    <div id="windNav" style="display:none;position:absolute;bottom:14%;left:50%;transform:translateX(-50%);z-index:12;gap:12px;align-items:center;">
+      <button onclick="event.stopPropagation();windBack()" style="font-size:1.1rem;padding:12px 24px;border-radius:30px;border:none;background:rgba(0,0,0,0.5);color:#fff;cursor:pointer;font-family:inherit;min-width:90px;box-shadow:0 2px 12px rgba(0,0,0,.25);">◀ Back</button>
+      <button onclick="event.stopPropagation();windAdvance()" style="font-size:1.1rem;padding:12px 24px;border-radius:30px;border:none;background:rgba(220,40,40,0.9);color:#fff;cursor:pointer;font-family:inherit;min-width:90px;box-shadow:0 2px 12px rgba(180,20,20,.4);">Next ▶</button>
+    </div>
     <!-- Inner container gets explicit pixel size set by JS so overflow:auto actually scrolls -->
     <div id="cvInner">
     <!-- Main display: SVG for result view (vector), canvas for original/error views -->
     <svg id="cvSvg" xmlns="http://www.w3.org/2000/svg" style="display:none;border-radius:50%;box-shadow:0 4px 32px rgba(0,0,0,.18);"></svg>
     <canvas id="cvRaster" style="display:none;border-radius:50%;box-shadow:0 4px 32px rgba(0,0,0,.18);"></canvas>
+    <svg id="cvWind" xmlns="http://www.w3.org/2000/svg" style="display:none;border-radius:50%;box-shadow:0 4px 32px rgba(0,0,0,.18);cursor:pointer;"></svg>
     </div>
     <!-- Compare overlay SVG (radon side) -->
     <svg id="cvCmpSvg" xmlns="http://www.w3.org/2000/svg" style="display:none;position:absolute;border-radius:50%;pointer-events:none;"></svg>
@@ -1147,19 +1124,25 @@ function setView(v){
   G.view=v;
   document.body.className=document.body.className.replace(/view-\S+/g,'').trim();
   document.body.classList.add('view-'+v);
-  ['vmR','vmO','vmE'].forEach(id=>$(id).classList.remove('on'));
-  ({result:'vmR',image:'vmO',error:'vmE'})[v] && $(({result:'vmR',image:'vmO',error:'vmE'})[v]).classList.add('on');
-  // panel-left always stays visible (same width on all tabs)
+  ['vmR','vmO','vmE','vmW'].forEach(id=>{if($(id))$(id).classList.remove('on');});
+  ({result:'vmR',image:'vmO',error:'vmE',wind:'vmW'})[v] && $(({result:'vmR',image:'vmO',error:'vmE',wind:'vmW'})[v]).classList.add('on');
 
+  // Always hide all canvases first, then re-show what's needed
+  cvSvg.style.display='none';
+  cvRaster.style.display='none';
+  if($('cvWind')) $('cvWind').style.display='none';
+  if($('windNailNum')) $('windNailNum').style.display='none';
+  if($('windStepInfo')) $('windStepInfo').style.display='none';
+  if($('windTapHint')) $('windTapHint').style.display='none';
+  if($('windNav')) $('windNav').style.display='none';
+  // Restore play/speed controls (hidden only in wind mode)
+  if($('pbPlay')) $('pbPlay').style.visibility='visible';
+  if($('pbSpeedWrap')) $('pbSpeedWrap').style.visibility='visible';
 
   if(v==='image'){
-    // Sync: if coming from result/error, match circle size to SVG size
-    if(prev==='result'||prev==='error') syncZoomToCircle();
-    // Image tab: show upload circle or image preview
-    cvSvg.style.display='none'; cvRaster.style.display='none';
-    // Restore upload placeholder content
+    if(prev==='result'||prev==='error'||prev==='wind') syncZoomToCircle();
     if($('phInner')) $('phInner').innerHTML='<div class="ph-txt">Drop an image</div><div class="ph-hint">or</div><button class="ph-upload-btn" onclick="event.stopPropagation();document.getElementById(\'fi\').click()">Upload</button>';
-    applyCircleSize(); // restore persisted circle size
+    applyCircleSize();
     if(G.img){
       $('ph').style.display='none';
       showImgPreview();
@@ -1168,18 +1151,23 @@ function setView(v){
       if($('imgPreviewWrap')) $('imgPreviewWrap').style.display='none';
     }
     if($('algoTitleOverlay')) $('algoTitleOverlay').style.display='none';
+
   } else if(v==='result'){
-    // Sync: if coming from image, match SVG zoom to circle size
     if(prev==='image') syncCircleToZoom();
-    // String Art tab: show result or placeholder
-    if($('imgPreviewWrap')) $('imgPreviewWrap').style.display='none';
     if($('imgHelpText')) $('imgHelpText').textContent='';
-    if(G.done){
+    if(G.done && prev==='image'){
+      if(G.img && $('imgPreviewWrap')){
+        const maxSz=Math.min(cWrapEl.clientWidth,cWrapEl.clientHeight)-40;
+        const sz=Math.round(maxSz*G.zoom);
+        $('imgPreviewWrap').style.width=sz+'px';
+        $('imgPreviewWrap').style.height=sz+'px';
+      }
+      if(!G.running) triggerGenerate();
+    } else if(G.done){
       $('ph').style.display='none';
       cvSvg.style.display='block';
       render();
     } else if(G.img){
-      // Have image — auto-generate when switching to String Art tab
       $('phInner').innerHTML='<div class="ph-txt" style="font-size:.9rem">Generating...</div><div class="ph-hint">String Art</div>';
       $('ph').style.display='flex';
       if(!G.running) triggerGenerate();
@@ -1187,6 +1175,21 @@ function setView(v){
       $('phInner').innerHTML='<div class="ph-txt" style="font-size:.9rem">Upload an image first</div><div class="ph-hint">Switch to the Image tab</div>';
       $('ph').style.display='flex';
     }
+
+  } else if(v==='wind'){
+    if($('imgPreviewWrap')) $('imgPreviewWrap').style.display='none';
+    $('ph').style.display='none';
+    if($('pbPlay')) $('pbPlay').style.visibility='hidden';
+    if($('pbSpeedWrap')) $('pbSpeedWrap').style.visibility='hidden';
+    if(G.done){
+      if($('cvWind')) $('cvWind').style.display='block';
+      if($('windNailNum')) $('windNailNum').style.display='block';
+      if($('windStepInfo')) $('windStepInfo').style.display='block';
+      if($('windTapHint')) $('windTapHint').style.display='block';
+      if($('windNav')) $('windNav').style.display='flex';
+      windInit();
+    }
+
   } else {
     // Error map
     if(prev==='image') syncCircleToZoom();
@@ -1412,7 +1415,7 @@ if(imgWrap){
 window.addEventListener('mousemove',e=>{
   if(!_panActive) return;
   if(!G.img) return;
-  const previewSz = Math.min($('cWrap').clientWidth,$('cWrap').clientHeight)-32 || 300;
+  const previewSz = Math.min($('cWrap').clientWidth,$('cWrap').clientHeight)-40 || 300;
   // cropOffX/Y are fractions (same space as crop modal, which divides by 380)
   // Here we divide by previewSz so panning feels 1:1 with the displayed circle
   G.cropOffX = _panOX + (e.clientX-_panSX)/previewSz;
@@ -1490,7 +1493,7 @@ function resetCropInline(){
 
 function loadFile(f){
   if(!f.type.startsWith('image/'))return;
-  if(window.innerWidth<=768) mobTab('settings'); // show params on mobile after upload
+
     document.body.classList.add('has-image');
     updateHelpBar();
   const rd=new FileReader();
@@ -1571,7 +1574,7 @@ function drawCropped(ctx,sz,gray,forcedRaw){
 // ══ CROP MODAL ══
 let cDrag=false,cSX=0,cSY=0,cOX=0,cOY=0;
 const cropCont=$('cropCont');
-$('cropPrevWrap').addEventListener('click',()=>{if(G.img)openCrop();});
+if($('cropPrevWrap'))$('cropPrevWrap').addEventListener('click',()=>{if(G.img)openCrop();});
 function openCrop(){renderCropCanvas();$('cropZoom').value=G.cropZoom;$('cropZV').textContent=G.cropZoom.toFixed(1)+'×';$('cropModal').classList.add('open');}
 $('btnCC').addEventListener('click',()=>$('cropModal').classList.remove('open'));
 $('btnCA').addEventListener('click',()=>{$('cropModal').classList.remove('open');updateBothThumbs();showImgPreview();resetResult();scheduleAutoGen();});
@@ -1920,11 +1923,11 @@ function updateGenBtn(){
   if(isBack){
     btn.style.background='var(--accent2)';
     btn.style.color='#fff';
-    lbl.textContent='▶ Generate Back';
+    lbl.textContent='▶ Generate';
   } else {
     btn.style.background='';
     btn.style.color='';
-    lbl.textContent='▶ Generate Front';
+    lbl.textContent='▶ Generate';
   }
 }
 
@@ -1977,7 +1980,7 @@ function syncZoomToCircle(){
 function syncCircleToZoom(){
   // Called when leaving image tab → going to result/error tab
   // Set G.zoom so SVG renders at same size as circle was
-  const maxSz=Math.min(cWrapEl.clientWidth,cWrapEl.clientHeight)-32;
+  const maxSz=Math.min(cWrapEl.clientWidth,cWrapEl.clientHeight)-40;
   if(maxSz>0 && G.circleSize>0) G.zoom=Math.min(4,Math.max(0.1,G.circleSize/maxSz));
   else G.zoom=1;
 }
@@ -2041,7 +2044,7 @@ function triggerGenerate(){
         G.cache['back']={key:_key,result,err,img,nails,N,sz,sc,lc};
         // Update Back tab button
         if($('btnGenGreedy')){$('btnGenGreedy').disabled=false;$('btnGenGreedy').classList.remove('pulsing');}
-        if($('btnInGreedy')) $('btnInGreedy').innerHTML=G.algo==='back'?'▶ Generate Back':'▶ Generate Front';
+        if($('btnInGreedy')) $('btnInGreedy').innerHTML='▶ Generate';
         if($('pwBack')) setTimeout(()=>$('pwBack').style.display='none',1500);
         // Update Back stats
         if($('statSecBack')) $('statSecBack').style.display='block';
@@ -2139,7 +2142,7 @@ function finishGen(result,err,img,nails,N,sz,ms,sc,lc){
   if(G.showSeq){$('nw').style.display='block'; renderNailPanel(result);}
   if($('algoTitleOverlay')){$('algoTitleOverlay').style.display='block';$('algoTitleOverlay').textContent=(G.algo==='back'?'Back Allowed':'Front (Greedy)')+' · '+((G.nails?G.nails.length:0)-1)+' lines';}
   // ── Mobile: switch panel ──
-  if(window.innerWidth<=768) mobTab('result');
+
   // ── RENDER first — must happen before pbInit so a crash there can't block it ──
   cvSvg.style.display='block';
   render();
@@ -2151,7 +2154,7 @@ function finishGen(result,err,img,nails,N,sz,ms,sc,lc){
   const _btnInIdF='btnInGreedy';
   const _pwIdF=_isBackF?'pwBack':'pwGreedy';
   if($(_btnIdF)){$(_btnIdF).disabled=false;$(_btnIdF).classList.remove('pulsing');}
-  if($(_btnInIdF)) $(_btnInIdF).innerHTML=_isBackF?'▶ Generate Back':'▶ Generate Front';
+  if($(_btnInIdF)) $(_btnInIdF).innerHTML=_isBackF?'▶ Generate':'▶ Generate';
   setTimeout(()=>{ if($(_pwIdF)) $(_pwIdF).style.display='none'; },2000);
   // Per-algo stats
   const _statId=_isBackF?'statSecBack':'statSecGreedy';
@@ -2169,6 +2172,7 @@ function finishGen(result,err,img,nails,N,sz,ms,sc,lc){
   if($('btnRefine')) $('btnRefine').style.display='block';
   updateProdTime();
   setTimeout(()=>{ if($('pw')) $('pw').style.display='none'; },2000);
+  showWindTab();
 }
 
 // ══ ITERATIVE REFINEMENT ══
@@ -2362,7 +2366,7 @@ function setSvgContent(svgEl, list, nailPos, imgSz, showNails){
   // Get actual display size of the SVG element
   const thickPx=parseFloat($('st').value);
   // Use BASE (zoom=1) display size for thickness — keeps lines same visual weight at all zoom levels
-  const baseSz=Math.min($('cWrap').clientWidth, $('cWrap').clientHeight)-32;
+  const baseSz=Math.min($('cWrap').clientWidth, $('cWrap').clientHeight)-40;
   const thickVB=Math.min(0.4, thickPx*(SZ/Math.max(200,baseSz)));
 
   const col=G.color;
@@ -2395,7 +2399,7 @@ function setSvgContent(svgEl, list, nailPos, imgSz, showNails){
 
 function applySvgSize(svgEl, zoom){
   const wrap=$('cWrap');
-  const maxSz=Math.min(wrap.clientWidth, wrap.clientHeight)-32;
+  const maxSz=Math.min(wrap.clientWidth, wrap.clientHeight)-40;
   const sz=Math.min(maxSz, Math.round(maxSz*zoom)); // never exceed fit size
   svgEl.setAttribute('width',sz);
   svgEl.setAttribute('height',sz);
@@ -2411,7 +2415,7 @@ function applySvgSize(svgEl, zoom){
 function render(){
   if(!G.done||G.compareMode)return;
   const sz=G.imgSz;
-  const baseDisplaySz=Math.round(Math.min($('cWrap').clientWidth,$('cWrap').clientHeight)-32);
+  const baseDisplaySz=Math.round(Math.min($('cWrap').clientWidth,$('cWrap').clientHeight)-40);
   const displaySz=Math.round(baseDisplaySz*G.zoom);
 
   if(G.view==='result'){
@@ -2424,7 +2428,7 @@ function render(){
     // Raster views: original photo or error map
     cvSvg.style.display='none';
     const wrap=$('cWrap');
-    const maxSz=Math.min(wrap.clientWidth,wrap.clientHeight)-32;
+    const maxSz=Math.min(wrap.clientWidth,wrap.clientHeight)-40;
     const displaySz=Math.min(maxSz, Math.round(maxSz*G.zoom));
     const rasterSz=Math.min(4000,displaySz);
     cvRaster.width=rasterSz;cvRaster.height=rasterSz;
@@ -2607,7 +2611,7 @@ if($('btnHide'))$('btnHide').addEventListener('click',()=>{
 
 // ══ EXPORT ══
 $('ePNG').addEventListener('click',()=>{
-  if(!G.done)return;
+  if(!G.nails||G.nails.length<2)return;
   // Render to a fresh canvas at high res for export
   const SZ=1200,sz=G.imgSz,sc=SZ/sz;
   const ec=document.createElement('canvas');ec.width=SZ;ec.height=SZ;
@@ -2626,7 +2630,7 @@ $('ePNG').addEventListener('click',()=>{
   const a=document.createElement('a');a.download='shweka-string-art.png';a.href=ec.toDataURL();a.click();
 });
 $('eSVG').addEventListener('click',()=>{
-  if(!G.done)return;
+  if(!G.nails||G.nails.length<2)return;
   const np=G.nailPos,list=G.nails,SZ=SVG_SZ,sc=SZ/G.imgSz;
   const thick=parseFloat($('st').value),col=G.color;
   const d=buildSvgLines(list,np,G.imgSz);
@@ -2641,7 +2645,7 @@ $('eSVG').addEventListener('click',()=>{
   a.href=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));a.click();
 });
 $('eTXT').addEventListener('click',()=>{
-  if(!G.done)return;
+  if(!G.nails||G.nails.length<2)return;
   const N=parseInt($('sn').value);
   const isBack = G.algo==='back';
   const seqStr = isBack
@@ -2780,6 +2784,7 @@ function pbInit(){
 }
 
 function pbScrub(val){
+  if(G.view==='wind'){ WD.pos=+val; windRender(); return; }
   if(PB.playing) pbPause();
   PB.pos=val;
   $('pbCount').textContent=val+' of '+PB.total+' lines';
@@ -2845,7 +2850,7 @@ function pbRender(n, animate){
   const nails=G.nailPos, sz=G.imgSz;
   const SZ=SVG_SZ, sc=SZ/sz;
   const thickPx=parseFloat($('st').value);
-  const baseSz=Math.min($('cWrap').clientWidth,$('cWrap').clientHeight)-32;
+  const baseSz=Math.min($('cWrap').clientWidth,$('cWrap').clientHeight)-40;
   const thickVB=Math.min(0.4, thickPx*(SZ/Math.max(200,baseSz)));
   const col=G.color;
   const [r,g,b]=hexRgb(col);
@@ -2942,8 +2947,9 @@ function pbRender(n, animate){
 
 function applyZoom(){
   if(!G.done)return;
+  if(G.view==='wind'){windRender();return;}
   if(G.compareMode){renderCompare();return;}
-  render(); // render() handles all views uniformly
+  render();
 }
 // zoom buttons now use inline onclick
 
@@ -2953,7 +2959,8 @@ window.addEventListener('resize',()=>{
   clearTimeout(_resizeTimer);
   _resizeTimer=setTimeout(()=>{
     if(G.done){
-      if(G.compareMode)renderCompare();
+      if(G.view==='wind') windRender();
+      else if(G.compareMode)renderCompare();
       else render();
     }
   },150);
@@ -3025,49 +3032,146 @@ if(displayArea){
 }
 
 // ── MOBILE TABS ──
-function mobTab(tab){
-  if(window.innerWidth>768) return; // desktop: don't touch layout
-  // Update tab button styles
-  ['settings','result','sequence'].forEach(t=>{
-    const btn=document.getElementById('mt'+t.charAt(0).toUpperCase()+t.slice(1));
-    if(btn) btn.classList.toggle('active', t===tab);
-  });
-  // Show/hide panels
-  const left=document.querySelector('.panel-left');
-  const center=document.querySelector('.panel-center');
-  const right=document.querySelector('.seq-drawer') || document.querySelector('.panel.panel-right');
-  left.classList.remove('mob-active');
-  center.classList.remove('mob-active');
-  right.classList.remove('mob-active');
-  if(tab==='settings') left.classList.add('mob-active');
-  if(tab==='result'){
-    center.classList.add('mob-active');
-    if(G.done) requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      if(G.compareMode) renderCompare(); else render();
-    }));
-  }
-  if(tab==='sequence') right.classList.add('mob-active');
-}
+function mobTab(tab){ /* mobile tab bar removed — unified layout */ }
 
-// Init mobile: show result panel by default
-function initMobile(){
-  const isMob = window.innerWidth<=768;
-  document.body.classList.toggle('is-mobile', isMob);
-  if(isMob) mobTab('settings');
-}
+// No mobile init needed — layout is the same on all screen sizes
+function initMobile(){}
 window.addEventListener('resize',()=>{
-  const isMob = window.innerWidth<=768;
-  document.body.classList.toggle('is-mobile', isMob);
-  if(!isMob){
-    // Restore desktop — remove mob-active classes
-    document.querySelector('.panel-left').classList.remove('mob-active');
-    document.querySelector('.panel-center').classList.remove('mob-active');
-    if(document.querySelector('.panel.panel-right')) document.querySelector('.panel.panel-right').classList.remove('mob-active');
-  } else {
-    mobTab('result');
-  }
+  // unified layout — just re-render on resize if done
 });
 initMobile();
+
+// ══════════════════════════════════════════
+//  WIND TAB
+//  Tap-to-advance hand-winding guide.
+//  Uses G.nails + G.nailPos from current result.
+// ══════════════════════════════════════════
+const WD = { pos: 0 }; // current step (0 = no strings drawn yet)
+
+function windInit(){
+  if(!G.nails||G.nails.length<2) return;
+  WD.pos = 0;
+  // Reset scrubber so it doesn't show old playback position
+  const total = G.nails.length-1;
+  if($('pbSlider')){ $('pbSlider').max=total; $('pbSlider').value=0; }
+  if($('pbCount')) $('pbCount').textContent = '0 of '+total+' lines';
+  // defer so display:block has taken effect before we read clientWidth
+  requestAnimationFrame(()=>requestAnimationFrame(windRender));
+}
+
+function windBack(){
+  if(WD.pos > 0) WD.pos--;
+  windRender();
+}
+
+function windAdvance(){
+  if(!G.nails||G.nails.length<2) return;
+  const total = G.nails.length-1;
+  if(WD.pos < total) WD.pos++;
+  windRender();
+}
+
+function windRender(){
+  if(!G.nails||!G.nailPos) return;
+  const cvWind = $('cvWind');
+  if(!cvWind) return;
+
+  const nails = G.nailPos, sz = G.imgSz;
+  const SZ = SVG_SZ, sc = SZ/sz;
+  const total = G.nails.length-1;
+  const n = WD.pos;
+
+  // Size exactly like the result SVG
+  applySvgSize(cvWind, G.zoom);
+  const maxSz = Math.min($('cWrap').clientWidth, $('cWrap').clientHeight)-40;
+  cvWind.setAttribute('viewBox', `0 0 ${SZ} ${SZ}`);
+
+  // Build past strings (dim)
+  const thickPx = parseFloat($('st').value);
+  const thickVB = Math.min(0.4, thickPx*(SZ/Math.max(200,maxSz)));
+  const col = G.color;
+  const [r,g,b] = hexRgb(col);
+  const opacity = Math.min(0.85, Math.max(0.06, 750/Math.max(1,total))).toFixed(3);
+
+  let pastLines = '';
+  for(let i=0; i<n-1; i++){
+    const ai=G.nails[i], bi=G.nails[i+1];
+    if(bi===undefined) break;
+    pastLines += `M${(nails[ai].x*sc).toFixed(2)},${(nails[ai].y*sc).toFixed(2)}L${(nails[bi].x*sc).toFixed(2)},${(nails[bi].y*sc).toFixed(2)}`;
+  }
+
+  // Current string = red, thicker
+  let currentLine = '';
+  if(n >= 1){
+    const ai=G.nails[n-1], bi=G.nails[n];
+    if(bi!==undefined){
+      currentLine = `<path d="M${(nails[ai].x*sc).toFixed(2)},${(nails[ai].y*sc).toFixed(2)}L${(nails[bi].x*sc).toFixed(2)},${(nails[bi].y*sc).toFixed(2)}" fill="none" stroke="rgba(220,40,40,0.95)" stroke-width="${(thickVB*2.5).toFixed(3)}" stroke-linecap="round"/>`;
+    }
+  }
+
+  // Nail dots
+  let nailDots = '';
+  nails.forEach(nail=>{
+    nailDots += `<circle cx="${(nail.x*sc).toFixed(1)}" cy="${(nail.y*sc).toFixed(1)}" r="2.2" fill="rgba(0,0,0,0.25)"/>`;
+  });
+  // Highlight current nail and next nail
+  if(n >= 1 && G.nails[n]!==undefined){
+    const cur = nails[G.nails[n]];
+    nailDots += `<circle cx="${(cur.x*sc).toFixed(1)}" cy="${(cur.y*sc).toFixed(1)}" r="5" fill="rgba(220,40,40,0.9)" stroke="#fff" stroke-width="1.5"/>`;
+  }
+
+  cvWind.innerHTML =
+    `<defs><clipPath id="cpWind"><circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2-1}"/></clipPath></defs>`+
+    `<circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2}" fill="#ffffff"/>`+
+    `<g clip-path="url(#cpWind)">`+
+      (pastLines ? `<path d="${pastLines}" fill="none" stroke="rgba(${r},${g},${b},${opacity})" stroke-width="${thickVB.toFixed(3)}" stroke-linecap="round"/>` : '')+
+      currentLine+
+      nailDots+
+    `</g>`+
+    `<circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2-1}" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="1.5"/>`;
+
+  // Update scrubber
+  const slider = $('pbSlider');
+  if(slider){ slider.max = total; slider.value = n; }
+  if($('pbCount')) $('pbCount').textContent = n + ' of ' + total + ' lines';
+
+  // Big nail number — show next nail to go to
+  const nextNail = G.nails[n]; // next nail to wrap to
+  const numEl = $('windNailNum');
+  if(numEl){
+    if(n < total && nextNail !== undefined){
+      numEl.textContent = nextNail;
+      numEl.style.display = 'block';
+    } else if(n >= total){
+      numEl.textContent = '✓';
+      numEl.style.display = 'block';
+    } else {
+      numEl.textContent = G.nails[0]; // show starting nail
+      numEl.style.display = 'block';
+    }
+  }
+
+  // Step info
+  const infoEl = $('windStepInfo');
+  if(infoEl) infoEl.textContent = `Step ${n} / ${total}`;
+}
+
+// Tap/click on wind SVG → advance (delegated from cWrap so it works regardless of display state at load)
+$('cWrap').addEventListener('click', e=>{
+  if(G.view!=='wind') return;
+  windAdvance();
+});
+$('cWrap').addEventListener('touchend', e=>{
+  if(G.view!=='wind') return;
+  e.preventDefault();
+  windAdvance();
+}, {passive:false});
+
+// Show Wind tab after generation
+function showWindTab(){
+  const btn = $('vmW');
+  if(btn) btn.style.display = '';
+}
 
 // ── CAMERA / FILE PICKER ──
 function openCamera(){
@@ -3078,14 +3182,11 @@ function openCamera(){
   input.capture='user'; // front camera (selfie); change to 'environment' for back
   input.onchange=e=>{
     if(e.target.files&&e.target.files[0]){
-      // Reuse existing file handler
-      document.getElementById('fi').files; // just for reference
       loadFile(e.target.files[0]);
     }
   };
   input.click();
 }
-
 </script>
 </body>
 </html>
