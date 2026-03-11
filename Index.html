@@ -1,0 +1,3397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SA v0.60 · Shweka Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f5f7;--surface:#ffffff;--surface2:#eef0f3;
+  --border:#d8dae0;--accent:#5a7af0;--accent2:#0a8f6e;
+  --text:#1a1a2e;--dim:#8890a4;--mid:#555e74;--r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;background:var(--surface);}
+.logo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1rem;color:var(--accent);letter-spacing:-0.02em;line-height:1.1;}
+.logo-sub{font-family:'Space Grotesk',sans-serif;font-size:0.55rem;font-weight:400;color:var(--dim);letter-spacing:0.12em;text-transform:uppercase;}
+.main{display:flex;flex:1;overflow:hidden;}
+
+.panel{display:flex;flex-direction:column;}
+.panel-left{width:300px;min-width:300px;background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;overflow-x:hidden;}
+
+.section{padding:14px 16px;border-bottom:1px solid var(--border);}
+.sec-title{font-family:'Space Grotesk',sans-serif;font-size:0.7rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--mid);margin-bottom:9px;}
+
+/* TOOLTIPS */
+.tip-wrap{position:relative;display:inline-flex;align-items:center;}
+.tip-q{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;border-radius:50%;border:1px solid var(--dim);font-size:0.5rem;color:var(--dim);cursor:help;margin-left:4px;flex-shrink:0;transition:border-color .15s,color .15s;user-select:none;font-style:italic;}
+.tip-q:hover{border-color:var(--accent2);color:var(--accent2);}
+.tip-box{position:absolute;left:18px;top:50%;transform:translateY(-50%);background:#fff;border:1px solid #d0d4df;border-radius:8px;padding:8px 10px;width:210px;font-size:0.73rem;color:#444;line-height:1.55;pointer-events:none;opacity:0;transition:opacity .15s;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,.12);white-space:normal;}
+.tip-wrap:hover .tip-box{opacity:1;}
+.tip-box b{color:var(--accent);}
+
+/* THUMBNAIL PAIR */
+.thumb-row{display:flex;gap:8px;margin-bottom:8px;}
+.thumb-lbl{font-size:0.55rem;color:var(--dim);text-align:center;letter-spacing:.05em;}
+.upload-zone{border:1.5px dashed #c8ccd8;border-radius:8px;cursor:pointer;transition:border-color .2s,background .2s;position:relative;overflow:hidden;background:#f0f2f7;}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--accent);background:rgba(90,122,240,.04);}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:10;}
+.upload-ph{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:100%;text-align:center;padding:8px;pointer-events:none;z-index:1;position:relative;}
+.upload-icon{font-size:1.3rem;}
+.upload-txt{font-size:.88rem;color:var(--mid);}
+.upload-hint{font-size:.76rem;color:var(--dim);}
+.orig-img{width:100%;height:100%;object-fit:cover;display:none;border-radius:6px;}
+.thumb-ov{position:absolute;inset:0;background:rgba(0,0,0,0);transition:background .2s;display:flex;align-items:center;justify-content:center;border-radius:6px;}
+.upload-zone:hover .thumb-ov{background:rgba(0,0,0,.5);}
+.thumb-ov span{color:#fff;font-size:.58rem;opacity:0;transition:opacity .2s;}
+.upload-zone:hover .thumb-ov span{opacity:1;}
+.crop-edit-ov{position:absolute;inset:0;background:rgba(0,0,0,0);transition:background .2s;display:flex;align-items:center;justify-content:center;border-radius:8px;}
+.crop-edit-ov span{color:#fff;font-size:.57rem;opacity:0;transition:opacity .2s;}
+
+/* BW dual switch */
+
+
+.dt-sw input:checked~.dt-track{background:rgba(232,255,71,.2);}
+.dt-sw input:checked~.dt-thumb{transform:translateX(16px);background:var(--accent);}
+
+/* WHITE BACKGROUND BUTTON */
+
+.btn-bg:hover:not(:disabled){border-color:#ccc;color:var(--text);}
+.btn-bg.active{background:rgba(255,255,255,.08);border-color:#ddd;color:#fff;box-shadow:0 0 10px rgba(90,122,240,.1);}
+.btn-bg.loading{border-color:var(--accent2);color:var(--accent2);animation:bgpulse 1.1s ease-in-out infinite;}
+.btn-bg:disabled{opacity:.4;cursor:not-allowed;}
+@keyframes bgpulse{0%,100%{opacity:.7}50%{opacity:1}}
+
+
+/* SLIDERS */
+.ctrl{margin-bottom:9px;}
+.ctrl-label{display:flex;justify-content:space-between;align-items:center;font-size:.68rem;color:var(--text);margin-bottom:4px;}
+.ctrl-left{display:flex;align-items:center;font-size:.82rem;}
+.ctrl-val{color:var(--accent);font-weight:600;font-size:.82rem;cursor:text;min-width:34px;text-align:right;border-radius:4px;padding:1px 3px;transition:background .15s,border .15s;border:1px solid transparent;}
+.ctrl-val:hover{background:rgba(90,122,240,.08);border-color:rgba(90,122,240,.2);}
+.ctrl-val[contenteditable=true]{background:#fff;border-color:var(--accent);outline:none;cursor:text;}
+input[type=range]{width:100%;-webkit-appearance:none;height:3px;background:#d0d4de;border-radius:2px;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--accent);cursor:pointer;transition:transform .15s;box-shadow:0 1px 4px rgba(90,122,240,.3);}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3);}
+
+/* DUAL SEGMENT BUTTONS */
+.dual-seg{display:flex;background:var(--surface2);border-radius:7px;padding:3px;gap:2px;}
+.ds-btn{flex:1;padding:5px 8px;background:transparent;border:none;border-radius:5px;font-family:'Inter',sans-serif;font-size:.78rem;color:var(--dim);cursor:pointer;transition:all .15s;text-align:center;}
+.ds-btn.on{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.4);}
+.ds-btn.on.ca{color:var(--accent);background:rgba(90,122,240,.1);}
+.ds-btn.on.cb{color:var(--accent2);background:rgba(10,143,110,.1);}
+
+/* OPTIMIZE BUTTON */
+.btn-optimize{width:100%;padding:8px;background:var(--surface2);border:1px solid rgba(90,122,240,.3);border-radius:7px;color:var(--accent);font-family:'Inter',sans-serif;font-size:.78rem;cursor:pointer;transition:all .15s;text-align:center;margin-top:7px;}
+.btn-optimize:hover{background:rgba(90,122,240,.07);border-color:var(--accent);}
+.rollback-row{display:flex;align-items:center;gap:7px;margin-top:6px;display:none;}
+.btn-rollback{flex:1;padding:6px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--mid);font-family:'Inter',sans-serif;font-size:.76rem;cursor:pointer;transition:all .15s;}
+.btn-rollback:hover{border-color:var(--mid);color:var(--text);}
+.opt-hint{font-size:.57rem;color:var(--dim);text-align:center;flex:1;}
+
+/* REFINE BUTTON */
+.btn-refine{width:100%;padding:8px;background:var(--surface2);border:1px solid rgba(10,143,110,.25);border-radius:7px;color:var(--accent2);font-family:'Inter',sans-serif;font-size:.63rem;cursor:pointer;transition:all .15s;text-align:center;margin-top:6px;}
+.btn-refine:hover{background:rgba(10,143,110,.06);border-color:var(--accent2);}
+
+/* SWATCHES */
+.swatches{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px;}
+.swatch{width:21px;height:21px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .15s,border-color .15s;}
+.swatch:hover{transform:scale(1.15);}
+.swatch.on{border-color:var(--accent);}
+.swatch.dk{border-color:#ccc;}
+.swatch.dk.on{border-color:var(--accent);box-shadow:0 0 0 2px rgba(90,122,240,.25);}
+
+/* GENERATE */
+.btn-gen{width:100%;padding:11px;background:var(--accent);color:#ffffff;border:none;border-radius:var(--r);font-family:'Space Grotesk',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;transition:background .3s,opacity .2s,transform .15s;}
+.btn-gen:hover:not(:disabled){opacity:.88;transform:translateY(-1px);}
+.btn-gen:disabled{opacity:.3;cursor:not-allowed;transform:none;}
+.btn-gen.pulsing{animation:pulse .9s ease-in-out infinite;}
+@keyframes pulse{0%,100%{background:var(--accent)}50%{background:#3a5ad0}}
+.prog-wrap{margin-top:7px;display:none;}
+.prog-bg{height:3px;background:#dde0e8;border-radius:2px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--accent);width:0%;transition:width .15s;border-radius:2px;}
+.prog-text{font-size:.78rem;color:var(--dim);margin-top:3px;text-align:center;}
+
+/* COMPARE */
+.btn-compare{width:100%;padding:8px;background:var(--surface2);border:1px solid rgba(10,143,110,.25);border-radius:7px;color:var(--accent2);font-family:'Inter',sans-serif;font-size:.63rem;cursor:pointer;transition:all .15s;margin-top:7px;}
+.btn-compare:hover{background:rgba(10,143,110,.06);border-color:var(--accent2);}
+.btn-compare.active{background:rgba(10,143,110,.15);border-color:var(--accent2);color:var(--accent2);box-shadow:0 0 12px rgba(10,143,110,.2);}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.stat-box{background:var(--surface2);border-radius:7px;padding:7px 9px;}
+.stat-val{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:700;color:var(--accent);}
+.stat-lbl{font-size:.72rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-top:1px;}
+.score-box{background:rgba(10,143,110,.06);border:1px solid rgba(10,143,110,.2);border-radius:7px;padding:7px 9px;margin-top:5px;}
+.score-val{font-family:'Space Grotesk',sans-serif;font-size:.9rem;font-weight:700;color:var(--accent2);}
+.score-delta{font-size:.72rem;color:var(--accent2);margin-top:1px;}
+
+/* EXPORT */
+.exp-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.btn-exp{padding:7px 5px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;font-family:'Inter',sans-serif;font-size:.76rem;cursor:pointer;transition:all .15s;text-align:center;}
+.btn-exp:hover{border-color:var(--accent);color:var(--accent);background:rgba(90,122,240,.06);}
+.btn-exp.full{grid-column:1/-1;}
+.btn-exp.ard{border-color:rgba(71,200,255,.28);color:var(--accent2);}
+.btn-exp.ard:hover{border-color:var(--accent2);}
+.notice{background:rgba(90,122,240,.05);border:1px solid rgba(90,122,240,.15);border-radius:7px;padding:7px 9px;font-size:.76rem;color:var(--mid);line-height:1.5;margin-top:7px;}
+.notice strong{color:var(--accent);}
+
+/* PRODUCTION TIME */
+.prod-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px;}
+.prod-box{background:var(--surface2);border-radius:7px;padding:7px 9px;}
+.prod-val{font-family:'Space Grotesk',sans-serif;font-size:.82rem;font-weight:700;color:var(--accent2);}
+.prod-lbl{font-size:.7rem;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-top:2px;}
+.prod-full{grid-column:1/-1;}
+.machine-input{display:flex;flex-direction:column;gap:5px;margin-bottom:7px;}
+.mi-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.mi-lbl{font-size:.78rem;color:var(--mid);flex:1;}
+.mi-val{width:60px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--accent);font-family:'Inter',sans-serif;font-size:.65rem;padding:3px 6px;text-align:right;}
+.mi-val:focus{outline:none;border-color:var(--accent);}
+.mi-unit{font-size:.74rem;color:var(--dim);width:22px;}
+
+/* CENTER */
+.panel-center{flex:1;display:flex;flex-direction:column;background:var(--surface);overflow:hidden;min-width:0;}
+.toolbar{padding:7px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.t-sep{width:1px;height:14px;background:var(--border);}
+.t-btn{padding:4px 9px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Inter',sans-serif;font-size:.64rem;cursor:pointer;transition:all .15s;}
+.t-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(90,122,240,.05);}
+.canvas-wrap{flex:1;overflow:hidden;position:relative;background:#e4e6eb;display:flex;align-items:center;justify-content:center;}
+#cvInner{display:flex;align-items:center;justify-content:center;width:100%;height:100%;}
+#cvInner svg, #cvInner canvas{display:block;flex-shrink:0;}
+#cvSvg,#cvRaster{max-width:min(calc(100vw - 530px),calc(100vh - 96px));max-height:min(calc(100vw - 530px),calc(100vh - 96px));width:auto;height:auto;}
+#cvCmpSvg{position:absolute;border-radius:50%;display:none;pointer-events:none;}
+.cmp-div{position:absolute;width:2px;background:var(--accent);display:none;pointer-events:none;box-shadow:0 0 8px rgba(90,122,240,.4);}
+.cmp-handle{position:absolute;width:28px;height:28px;border-radius:50%;background:var(--accent);display:none;cursor:ew-resize;z-index:6;box-shadow:0 2px 8px rgba(0,0,0,.5);transform:translate(-50%,-50%);}
+.cmp-lbl{position:absolute;font-size:.57rem;color:rgba(0,0,0,.6);background:rgba(255,255,255,.85);padding:2px 7px;border-radius:4px;pointer-events:none;display:none;z-index:5;font-weight:600;}
+.ph{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;color:#999;font-size:.7rem;text-align:center;pointer-events:none;}
+.ph.ph-upload{pointer-events:auto;}
+.ph-ring{display:none;}
+.ph-nail{position:absolute;width:4px;height:4px;border-radius:50%;background:var(--border);transform:translate(-50%,-50%);animation:pdot 2.5s ease-in-out infinite;}
+@keyframes pdot{0%,100%{opacity:.1}50%{opacity:.65}}
+
+/* RIGHT */
+
+
+/* CROP MODAL */
+#cropModal{display:none;position:fixed;inset:0;background:rgba(30,30,50,.7);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:12px;backdrop-filter:blur(6px);}
+#cropModal.open{display:flex;}
+.crop-title{font-family:'Space Grotesk',sans-serif;font-size:.78rem;font-weight:700;color:#fff;}
+.crop-sub{font-size:.59rem;color:rgba(255,255,255,.7);margin-top:-6px;}
+.crop-cont{position:relative;width:380px;height:380px;border-radius:50%;overflow:hidden;border:2px solid rgba(255,255,255,0.25);cursor:grab;background:#111;}
+.crop-cont:active{cursor:grabbing;}
+#cropCanvas{position:absolute;top:0;left:0;}
+.crop-overlay{display:none;}
+.crop-controls{display:flex;align-items:center;gap:10px;}
+.crop-zlbl{font-size:.65rem;color:rgba(255,255,255,.8);}
+.crop-btns{display:flex;gap:8px;}
+.btn-ca{padding:8px 18px;border-radius:7px;font-family:'Inter',sans-serif;font-size:.67rem;cursor:pointer;transition:all .15s;border:1px solid;}
+.btn-cancel{background:var(--surface2);border-color:var(--border);color:var(--mid);}
+.btn-cancel:hover{border-color:var(--mid);color:var(--text);}
+.btn-apply{background:var(--accent);border-color:var(--accent);color:#0a0a0a;font-weight:700;}
+.crop-hint{font-size:.57rem;color:rgba(255,255,255,.6);}
+
+/* ════ MOBILE LAYOUT (≤600px) ════ */
+/* On mobile: canvas fills screen, settings slide up from bottom */
+
+/* Mobile floating top bar */
+#mobTopBar{display:none;}
+
+/* Mobile settings sheet */
+#mobSheet{display:none;}
+#mobSheetBackdrop{display:none;}
+
+@media (max-width: 600px) {
+  body{height:100dvh;overflow:hidden;}
+  header{display:none;} /* hide desktop header on mobile */
+
+  /* Mobile floating top bar */
+  #mobTopBar{
+    display:flex;
+    position:fixed;top:0;left:0;right:0;z-index:200;
+    height:52px;
+    background:var(--surface);
+    border-bottom:1px solid var(--border);
+    box-shadow:0 2px 10px rgba(0,0,0,.08);
+    align-items:center;
+    padding:0 10px;
+    gap:6px;
+  }
+  #mobTopBar .mob-logo{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.85rem;
+    color:var(--accent);white-space:nowrap;margin-right:4px;
+  }
+  #mobTopBar .mob-tabs-row{
+    display:flex;gap:3px;flex:1;
+  }
+  #mobTopBar .mob-tab-btn{
+    flex:1;padding:6px 4px;background:var(--surface2);
+    border:none;border-radius:6px;
+    font-family:'Inter',sans-serif;font-size:.68rem;color:var(--dim);
+    cursor:pointer;transition:all .15s;white-space:nowrap;text-align:center;
+  }
+  #mobTopBar .mob-tab-btn.active{
+    background:var(--accent);color:#fff;
+  }
+  #mobTopBar .mob-tab-btn.wind-active{background:#e85d00;color:#fff;}
+  #mobTopBar .mob-gen-btn{
+    padding:7px 12px;background:var(--accent);color:#fff;
+    border:none;border-radius:7px;font-family:'Space Grotesk',sans-serif;
+    font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap;
+    flex-shrink:0;
+  }
+  #mobTopBar .mob-gen-btn:disabled{opacity:.35;cursor:not-allowed;}
+  #mobTopBar .mob-settings-btn{
+    width:36px;height:36px;border-radius:8px;
+    background:var(--surface2);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;flex-shrink:0;color:var(--mid);font-size:1rem;
+  }
+
+  /* Push main content below the top bar */
+  .main{
+    flex-direction:column;
+    padding-top:52px;
+  }
+
+  /* Left panel hidden on mobile by default — shown via sheet */
+  .panel-left{
+    display:none !important;
+  }
+
+  /* Center panel takes full remaining height */
+  .panel-center{
+    flex:1;min-height:0;
+  }
+
+  /* Seq drawer hidden on mobile */
+  .seq-drawer{display:none !important;}
+
+  /* playbar smaller on mobile */
+  #playBar{height:40px;padding:0 10px;gap:6px;}
+  .pb-count{font-size:.62rem;min-width:55px;}
+
+  /* Wind nav buttons even bigger on mobile */
+  #windNav button{font-size:1.2rem !important;padding:14px 28px !important;min-width:100px !important;}
+  #windNailNum{font-size:clamp(3rem,12vw,6rem) !important;}
+
+  /* Settings bottom sheet backdrop */
+  #mobSheetBackdrop{
+    display:none;
+    position:fixed;inset:0;z-index:300;
+    background:rgba(0,0,0,.4);
+    backdrop-filter:blur(2px);
+  }
+  #mobSheetBackdrop.open{display:block;}
+
+  /* Settings bottom sheet */
+  #mobSheet{
+    display:flex;
+    position:fixed;bottom:0;left:0;right:0;z-index:301;
+    background:var(--surface);
+    border-radius:18px 18px 0 0;
+    box-shadow:0 -8px 40px rgba(0,0,0,.18);
+    flex-direction:column;
+    max-height:82dvh;
+    transform:translateY(100%);
+    transition:transform .3s cubic-bezier(.4,0,.2,1);
+  }
+  #mobSheet.open{transform:translateY(0);}
+  #mobSheetHandle{
+    width:40px;height:4px;border-radius:2px;
+    background:var(--border);margin:10px auto 4px;flex-shrink:0;
+  }
+  #mobSheetTitle{
+    font-family:'Space Grotesk',sans-serif;font-size:.8rem;font-weight:700;
+    color:var(--text);padding:4px 16px 10px;flex-shrink:0;
+    border-bottom:1px solid var(--border);
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  #mobSheetTitle button{
+    background:none;border:none;font-size:1.1rem;cursor:pointer;
+    color:var(--mid);padding:0 4px;
+  }
+  #mobSheetInner{
+    overflow-y:auto;flex:1;
+    /* Contains the panel-left contents, cloned/moved here */
+  }
+}
+
+
+/* ════ PLAYBACK BAR ════ */
+#playBar{
+  display:flex;align-items:center;gap:10px;
+  height:48px;padding:0 16px;
+  background:var(--surface);border-top:1px solid var(--border);
+  flex-shrink:0;
+  box-shadow:0 -2px 8px rgba(0,0,0,.06);
+}
+body:not(.pb-ready) #playBar > * { visibility:hidden; }
+.pb-left{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.pb-center{flex:1;display:flex;align-items:center;}
+.pb-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.pb-btn{
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--text);width:32px;height:32px;border-radius:6px;
+  cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center;
+  transition:border-color .15s,color .15s,background .15s;flex-shrink:0;
+}
+.pb-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(90,122,240,.07);}
+.pb-btn.playing{color:var(--accent);border-color:var(--accent);}
+.pb-speed-wrap{position:relative;}
+.pb-speed-btn{font-size:.72rem;font-weight:600;min-width:38px;}
+.pb-speed-popup{
+  display:none;position:absolute;bottom:44px;left:50%;transform:translateX(-50%);
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:10px 10px 28px;
+  box-shadow:0 -8px 32px rgba(0,0,0,.5);
+  z-index:100;align-items:center;flex-direction:column;gap:6px;
+  min-width:48px;
+}
+.pb-speed-popup.open{display:flex;}
+#pbSpeedSlider{
+  -webkit-appearance:slider-vertical;
+  writing-mode:vertical-lr;direction:rtl;
+  width:4px;height:120px;
+  accent-color:var(--accent);cursor:pointer;
+}
+.pb-speed-lbl{
+  font-size:.75rem;color:var(--accent);font-weight:600;
+  font-family:'Inter',sans-serif;
+}
+.pb-speed-hint{font-size:.58rem;color:var(--dim);}
+
+#pbSlider{
+  -webkit-appearance:none;width:100%;height:3px;
+  background:#d0d4de;border-radius:2px;outline:none;cursor:pointer;
+}
+#pbSlider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+  background:var(--accent);cursor:pointer;transition:transform .1s;
+}
+#pbSlider::-webkit-slider-thumb:hover{transform:scale(1.3);}
+.pb-count{
+  font-family:var(--mono,monospace);font-size:.7rem;
+  color:var(--mid);min-width:70px;text-align:right;
+}
+.pb-view{
+  font-size:.65rem;padding:0 8px;width:auto;min-width:64px;
+}
+/* Animated string drawing */
+.pb-drawing-line{
+  stroke-dasharray:2000;
+  stroke-dashoffset:2000;
+  animation:drawLine .18s ease-out forwards;
+}
+@keyframes drawLine{to{stroke-dashoffset:0;}}
+/* Back-view indicator */
+/* back view now handled by mirrored coords in pbRender, no CSS transform needed */
+body.pb-back-view .pb-view{color:var(--accent);border-color:var(--accent);}
+
+
+/* ── NAIL SEQUENCE DRAWER ── */
+.seq-drawer{
+  display:flex;flex-direction:row;flex-shrink:0;
+  background:var(--surface);border-left:1px solid var(--border);
+}
+.seq-toggle{
+  width:28px;min-width:28px;flex-shrink:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  padding:12px 0 10px;gap:6px;cursor:pointer;
+  background:var(--surface);border:none;color:var(--mid);
+  transition:color .15s,background .15s;
+  border-right:1px solid var(--border);
+}
+.seq-toggle:hover{color:var(--accent);background:var(--surface2);}
+.seq-drawer.open .seq-toggle{background:var(--surface2);color:var(--accent);border-right-color:var(--accent);}
+.seq-arrow{
+  font-size:1rem;font-weight:900;transition:transform .3s ease;
+  color:var(--accent);line-height:1;display:block;
+}
+.seq-drawer.open .seq-arrow{transform:rotate(180deg);}
+.seq-label{
+  font-size:.48rem;letter-spacing:.12em;text-transform:uppercase;
+  writing-mode:vertical-rl;color:inherit;font-family:'Inter',sans-serif;
+  user-select:none;
+}
+.seq-content{
+  width:0;overflow:hidden;
+  display:flex;flex-direction:column;
+  transition:width .25s cubic-bezier(.4,0,.2,1);
+  pointer-events:none;
+}
+.seq-drawer.open .seq-content{width:182px;pointer-events:auto;}
+.seq-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 11px 0;flex-shrink:0;min-width:182px;
+}
+.seq-title{font-family:'Space Grotesk',sans-serif;font-size:.6rem;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--mid);}
+.nail-wrap{padding:4px 11px 11px;overflow-y:auto;flex:1;min-width:182px;}
+.nail-list{font-size:.52rem;color:var(--dim);line-height:2;word-break:break-all;}
+.nail-list .hi{color:var(--accent);}
+.empty-msg{font-size:.56rem;color:var(--dim);text-align:center;padding:14px 10px;line-height:1.6;}
+
+/* ── ALGO TABS ── */
+.algo-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;}
+.algo-tab{
+  flex:1;padding:9px 6px;background:none;border:none;
+  font-family:'Inter',sans-serif;font-size:.8rem;color:var(--dim);
+  cursor:pointer;border-bottom:2px solid transparent;
+  transition:color .15s,border-color .15s;text-align:center;
+}
+.algo-tab.active-greedy,.algo-tab.active-front{color:var(--accent);border-bottom-color:var(--accent);font-weight:600;background:#f0f3ff;}
+.algo-tab.active-back{color:var(--accent2);border-bottom-color:var(--accent2);font-weight:600;background:#f0fbf7;}
+.algo-pane{display:none;flex-direction:column;}
+#paneGreedy{background:#fafbff;}
+#paneBack{background:#f5fdf9;}
+.algo-pane.active{display:flex;}
+.algo-pane > .section:first-child{border-top:none;}
+.btn-gen-back{background:var(--accent2)!important;color:#fff!important;}
+.collapse-toggle{width:100%;padding:7px 0;background:none;border:none;color:var(--mid);font-family:'Inter',sans-serif;font-size:.78rem;cursor:pointer;text-align:left;display:flex;align-items:center;justify-content:space-between;transition:color .15s;}
+.collapse-toggle:hover{color:var(--accent);}
+.collapse-arrow{font-size:.65rem;transition:transform .2s;}
+.collapse-arrow.open{transform:rotate(90deg);}
+
+/* ── IMAGE SECTION ── */
+.section-image{padding:0;border-top:none;}
+.section-image .upload-zone{
+  border-radius:0;border:none;border-bottom:1px solid var(--border);
+  aspect-ratio:unset;height:220px;background:#f0f2f7;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+.section-image .upload-zone.has-img{background:#000;}
+.section-image .orig-img{
+  width:100%;height:100%;object-fit:contain;display:none;
+}
+.crop-prev-wrap{
+  height:220px;position:relative;cursor:pointer;overflow:hidden;
+  background:#000;border-bottom:1px solid var(--border);
+}
+.crop-prev-img{width:100%;height:100%;object-fit:cover;display:block;}
+.crop-edit-ov{
+  position:absolute;inset:0;background:rgba(0,0,0,0);
+  display:flex;align-items:center;justify-content:center;
+  transition:background .2s;
+}
+.crop-edit-ov span{
+  color:#fff;font-size:.72rem;font-weight:500;
+  background:rgba(0,0,0,.55);padding:5px 12px;border-radius:20px;
+  opacity:0;transition:opacity .2s;
+}
+.crop-prev-wrap:hover .crop-edit-ov{background:rgba(0,0,0,.15);}
+.crop-prev-wrap:hover .crop-edit-ov span{opacity:1;}
+.section-gen-top{padding:10px 14px;border-top:none;background:var(--surface);}
+
+.change-img-btn{
+  position:absolute;bottom:8px;right:8px;
+  background:rgba(255,255,255,.85);border:1px solid rgba(0,0,0,.12);
+  border-radius:20px;padding:3px 10px;font-size:.72rem;color:#333;
+  cursor:pointer;z-index:5;transition:background .15s;
+}
+.change-img-btn:hover{background:#fff;}
+
+/* ── IMAGE PREVIEW CIRCLE (after upload, before generate) ── */
+.img-preview-wrap{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  pointer-events:auto;
+  cursor:grab;
+}
+.img-preview-wrap:active{cursor:grabbing;}
+.img-preview-canvas{
+  border-radius:50%;display:block;
+  box-shadow:0 4px 24px rgba(0,0,0,.15);
+  background:#fff;
+}
+.img-preview-ring{
+  position:absolute;inset:-3px;border-radius:50%;
+  border:3px solid #1a1a2e;pointer-events:none;
+}
+
+/* ── ALGO TITLE OVERLAY ── */
+.algo-title-overlay{
+  position:absolute;top:12px;left:50%;transform:translateX(-50%);
+  background:rgba(255,255,255,.9);backdrop-filter:blur(8px);
+  border:1px solid var(--border);border-radius:20px;
+  padding:4px 16px;font-family:'Space Grotesk',sans-serif;
+  font-size:.75rem;font-weight:600;color:var(--text);
+  letter-spacing:.04em;pointer-events:none;white-space:nowrap;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
+}
+
+/* ── BACK TAB PROGRESS BADGE ── */
+.algo-tab{position:relative;}
+@keyframes badgeFlash{0%,100%{opacity:1}50%{opacity:.45}}
+.tab-progress-badge{display:none;}
+.algo-tab.back-running::after{
+  content:attr(data-pct);
+  margin-left:5px;
+  background:var(--accent2);color:#fff;
+  font-size:.62rem;font-weight:700;border-radius:8px;
+  padding:1px 6px;line-height:1.5;
+  animation:badgeFlash 1s ease-in-out infinite;
+  display:inline-block;
+}
+
+/* ── PARAM RESET POPUP ── */
+.reset-popup{
+  position:fixed;z-index:9999;
+  background:#fff;border:1px solid var(--border);border-radius:10px;
+  padding:12px 16px;box-shadow:0 8px 32px rgba(0,0,0,.15);
+  font-family:'Inter',sans-serif;font-size:.8rem;min-width:200px;
+}
+.reset-popup p{margin-bottom:10px;color:var(--text);line-height:1.4;}
+.reset-popup strong{color:var(--accent);}
+.reset-popup-btns{display:flex;gap:8px;}
+.reset-popup-btns button{
+  flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);
+  font-family:'Inter',sans-serif;font-size:.78rem;cursor:pointer;transition:all .15s;
+}
+.reset-popup-btns .rp-yes{background:var(--accent);color:#fff;border-color:var(--accent);}
+.reset-popup-btns .rp-yes:hover{filter:brightness(1.1);}
+.reset-popup-btns .rp-no{background:var(--surface2);}
+.reset-popup-btns .rp-no:hover{border-color:var(--text);}
+
+/* ── IMAGE TAB: upload circle ── */
+.ph-upload{
+  cursor:pointer;
+  width:280px;height:280px;
+  border-radius:50%;
+  border:2px dashed #c0c4d0;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:10px;
+  background:transparent;
+  transition:background .2s, border-color .2s;
+  pointer-events:auto;
+}
+.ph-upload:hover{border-color:var(--accent);background:rgba(90,122,240,.04);}
+.ph-upload.drag-over{
+  background:#fff !important;
+  border-color:var(--accent) !important;
+  border-style:solid !important;
+  box-shadow:0 0 0 6px rgba(90,122,240,.12);
+}
+.ph-upload-inner{display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:auto;}
+.ph-txt{font-size:.9rem;font-weight:600;color:var(--text);}
+.ph-hint{font-size:.75rem;color:var(--dim);}
+/* bigger on image tab */
+body.view-image .ph-upload{width:320px;height:320px;}
+body.view-image .ph-txt{font-size:1rem;}
+body.view-image .ph-hint{font-size:.8rem;}
+
+/* ── UPLOAD NEW BUTTON (in left panel Image tab) ── */
+.btn-upload-new{
+  display:flex;align-items:center;justify-content:center;
+  width:100%;padding:9px 12px;border-radius:8px;
+  background:var(--accent);color:#fff;border:none;
+  font-family:'Inter',sans-serif;font-size:.82rem;font-weight:600;
+  cursor:pointer;transition:filter .15s;gap:6px;
+  text-align:center;
+}
+.btn-upload-new:hover{filter:brightness(1.1);}
+
+/* ── CROP OPEN BUTTON ── */
+.btn-crop-open{
+  width:100%;margin-top:10px;padding:7px 12px;border-radius:7px;
+  background:var(--surface2);border:1px solid var(--border);
+  font-family:'Inter',sans-serif;font-size:.8rem;color:var(--text);
+  cursor:pointer;transition:all .15s;
+}
+.btn-crop-open:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ── IMAGE TAB: inline zoom feedback ── */
+#cropZoomInline{width:100%;}
+
+/* ── IMAGE PREVIEW HOVER OVERLAY (Image tab) ── */
+.img-prev-hover-ov{
+  position:absolute;inset:0;border-radius:50%;
+  background:rgba(26,26,46,.0);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:background .2s;
+}
+.img-preview-wrap:hover .img-prev-hover-ov{background:rgba(26,26,46,.45);}
+.img-prev-hover-ov span{
+  color:#fff;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:600;
+  opacity:0;transition:opacity .2s;pointer-events:none;
+}
+.img-preview-wrap:hover .img-prev-hover-ov span{opacity:1;}
+/* Only show hover on image tab */
+.img-prev-hover-ov{pointer-events:none !important;}
+body:not(.view-image) .img-prev-hover-ov{display:none;}
+
+/* ── IMAGE TAB: full-width canvas, no left panel ── */
+/* panel-left always visible — same width on all tabs keeps circle position stable */
+body.view-image .panel-left { border-right: 1px solid var(--border); }
+body.view-image .panel-left > * { opacity: 0.18; pointer-events: none; }
+body.view-image .panel-left input[type=range] { pointer-events: none; }
+body.view-image .panel-left button { pointer-events: none; }
+body.view-image .panel-center { flex: 1; }
+/* toolbar always visible so tab buttons work */
+body.view-image .zoom-btns { display: none; } /* hide zoom buttons on image tab */
+/* playBar always visible for stable layout — contents hidden when not applicable */
+body.view-image .canvas-wrap { background: var(--bg); }
+
+/* ── IMAGE TAB: floating controls below circle ── */
+.img-tab-controls {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  z-index: 20;
+  white-space: nowrap;
+}
+.img-ctrl-btn {
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(8px);
+  font-family: 'Inter', sans-serif;
+  font-size: .78rem;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  transition: all .15s;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.img-ctrl-btn:hover { border-color: var(--accent); color: var(--accent); background: #fff; }
+.img-ctrl-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.img-ctrl-btn.primary:hover { filter: brightness(1.1); }
+.img-ctrl-btn.has-image { display: none; } /* shown only after image loaded */
+
+/* zoom hint label */
+.img-zoom-hint {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: .65rem;
+  color: var(--dim);
+  background: rgba(255,255,255,.85);
+  padding: 3px 10px;
+  border-radius: 10px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .3s;
+}
+.img-zoom-hint.visible { opacity: 1; }
+
+/* ── Image tab help bar ── */
+.img-help-bar{
+  position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+  background:rgba(255,255,255,0.88);backdrop-filter:blur(8px);
+  border:1px solid var(--border);border-radius:20px;
+  padding:7px 18px;font-size:.72rem;color:#555;white-space:nowrap;
+  pointer-events:none;opacity:0;transition:opacity .3s;
+}
+body.view-image .img-help-bar{ opacity:1; }
+body.view-result .img-help-bar{ opacity:1; }
+
+/* ── Upload button inside circle ── */
+.ph-upload-btn {
+  margin-top: 4px;
+  padding: 8px 28px;
+  border-radius: 20px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: .85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter .15s;
+  pointer-events: auto;
+}
+.ph-upload-btn:hover { filter: brightness(1.12); }
+
+/* ── Tab background colors ── */
+body.view-image   { --tab-bg: #eef4ff; }
+body.view-result  { --tab-bg: #f0fff8; }
+body.view-error   { --tab-bg: #fff8ee; }
+body.view-image .panel-center { background: var(--tab-bg) !important; }
+body.view-result .panel-center { background: var(--tab-bg) !important; }
+body.view-error .panel-center { background: var(--tab-bg) !important; }
+body.view-image .canvas-wrap,
+body.view-result .canvas-wrap,
+body.view-error .canvas-wrap { background: var(--tab-bg) !important; }
+
+/* ── Big Generate button above circle ── */
+.big-gen-wrap {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  padding: 14px 0 8px;
+  flex-shrink: 0;
+}
+body.view-image.has-image .big-gen-wrap { display: flex; }
+.btn-big-gen {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 14px 48px;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(90,122,240,0.35);
+  transition: transform .12s, box-shadow .12s, background .15s;
+}
+.btn-big-gen:hover { transform: translateY(-2px); box-shadow: 0 7px 24px rgba(90,122,240,0.45); }
+.btn-big-gen:active { transform: translateY(0); }
+
+/* Active tab button gets tab color */
+body.view-image   #vmO { background: #5a7af0; color: #fff; border-color: #5a7af0; }
+body.view-result  #vmR { background: #0a8f6e; color: #fff; border-color: #0a8f6e; }
+body.view-error   #vmE { background: #d97706; color: #fff; border-color: #d97706; }
+
+/* ── WIND TAB ── */
+#cvWind{cursor:pointer;}
+#cvWind:active{opacity:0.92;}
+body.view-wind #vmW{background:#e85d00;color:#fff;border-color:#e85d00;}
+</style>
+</head>
+<body class="view-image">
+
+<!-- ════ MOBILE TOP BAR (≤600px only) ════ -->
+<div id="mobTopBar">
+  <span class="mob-logo">Shweka</span>
+  <div class="mob-tabs-row">
+    <button class="mob-tab-btn active" id="mbtImage" onclick="mobSetTab('image')">Image</button>
+    <button class="mob-tab-btn" id="mbtResult" onclick="mobSetTab('result')">String Art</button>
+    <button class="mob-tab-btn" id="mbtWind" style="display:none" onclick="mobSetTab('wind')">🧵 Wind</button>
+  </div>
+  <button class="mob-gen-btn" id="mobGenBtn" disabled onclick="triggerFromBtn()">▶ Go</button>
+  <button class="mob-settings-btn" onclick="mobOpenSheet()">⚙</button>
+</div>
+
+<!-- ════ MOBILE SETTINGS SHEET ════ -->
+<div id="mobSheetBackdrop" onclick="mobCloseSheet()"></div>
+<div id="mobSheet">
+  <div id="mobSheetHandle"></div>
+  <div id="mobSheetTitle">
+    Settings
+    <button onclick="mobCloseSheet()">✕</button>
+  </div>
+  <div id="mobSheetInner">
+    <!-- panel-left contents are moved here by JS on mobile -->
+  </div>
+</div>
+<header>
+  <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:nowrap;">
+    <div class="logo" style="font-size:1.15rem;white-space:nowrap;">String Art Generator</div>
+    <span class="logo-sub" style="font-size:0.65rem;white-space:nowrap;">by Shweka Studio</span>
+    <span class="logo-sub" style="font-size:0.6rem;color:var(--accent);opacity:0.7;white-space:nowrap;">v0.60</span>
+  </div>
+</header>
+<div class="main">
+
+<!-- ── MOBILE TOP TABS ── -->
+
+<!-- ════ LEFT ════ -->
+<div class="panel panel-left">
+
+
+  <!-- GENERATE BUTTON (above tabs, unified) -->
+  <div class="section section-gen-top" id="genTopSec">
+    <button class="btn-gen btn-gen-unified" id="btnGenGreedy" disabled onclick="triggerFromBtn()">
+      <div id="btnInGreedy">▶ Generate</div>
+    </button>
+    <div class="prog-wrap" id="pwGreedy" style="display:none;">
+      <div class="prog-bg"><div class="prog-fill" id="pfGreedy"></div></div>
+      <div class="prog-text" id="ptGreedy">Starting...</div>
+    </div>
+  </div>
+
+  <!-- ALGO TABS (hidden) -->
+  <div class="algo-tabs" id="algoTabBar" style="display:none;">
+    <button class="algo-tab active-front" id="algoTabGreedy" onclick="setAlgo('greedy')">Front</button>
+    <button class="algo-tab" id="algoTabBack" onclick="setAlgo('back')">Back</button>
+  </div>
+
+  <!-- FRONT (GREEDY) PANE -->
+  <div class="algo-pane active" id="paneGreedy">
+    <div class="section">
+      <div class="ctrl">
+        <div class="ctrl-label">
+          <div class="ctrl-left">Nails<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">Nails around the circle. <b>More nails</b> = finer detail but more winding time. <b>Typical:</b> 150–300 for 30cm board.</span></span></div>
+          <span class="ctrl-val" id="vn">320</span>
+        </div>
+        <input type="range" id="sn" min="50" max="400" value="320" step="5">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">
+          <div class="ctrl-left">Max lines<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">Total thread segments. More = denser image. <b>~12–18× nail count</b> works well for portraits.</span></span></div>
+          <span class="ctrl-val" id="vl">5600</span>
+        </div>
+        <input type="range" id="sl" min="500" max="8000" value="5600" step="100">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">
+          <div class="ctrl-left">Line darkness<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">How much each line "uses up" the darkness beneath it.</span></span></div>
+          <span class="ctrl-val" id="vf">35</span>
+        </div>
+        <input type="range" id="sf" min="5" max="80" value="35" step="1">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">
+          <div class="ctrl-left">Thread thickness<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box"><b>0.1–0.3</b> = fine · <b>0.4–0.8</b> = floss · <b>1.0+</b> = yarn</span></span></div>
+          <span class="ctrl-val" id="vt">0.4</span>
+        </div>
+        <input type="range" id="st" min="0.05" max="0.7" value="0.4" step="0.05">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">
+          <div class="ctrl-left">Min nail skip<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">Skip at least this many nails. Prevents short lines. <b>~6–8% of nail count</b> is ideal.</span></span></div>
+          <span class="ctrl-val" id="vg">20</span>
+        </div>
+        <input type="range" id="sg" min="3" max="80" value="20" step="1">
+      </div>
+    </div>
+
+    <div class="section" id="statSecGreedy" style="display:none">
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-val" id="stlG">—</div><div class="stat-lbl">Lines</div></div>
+        <div class="stat-box"><div class="stat-val" id="stnG">—</div><div class="stat-lbl">Nails</div></div>
+        <div class="stat-box"><div class="stat-val" id="sttG">—</div><div class="stat-lbl">Time (s)</div></div>
+        <div class="stat-box"><div class="stat-val" id="stmG">—</div><div class="stat-lbl">~Thread m</div></div>
+      </div>
+      <div class="score-box" id="scoreBoxG">
+        <div class="score-val" id="scoreValG">—</div>
+        <div class="score-delta" id="scoreDeltaG">accuracy score</div>
+      </div>
+    </div>
+    <!-- Machine params collapsible -->
+    <div class="section">
+      <button class="collapse-toggle" onclick="toggleCollapse('machineG')">⚙ Machine &amp; Export <span class="collapse-arrow" id="machineGArrow">▸</span></button>
+      <div class="collapse-body" id="machineG" style="display:none;">
+        <div class="section" style="border-top:none;padding-top:4px;">
+          <div class="sec-title">Thread Color</div>
+          <div class="swatches" id="swatches">
+            <div class="swatch dk on" data-c="#111111" style="background:#111" title="Black"></div>
+            <div class="swatch dk" data-c="#555555" style="background:#666" title="Dark grey"></div>
+            <div class="swatch" data-c="#cc0000" style="background:#c00" title="Red"></div>
+            <div class="swatch" data-c="#0055cc" style="background:#0055cc" title="Blue"></div>
+            <div class="swatch" data-c="#007755" style="background:#077" title="Green"></div>
+            <div class="swatch" data-c="#884400" style="background:#884400" title="Brown"></div>
+            <div class="swatch" data-c="#880088" style="background:#808" title="Purple"></div>
+            <div class="swatch" data-c="#cc6600" style="background:#c60" title="Orange"></div>
+          </div>
+          <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:.63rem;color:var(--mid);">Nail markers</span>
+            <div class="dual-seg">
+              <button class="ds-btn" id="nailsHide" onclick="setNails(false)">Hide</button>
+              <button class="ds-btn on" id="nailsShow" onclick="setNails(true)">Show</button>
+            </div>
+          </div>
+        </div>
+        <div class="section" style="border-top:none;padding-top:4px;" id="expSec">
+          <div class="sec-title">Export</div>
+          <div class="exp-grid">
+            <button class="btn-exp" id="ePNG">PNG</button>
+            <button class="btn-exp" id="eSVG">SVG</button>
+            <button class="btn-exp full ard" id="eTXT">↓ Nail Sequence (.txt)</button>
+          </div>
+          <div class="notice"><strong>TXT:</strong> nail numbers CCW from top, ready for Arduino.</div>
+        </div>
+        <div class="section" style="border-top:none;padding-top:4px;" id="prodSec">
+          <div class="sec-title">Production Time</div>
+          <div class="machine-input">
+            <div class="mi-row"><span class="mi-lbl">Board diameter</span><input class="mi-val" id="mDiam" type="number" value="30" min="5" max="150" step="1"><span class="mi-unit">cm</span></div>
+            <div class="mi-row"><span class="mi-lbl">Motor speed</span><input class="mi-val" id="mSpeed" type="number" value="60" min="1" max="720" step="1"><span class="mi-unit">°/s</span></div>
+            <div class="mi-row"><span class="mi-lbl">Thread feed</span><input class="mi-val" id="mFeed" type="number" value="5" min="1" max="50" step="0.5"><span class="mi-unit">cm/s</span></div>
+            <div class="mi-row"><span class="mi-lbl">Dwell/nail</span><input class="mi-val" id="mDwell" type="number" value="0.3" min="0" max="5" step="0.05"><span class="mi-unit">sec</span></div>
+          </div>
+          <div class="prod-grid">
+            <div class="prod-box"><div class="prod-val" id="pTime">—</div><div class="prod-lbl">Est. total time</div></div>
+            <div class="prod-box"><div class="prod-val" id="pThread">—</div><div class="prod-lbl">Thread length</div></div>
+            <div class="prod-box"><div class="prod-val" id="pAvgDeg">—</div><div class="prod-lbl">Avg rot/step</div></div>
+            <div class="prod-box"><div class="prod-val" id="pMaxDeg">—</div><div class="prod-lbl">Max rot/step</div></div>
+            <div class="prod-box prod-full"><div class="prod-val" id="pAvgChord">—</div><div class="prod-lbl">Avg chord</div></div>
+          </div>
+          <div class="notice" id="prodBreakdown" style="font-size:.55rem;line-height:1.7;"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Smart Optimize -->
+    <div class="section" style="padding-top:0;border-top:none;">
+      <button class="btn-optimize" id="btnOptimize" disabled>✦ Smart Optimize</button>
+      <div class="rollback-row" id="rollbackRow">
+        <button class="btn-rollback" id="btnRollback">↩ Rollback</button>
+        <span class="opt-hint" id="optHint"></span>
+      </div>
+    </div>
+  </div><!-- /paneGreedy -->
+
+  <!-- BACK PANE -->
+  <div class="algo-pane" id="paneBack">
+    <div class="section">
+      <div class="ctrl">
+        <div class="ctrl-label">
+          <div class="ctrl-left">Nails<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">Nails around the circle.</span></span></div>
+          <span class="ctrl-val" id="vnB">320</span>
+        </div>
+        <input type="range" id="snB" min="50" max="400" value="320" step="5">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">
+          <div class="ctrl-left">Max lines<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">Total thread segments.</span></span></div>
+          <span class="ctrl-val" id="vlB">5600</span>
+        </div>
+        <input type="range" id="slB" min="500" max="8000" value="5600" step="100">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">
+          <div class="ctrl-left">Line darkness<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">How much each line uses up darkness.</span></span></div>
+          <span class="ctrl-val" id="vfB">35</span>
+        </div>
+        <input type="range" id="sfB" min="5" max="80" value="35" step="1">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">
+          <div class="ctrl-left">Thread thickness</div>
+          <span class="ctrl-val" id="vtB">0.4</span>
+        </div>
+        <input type="range" id="stB" min="0.05" max="0.7" value="0.4" step="0.05">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">
+          <div class="ctrl-left">Min nail skip</div>
+          <span class="ctrl-val" id="vgB">20</span>
+        </div>
+        <input type="range" id="sgB" min="3" max="80" value="20" step="1">
+      </div>
+    </div>
+    <!-- Back-specific params -->
+    <div class="section" style="border-top:none;padding-top:0;">
+      <div class="ctrl">
+        <div class="ctrl-label">
+          <div class="ctrl-left">Max chord skip<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">Maximum nails apart a back-thread can jump. Lower = shorter chords only. ∞ = any distance.</span></span></div>
+          <span class="ctrl-val" id="maxSkipV">∞</span>
+        </div>
+        <input type="range" id="maxSkip" min="10" max="999" value="999" step="1" oninput="$('maxSkipV').textContent=this.value==999?'∞':this.value">
+      </div>
+      <button class="collapse-toggle" onclick="toggleCollapse('backExtra')" style="margin-top:4px;">⚙ Advanced <span class="collapse-arrow" id="backExtraArrow">▸</span></button>
+      <div class="collapse-body" id="backExtra" style="display:none;">
+        <div class="ctrl" style="margin-top:8px;">
+          <div class="ctrl-label">
+            <div class="ctrl-left">Routing penalty<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">Penalises long behind-board routes.</span></span></div>
+            <span class="ctrl-val" id="routePenV">0</span>
+          </div>
+          <input type="range" id="routePen" min="0" max="100" value="0" step="1" oninput="$('routePenV').textContent=this.value">
+        </div>
+      </div>
+    </div>
+    <div class="prog-wrap" id="pwBack" style="display:none;margin:0 16px 8px;">
+      <div class="prog-bg"><div class="prog-fill" id="pfBack" style="background:var(--accent2);"></div></div>
+      <div class="prog-text" id="ptBack">Starting...</div>
+    </div>
+    <div class="section" id="statSecBack" style="display:none">
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-val" id="stlB">—</div><div class="stat-lbl">Lines</div></div>
+        <div class="stat-box"><div class="stat-val" id="stnB">—</div><div class="stat-lbl">Nails</div></div>
+        <div class="stat-box"><div class="stat-val" id="sttB">—</div><div class="stat-lbl">Time (s)</div></div>
+        <div class="stat-box"><div class="stat-val" id="stmB">—</div><div class="stat-lbl">~Thread m</div></div>
+      </div>
+      <div class="score-box" id="scoreBoxB" style="border-color:rgba(10,143,110,.2);">
+        <div class="score-val" id="scoreValB" style="color:var(--accent2);">—</div>
+        <div class="score-delta" id="scoreDeltaB">accuracy score</div>
+      </div>
+    </div>
+  </div><!-- /paneBack -->
+
+
+
+  <!-- hidden legacy ids needed by JS -->
+  <div style="display:none">
+    <div id="statSec"><div id="stl"></div><div id="stn"></div><div id="stt"></div><div id="stm"></div></div>
+    <div id="scoreBox"><div id="scoreVal"></div><div id="scoreDelta"></div></div>
+    <div id="refineRow"><button id="btnRefine"></button></div>
+    <div id="legacyAlgo"></div>
+  </div>
+
+</div><!-- /left -->
+
+<!-- ════ CENTER ════ -->
+<div class="panel-center">
+  <div class="toolbar">
+    <div class="dual-seg">
+      <button class="ds-btn on" id="vmO" onclick="setView('image')">Image</button>
+      <button class="ds-btn" id="vmR" onclick="setView('result')">String Art</button>
+      <button class="ds-btn" id="vmE" onclick="setView('error')">Error map</button>
+      <button class="ds-btn" id="vmW" onclick="setView('wind')" style="display:none">🧵 Wind</button>
+    </div>
+    <div class="zoom-btns" style="display:flex;align-items:center;gap:8px;">
+      <div class="t-sep"></div>
+      <button class="t-btn" id="bZI" onclick="zoomIn()">＋</button>
+      <button class="t-btn" id="bZO" onclick="zoomOut()">－</button>
+      <button class="t-btn" id="bZR" onclick="zoomFit()">fit</button>
+      <div class="t-sep" id="backViewSep" style="display:none"></div>
+      <button class="t-btn" id="tbBackView" onclick="pbToggleView()" style="display:none;color:var(--accent2);border-color:rgba(10,143,110,.3);">↺ Flip Plate</button>
+    </div>
+  </div>
+  <div class="big-gen-wrap"><button class="btn-big-gen" onclick="onBigGenerate()">▶ Generate</button></div>
+  <div class="canvas-wrap" id="cWrap">
+    <!-- Image tab: circle IS the upload/crop zone -->
+    <div class="ph ph-upload" id="ph">
+      <div class="ph-upload-inner" id="phInner">
+        <div class="ph-txt">Drop an image</div>
+        <div class="ph-hint">or</div>
+        <button class="ph-upload-btn" onclick="event.stopPropagation();document.getElementById('fi').click()">Upload</button>
+      </div>
+    </div>
+    <!-- Image preview circle: shown on Image tab after upload -->
+    <div class="img-preview-wrap" id="imgPreviewWrap" style="display:none;" ondblclick="document.getElementById('fi').click()">
+      <canvas id="imgPreviewCanvas" class="img-preview-canvas"></canvas>
+      <div class="img-preview-ring"></div>
+      <!-- Hover overlay: click to open crop (Image tab) -->
+      <div class="img-prev-hover-ov" id="imgPrevHoverOv" onclick="openCrop()">
+        <span>✎ Adjust crop</span>
+      </div>
+    </div>
+    <!-- Zoom hint (image tab) -->
+    <div class="img-zoom-hint" id="imgZoomHint">100%</div>
+    <div class="img-help-bar" id="imgHelpBar">
+      <span id="imgHelpText">Drop an image onto the circle, or click Upload</span>
+    </div>
+    <!-- Floating controls bar: shown on image tab -->
+    <div class="img-tab-controls" id="imgTabControls">
+      <!-- fi is inside ph label click handler — file input lives here hidden -->
+      <input type="file" id="fi" accept="image/*" style="display:none;">
+      <!-- After image: change + crop + reset -->
+      <label class="img-ctrl-btn has-image" id="ctrlChange" title="Upload new image" style="display:none;">
+        <input type="file" id="fi2" accept="image/*" style="display:none;">
+        ↺ Change
+      </label>
+      <button class="img-ctrl-btn has-image" id="ctrlCrop" onclick="openCrop()" style="display:none;">
+        ✎ Crop &amp; Pan
+      </button>
+      <button class="img-ctrl-btn has-image" id="ctrlResetCrop" style="display:none;" onclick="resetCropInline()">
+        ↩ Reset
+      </button>
+    </div>
+    <!-- Wind tab overlay -->
+    <!-- Wind nail number display -->
+    <div id="windNailNum" style="display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:'Space Grotesk',sans-serif;font-size:clamp(2.5rem,8vw,5rem);font-weight:700;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,.7),0 0 40px rgba(0,0,0,.4);pointer-events:none;z-index:10;line-height:1;text-align:center;"></div>
+    <div id="windStepInfo" style="display:none;position:absolute;left:50%;bottom:18%;transform:translateX(-50%);font-family:'Inter',sans-serif;font-size:0.75rem;color:rgba(255,255,255,0.8);text-shadow:0 1px 6px rgba(0,0,0,.6);pointer-events:none;z-index:10;white-space:nowrap;background:rgba(0,0,0,0.35);padding:4px 10px;border-radius:20px;"></div>
+    <div id="windTapHint" style="display:none;position:absolute;left:50%;top:18%;transform:translateX(-50%);font-family:'Inter',sans-serif;font-size:0.7rem;color:rgba(255,255,255,0.6);text-shadow:0 1px 4px rgba(0,0,0,.5);pointer-events:none;z-index:10;white-space:nowrap;">tap circle to advance</div>
+    <!-- Wind nav buttons -->
+    <div id="windNav" style="display:none;position:absolute;bottom:14%;left:50%;transform:translateX(-50%);z-index:12;gap:12px;align-items:center;">
+      <button onclick="event.stopPropagation();windBack()" style="font-size:1.1rem;padding:12px 24px;border-radius:30px;border:none;background:rgba(0,0,0,0.5);color:#fff;cursor:pointer;font-family:inherit;min-width:90px;box-shadow:0 2px 12px rgba(0,0,0,.25);">◀ Back</button>
+      <button onclick="event.stopPropagation();windAdvance()" style="font-size:1.1rem;padding:12px 24px;border-radius:30px;border:none;background:rgba(220,40,40,0.9);color:#fff;cursor:pointer;font-family:inherit;min-width:90px;box-shadow:0 2px 12px rgba(180,20,20,.4);">Next ▶</button>
+    </div>
+    <!-- Inner container gets explicit pixel size set by JS so overflow:auto actually scrolls -->
+    <div id="cvInner">
+    <!-- Main display: SVG for result view (vector), canvas for original/error views -->
+    <svg id="cvSvg" xmlns="http://www.w3.org/2000/svg" style="display:none;border-radius:50%;box-shadow:0 4px 32px rgba(0,0,0,.18);"></svg>
+    <canvas id="cvRaster" style="display:none;border-radius:50%;box-shadow:0 4px 32px rgba(0,0,0,.18);"></canvas>
+    <svg id="cvWind" xmlns="http://www.w3.org/2000/svg" style="display:none;border-radius:50%;box-shadow:0 4px 32px rgba(0,0,0,.18);cursor:pointer;"></svg>
+    </div>
+    <!-- Compare overlay SVG (radon side) -->
+    <svg id="cvCmpSvg" xmlns="http://www.w3.org/2000/svg" style="display:none;position:absolute;border-radius:50%;pointer-events:none;"></svg>
+    <div class="cmp-div" id="cDiv"></div>
+    <div class="cmp-handle" id="cHandle"></div>
+    <div class="cmp-lbl" id="cLblL">Greedy</div>
+    <div class="cmp-lbl" id="cLblR">Radon</div>
+  </div>
+</div>
+
+<!-- ════ NAIL SEQUENCE DRAWER ════ -->
+<div class="seq-drawer" id="seqDrawer">
+  <button class="seq-toggle" onclick="toggleSeqDrawer()" title="Nail sequence">
+    <span class="seq-arrow" id="seqArrow">›</span>
+    <span class="seq-label">Nail Seq</span>
+  </button>
+  <div class="seq-content">
+    <div class="seq-hdr">
+      <div class="seq-title">Nail Sequence</div>
+    </div>
+    <div id="emptyMsg" class="empty-msg">Generate to see the nail order.</div>
+    <div class="nail-wrap" id="nw" style="display:none"><div class="nail-list" id="nl"></div></div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ════ PLAYBACK BAR ════ -->
+<div id="playBar">
+  <div class="pb-left">
+    <button class="pb-btn" id="pbPlay" onclick="pbTogglePlay()" title="Play">▶</button>
+    <div class="pb-speed-wrap" id="pbSpeedWrap">
+      <button class="pb-btn pb-speed-btn" id="pbSpeedBtn" onclick="pbToggleSpeedPopup()" title="Speed">1×</button>
+      <div class="pb-speed-popup" id="pbSpeedPopup">
+        <div class="pb-speed-lbl" id="pbSpeedLbl">500/s</div>
+        <div class="pb-speed-hint">5000/s</div>
+        <input type="range" id="pbSpeedSlider" min="1" max="5000" value="500"
+          orient="vertical" oninput="pbSetSpeed(+this.value)"
+          style="margin:4px 0;">
+        <div class="pb-speed-hint">1/s</div>
+      </div>
+    </div>
+  </div>
+  <div class="pb-center">
+    <input type="range" id="pbSlider" min="0" max="100" value="100" oninput="pbScrub(+this.value)">
+  </div>
+  <div class="pb-right">
+    <span class="pb-count" id="pbCount">0 / 0</span>
+    <button class="pb-btn pb-view" id="pbViewBtn" onclick="pbToggleView()" style="display:none" title="Flip board">↺ Flip Plate</button>
+  </div>
+</div>
+
+<div id="pw" style="display:none"><div id="pf"></div><div id="pt"></div></div>
+<!-- CROP MODAL -->
+<div id="cropModal">
+  <div class="crop-title">Crop &amp; Frame</div>
+  <div class="crop-sub">Drag to pan · Scroll to zoom</div>
+  <div class="crop-cont" id="cropCont">
+    <canvas id="cropCanvas" width="380" height="380"></canvas>
+    <div class="crop-overlay"></div>
+  </div>
+  <div class="crop-controls">
+    <span class="crop-zlbl">Zoom</span>
+    <input type="range" id="cropZoom" min="0.5" max="5" step="0.05" value="1" style="width:140px;">
+    <span class="crop-zlbl" id="cropZV">1.0×</span>
+  </div>
+  <div class="crop-btns">
+    <button class="btn-ca btn-cancel" id="btnCC">Cancel</button>
+    <button class="btn-ca btn-apply" id="btnCA">Apply</button>
+  </div>
+  <div class="crop-hint">The circle shows exactly what will be generated</div>
+</div>
+<canvas id="off" style="display:none"></canvas>
+
+<script>
+// Playback state — declared first so pbInit() can always access it
+var PB={
+  playing:false,
+  frame:null,
+  pos:0,
+  total:0,
+  backView:false, // updated per-algo in pbInit
+  lastTime:0,
+  speed:1,          // current speed multiplier (1–200)
+};
+// ══════════════════════════
+//  STATE
+// ══════════════════════════
+const G={
+  img:null,bw:false,cropOffX:0,cropOffY:0,cropZoom:1,circleSize:0,
+  nails:[],imgPx:null,errPx:null,imgSz:0,nailPos:null,
+  color:'#111111',algo:'greedy',showNails:true,
+  view:'image',zoom:1,done:false,running:false,showSeq:true,
+  compareMode:false,comparePct:50,greedyCv:null,radonCv:null,
+  // Result cache — keyed by algo+image+params so switching algo reuses stored result
+  cache:{greedy:null,back:null},
+  // For rollback
+  prevParams:null,prevNails:null,prevErr:null,
+  // Accuracy score
+  score:null,prevScore:null,
+  // White background
+};
+const $=id=>document.getElementById(id);
+const cvSvg=$('cvSvg'),cvRaster=$('cvRaster'),off=$('off'),cvCmpSvg=$('cvCmpSvg');
+const BG='#f7f5f0';
+const SVG_SZ=600; // internal coordinate space for SVG viewBox
+
+// Placeholder nails
+(()=>{const r=$('phr');if(!r)return;for(let i=0;i<40;i++){const a=(i/40)*Math.PI*2-Math.PI/2,d=document.createElement('div');d.className='ph-nail';d.style.left=(50+49*Math.cos(a))+'%';d.style.top=(50+49*Math.sin(a))+'%';d.style.animationDelay=(i*63)+'ms';r.appendChild(d);}})();
+
+// ══ DUAL TOGGLES ══
+function toggleSeqDrawer(){
+  const d=$('seqDrawer');
+  d.classList.toggle('open');
+  // arrow direction handled by CSS rotation only
+}
+
+function setAlgo(a){
+  const prev=G.algo;
+  G.algo=a;
+  $('algoTabGreedy').className='algo-tab'+(a==='greedy'?' active-front':'');
+  $('algoTabBack').className='algo-tab'+(a==='back'?' active-back':'');
+  $('paneGreedy').classList.toggle('active', a==='greedy');
+  $('paneBack').classList.toggle('active', a==='back');
+  updateGenBtn();
+  if($('tbBackView')) $('tbBackView').style.display = (a==='back') ? 'flex' : 'none';
+  if($('backViewSep')) $('backViewSep').style.display = (a==='back') ? 'block' : 'none';
+  if($('pbViewBtn')) $('pbViewBtn').style.display = a==='back' ? 'flex' : 'none';
+  if(!G.img) return;
+
+  // Try to restore cached result for this algo
+  const cached=G.cache[a];
+  if(cached){
+    // Restore the cached result for this algo immediately
+    G.nails=cached.result;G.errPx=cached.err;G.imgPx=cached.img;
+    G.nailPos=cached.nails;G.imgSz=cached.sz;G.done=true;G.score=cached.sc;G.lineCache=cached.lc;
+    if($('algoTitleOverlay')){
+      const lbl=a==='back'?'Back Allowed':'Front';
+      const lines=a==='back'?(cached.result.length/2|0):(cached.result.length-1);
+      $('algoTitleOverlay').style.display='block';
+      $('algoTitleOverlay').textContent=lbl+' · '+lines+' lines';
+    }
+    if($('imgPreviewWrap')) $('imgPreviewWrap').style.display='none';
+    $('ph').style.display='none';
+    pbInit(); render();
+    return; // Don't trigger a new generate — result is already here
+  }
+  // No cache for this algo — generate fresh (but only if this algo isn't already running)
+  if(!(G.running && G.runningAlgo===a)){
+    triggerGenerate();
+  }
+}
+function toggleCollapse(id){
+  const el=$(id), arrow=$(id+'Arrow');
+  const open = el.style.display==='none';
+  el.style.display = open ? 'block' : 'none';
+  if(arrow) arrow.classList.toggle('open', open);
+}
+function setNails(v){G.showNails=v;$('nailsShow').classList.toggle('on',v);$('nailsHide').classList.toggle('on',!v);if(G.done)render();}
+function setView(v){
+  const prev=G.view;
+  G.view=v;
+  document.body.className=document.body.className.replace(/view-\S+/g,'').trim();
+  document.body.classList.add('view-'+v);
+  ['vmR','vmO','vmE','vmW'].forEach(id=>{if($(id))$(id).classList.remove('on');});
+  ({result:'vmR',image:'vmO',error:'vmE',wind:'vmW'})[v] && $(({result:'vmR',image:'vmO',error:'vmE',wind:'vmW'})[v]).classList.add('on');
+
+  // Always hide all canvases first, then re-show what's needed
+  cvSvg.style.display='none';
+  cvRaster.style.display='none';
+  if($('cvWind')) $('cvWind').style.display='none';
+  if($('windNailNum')) $('windNailNum').style.display='none';
+  if($('windStepInfo')) $('windStepInfo').style.display='none';
+  if($('windTapHint')) $('windTapHint').style.display='none';
+  if($('windNav')) $('windNav').style.display='none';
+  // Restore play/speed controls (hidden only in wind mode)
+  if($('pbPlay')) $('pbPlay').style.visibility='visible';
+  if($('pbSpeedWrap')) $('pbSpeedWrap').style.visibility='visible';
+
+  if(v==='image'){
+    if(prev==='result'||prev==='error'||prev==='wind') syncZoomToCircle();
+    if($('phInner')) $('phInner').innerHTML='<div class="ph-txt">Drop an image</div><div class="ph-hint">or</div><button class="ph-upload-btn" onclick="event.stopPropagation();document.getElementById(\'fi\').click()">Upload</button>';
+    applyCircleSize();
+    if(G.img){
+      $('ph').style.display='none';
+      showImgPreview();
+    } else {
+      $('ph').style.display='flex';
+      if($('imgPreviewWrap')) $('imgPreviewWrap').style.display='none';
+    }
+    if($('algoTitleOverlay')) $('algoTitleOverlay').style.display='none';
+
+  } else if(v==='result'){
+    if(prev==='image') syncCircleToZoom();
+    if($('imgHelpText')) $('imgHelpText').textContent='';
+    if(G.done && prev==='image'){
+      if(G.img && $('imgPreviewWrap')){
+        const maxSz=Math.min(cWrapEl.clientWidth,cWrapEl.clientHeight)-40;
+        const sz=Math.round(maxSz*G.zoom);
+        $('imgPreviewWrap').style.width=sz+'px';
+        $('imgPreviewWrap').style.height=sz+'px';
+      }
+      if(!G.running) triggerGenerate();
+    } else if(G.done){
+      $('ph').style.display='none';
+      cvSvg.style.display='block';
+      render();
+    } else if(G.img){
+      $('phInner').innerHTML='<div class="ph-txt" style="font-size:.9rem">Generating...</div><div class="ph-hint">String Art</div>';
+      $('ph').style.display='flex';
+      if(!G.running) triggerGenerate();
+    } else {
+      $('phInner').innerHTML='<div class="ph-txt" style="font-size:.9rem">Upload an image first</div><div class="ph-hint">Switch to the Image tab</div>';
+      $('ph').style.display='flex';
+    }
+
+  } else if(v==='wind'){
+    if($('imgPreviewWrap')) $('imgPreviewWrap').style.display='none';
+    $('ph').style.display='none';
+    if($('pbPlay')) $('pbPlay').style.visibility='hidden';
+    if($('pbSpeedWrap')) $('pbSpeedWrap').style.visibility='hidden';
+    if(G.done){
+      if($('cvWind')) $('cvWind').style.display='block';
+      if($('windNailNum')) $('windNailNum').style.display='block';
+      if($('windStepInfo')) $('windStepInfo').style.display='block';
+      if($('windTapHint')) $('windTapHint').style.display='block';
+      if($('windNav')) $('windNav').style.display='flex';
+      windInit();
+    }
+
+  } else {
+    // Error map
+    if(prev==='image') syncCircleToZoom();
+    if($('imgPreviewWrap')) $('imgPreviewWrap').style.display='none';
+    if(G.done){ cvRaster.style.display='block'; render(); }
+  }
+}
+
+
+// ══ SLIDERS — auto-regen on release + click-to-type ══
+let autoTimer=null;
+function scheduleAutoGen(){
+  if(!G.img)return;
+  if(G.view==='image')return; // never generate while browsing image tab
+  clearTimeout(autoTimer);
+  autoTimer=setTimeout(()=>triggerGenerate(),80);
+}
+
+// Config for each param: slider id, display id, min, max, step, isFloat, regenType
+const PARAM_CFG=[
+  {s:'sn',v:'vn',min:50,max:400,step:5,float:false,regen:'full',def:320},
+  {s:'sl',v:'vl',min:500,max:8000,step:100,float:false,regen:'full',def:5600},
+  {s:'sf',v:'vf',min:5,max:80,step:1,float:false,regen:'full',def:35},
+  {s:'sg',v:'vg',min:3,max:80,step:1,float:false,regen:'full',def:20},
+  {s:'st',v:'vt',min:0.05,max:0.7,step:0.05,float:true,regen:'render',def:0.4},
+  {s:'snB',v:'vnB',min:50,max:400,step:5,float:false,regen:'full',def:320},
+  {s:'slB',v:'vlB',min:500,max:8000,step:100,float:false,regen:'full',def:5600},
+  {s:'sfB',v:'vfB',min:5,max:80,step:1,float:false,regen:'full',def:35},
+  {s:'sgB',v:'vgB',min:3,max:80,step:1,float:false,regen:'full',def:20},
+  {s:'stB',v:'vtB',min:0.05,max:0.7,step:0.05,float:true,regen:'render',def:0.4},
+];
+
+// ── Per-param custom defaults saved by user (persisted in localStorage) ──
+let userDefaults={};
+try{const d=localStorage.getItem('sa_defaults');if(d)userDefaults=JSON.parse(d);}catch(e){}
+function saveUserDefault(sid,val){
+  userDefaults[sid]=val;
+  try{localStorage.setItem('sa_defaults',JSON.stringify(userDefaults));}catch(e){}
+}
+function getDefault(cfg){
+  return userDefaults[cfg.s]!==undefined ? userDefaults[cfg.s] : cfg.def;
+}
+
+
+PARAM_CFG.forEach(({s,v,min,max,step,float,regen})=>{
+  const slider=$(s),label=$(v);
+  if(!slider||!label) return; // element may not exist in this layout
+  let drag=false;
+
+  // Slider interaction
+  slider.addEventListener('mousedown',()=>{drag=true;});
+  slider.addEventListener('touchstart',()=>{drag=true;},{passive:true});
+  slider.addEventListener('input',()=>{
+    label.textContent=float?parseFloat(slider.value).toFixed(2).replace(/\.?0+$/,''):slider.value;
+    if(regen==='render'&&G.done&&!G.compareMode)render();
+  });
+  slider.addEventListener('mouseup',()=>{drag=false;if(regen==='full'&&G.img)scheduleAutoGen();});
+  slider.addEventListener('touchend',()=>{drag=false;if(regen==='full'&&G.img)scheduleAutoGen();});
+
+  // Click label to type a value
+  label.addEventListener('click',()=>{
+    label.contentEditable='true';
+    // Select all text
+    const range=document.createRange();range.selectNodeContents(label);
+    const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);
+    label.focus();
+  });
+  label.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();label.blur();}
+    if(e.key==='Escape'){
+      label.contentEditable='false';
+      label.textContent=float?parseFloat(slider.value).toFixed(2).replace(/\.?0+$/,''):slider.value;
+    }
+    // Allow only numbers, dot, backspace, arrows
+    if(!/[\d.\-]|Backspace|Delete|Arrow|Tab/.test(e.key)&&e.key.length===1)e.preventDefault();
+  });
+  label.addEventListener('blur',()=>{
+    label.contentEditable='false';
+    let val=parseFloat(label.textContent);
+    if(isNaN(val))val=parseFloat(slider.value);
+    val=Math.max(min,Math.min(max,float?val:Math.round(val/step)*step));
+    slider.value=val;
+    label.textContent=float?String(val).replace(/\.?0+$/,''):String(val);
+    if(regen==='full'&&G.img)scheduleAutoGen();
+    if(regen==='render'&&G.done&&!G.compareMode)render();
+  });
+
+  // Double-click the value label → "Set as default?" popup
+  label.addEventListener('dblclick',e=>{
+    e.stopPropagation();
+    const curVal=float?parseFloat(slider.value):parseInt(slider.value);
+    const dflt=getDefault({s,def:float?parseFloat(s):parseInt(s)});
+    showResetPopup(e.clientX,e.clientY, curVal, dflt, float, s, slider, label, step, min, max, regen);
+  });
+});
+
+
+function showResetPopup(px,py,curVal,dfltVal,isFloat,sid,slider,label,step,min,max,regen){
+  // Remove any existing popup
+  const old=document.querySelector('.reset-popup');
+  if(old) old.remove();
+
+  const fmt=v=>isFloat?String(parseFloat(v.toFixed(3))).replace(/\.?0+$/, ''):String(Math.round(v));
+  const pop=document.createElement('div');
+  pop.className='reset-popup';
+  pop.innerHTML=`<p>Current: <strong>${fmt(curVal)}</strong><br>Default: <strong>${fmt(dfltVal)}</strong></p>
+    <div class="reset-popup-btns">
+      <button class="rp-yes" id="rpSaveDefault">💾 Save as default</button>
+      <button class="rp-no" id="rpGoDefault">↩ Reset to default</button>
+    </div>
+    <button class="rp-cancel" style="margin-top:6px;width:100%;padding:4px;background:none;border:none;color:var(--dim);font-size:.7rem;cursor:pointer;">cancel</button>`;
+  
+  // Position near click
+  pop.style.left=Math.min(px, window.innerWidth-220)+'px';
+  pop.style.top=Math.min(py+8, window.innerHeight-140)+'px';
+  document.body.appendChild(pop);
+
+  const close=()=>pop.remove();
+  pop.querySelector('#rpSaveDefault').onclick=()=>{
+    saveUserDefault(sid, curVal);
+    close();
+  };
+  pop.querySelector('#rpGoDefault').onclick=()=>{
+    const v=Math.max(min,Math.min(max,isFloat?dfltVal:Math.round(dfltVal/step)*step));
+    slider.value=v;
+    label.textContent=fmt(v);
+    if(regen==='full'&&G.img)scheduleAutoGen();
+    if(regen==='render'&&G.done&&!G.compareMode)render();
+    close();
+  };
+  pop.querySelector('.rp-cancel').onclick=close;
+  // Close on outside click
+  setTimeout(()=>document.addEventListener('click',close,{once:true}),50);
+}
+
+// ══ UPLOAD ══
+// ── File inputs ──
+$('fi').addEventListener('change',()=>{if($('fi').files[0])loadFile($('fi').files[0]);});
+if($('fi2'))$('fi2').addEventListener('change',()=>{if($('fi2').files[0])loadFile($('fi2').files[0]);});
+
+// ── Canvas drop zone (image tab) ──
+const cWrapEl=$('cWrap');
+cWrapEl.addEventListener('dragover',e=>{
+  if(G.view!=='image') return;
+  e.preventDefault();
+  $('ph').classList.add('drag-over');
+});
+cWrapEl.addEventListener('dragleave',()=>$('ph').classList.remove('drag-over'));
+cWrapEl.addEventListener('drop',e=>{
+  if(G.view!=='image') return;
+  e.preventDefault();
+  $('ph').classList.remove('drag-over');
+  if(e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+});
+
+// ── Click on placeholder = upload ──
+$('ph').addEventListener('click',()=>{
+  if(G.view==='image') $('fi').click();
+});
+
+// ── Scroll to zoom — image tab: crop/resize; result/error: zoom SVG ──
+let _zoomHintTimer=null;
+cWrapEl.addEventListener('wheel',e=>{
+  e.preventDefault();
+  if(G.view==='image'){
+    const wrap=$('imgPreviewWrap');
+    const ph=$('ph');
+    const circleEl = (G.img && wrap && wrap.style.display!=='none') ? wrap : ph;
+    const rect = circleEl.getBoundingClientRect();
+    const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+    const dist=Math.sqrt((e.clientX-cx)**2+(e.clientY-cy)**2);
+    const radius=rect.width/2;
+    if(dist<=radius && G.img){
+      const delta = e.deltaY < 0 ? 0.1 : -0.1;
+      G.cropZoom = Math.max(0.5, Math.min(5, G.cropZoom + delta));
+      if($('cropZoom')) $('cropZoom').value = G.cropZoom;
+      showZoomHint();
+      showImgPreview();
+    } else {
+      const factor = e.deltaY < 0 ? 1.08 : 0.92;
+      const maxSz = Math.min(cWrapEl.clientWidth, cWrapEl.clientHeight) - 40;
+      G.circleSize = Math.max(120, Math.min(maxSz, G.circleSize * factor));
+      applyCircleSize();
+      showSizeHint();
+    }
+  } else if(G.done){
+    // Result / error tab: scroll zooms the SVG
+    const factor = e.deltaY < 0 ? 1.15 : 1/1.15;
+    const newZ = Math.max(0.25, Math.min(4, G.zoom * factor));
+    if(newZ !== G.zoom){ G.zoom = newZ; applyZoom(); }
+  }
+},{passive:false});
+
+// ── Pinch to zoom on mobile (image tab) ──
+let _pinchDist=null;
+cWrapEl.addEventListener('touchstart',e=>{
+  if(G.view!=='image'||!G.img||e.touches.length!==2) return;
+  _pinchDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+},{passive:true});
+cWrapEl.addEventListener('touchmove',e=>{
+  if(G.view!=='image'||!G.img||e.touches.length!==2||!_pinchDist) return;
+  const d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+  const scale = d / _pinchDist;
+  G.cropZoom = Math.max(0.5, Math.min(5, G.cropZoom * scale));
+  _pinchDist = d;
+  showZoomHint();
+  showImgPreview();
+},{passive:true});
+
+// ── Drag to pan on image tab ──
+let _panActive=false, _panSX=0, _panSY=0, _panOX=0, _panOY=0;
+const imgWrap=$('imgPreviewWrap');
+if(imgWrap){
+  imgWrap.addEventListener('mousedown',e=>{
+    if(G.view!=='image'||!G.img) return;
+    _panActive=true; _panSX=e.clientX; _panSY=e.clientY;
+    _panOX=G.cropOffX; _panOY=G.cropOffY;
+    imgWrap.style.cursor='grabbing';
+    document.body.style.cursor='grabbing';
+    e.preventDefault();
+  });
+}
+window.addEventListener('mousemove',e=>{
+  if(!_panActive) return;
+  if(!G.img) return;
+  const previewSz = Math.min($('cWrap').clientWidth,$('cWrap').clientHeight)-40 || 300;
+  // cropOffX/Y are fractions (same space as crop modal, which divides by 380)
+  // Here we divide by previewSz so panning feels 1:1 with the displayed circle
+  G.cropOffX = _panOX + (e.clientX-_panSX)/previewSz;
+  G.cropOffY = _panOY + (e.clientY-_panSY)/previewSz;
+  // Clamp to ±0.45 so image stays in frame
+  G.cropOffX = Math.max(-0.45, Math.min(0.45, G.cropOffX));
+  G.cropOffY = Math.max(-0.45, Math.min(0.45, G.cropOffY));
+  showImgPreview();
+});
+window.addEventListener('mouseup',()=>{
+  if(!_panActive) return;
+  _panActive=false;
+  if(imgWrap) imgWrap.style.cursor='';
+  document.body.style.cursor='';
+  // Don't auto-gen on pan end — user controls when to generate
+});
+
+function updateHelpBar(){
+  const el=$('imgHelpText');
+  if(!el) return;
+  if(G.img){
+    el.innerHTML='<b>Scroll inside</b> to crop &nbsp;·&nbsp; <b>Scroll outside</b> to resize &nbsp;·&nbsp; <b>Drag</b> to pan &nbsp;·&nbsp; <b>Double-click</b> to change image';
+  } else {
+    el.innerHTML='Drop an image onto the circle, or click <b>Upload</b>';
+  }
+}
+
+function applyCircleSize(){
+  if(!G.circleSize){
+    const cw=cWrapEl.clientWidth||window.innerWidth-310;
+    const ch=cWrapEl.clientHeight||window.innerHeight-100;
+    G.circleSize=Math.max(120, Math.min(cw,ch)-40);
+  }
+  const sz=Math.round(G.circleSize);
+  const ph=$('ph');
+  const wrap=$('imgPreviewWrap');
+  const cv=$('imgPreviewCanvas');
+  if(ph){ ph.style.width=sz+'px'; ph.style.height=sz+'px'; }
+  if(wrap){ wrap.style.width=sz+'px'; wrap.style.height=sz+'px'; }
+  if(cv && cv.width!==sz){ cv.width=sz; cv.height=sz; }
+  if(G.img) _drawImgPreview();
+}
+
+function showSizeHint(){
+  const el=$('imgZoomHint');
+  if(!el) return;
+  el.textContent=Math.round(G.circleSize)+'px';
+  el.classList.add('visible');
+  clearTimeout(_zoomHintTimer);
+  _zoomHintTimer=setTimeout(()=>el.classList.remove('visible'),1200);
+}
+
+function showZoomHint(){
+  const el=$('imgZoomHint');
+  if(!el) return;
+  el.textContent=Math.round(G.cropZoom*100)+'%';
+  el.classList.add('visible');
+  clearTimeout(_zoomHintTimer);
+  _zoomHintTimer=setTimeout(()=>el.classList.remove('visible'),1200);
+}
+
+function showImageControls(hasImage){
+  const change=$('ctrlChange'), crop=$('ctrlCrop'), reset=$('ctrlResetCrop');
+  if(change) change.style.display = hasImage ? '' : 'none';
+  if(crop)   crop.style.display   = hasImage ? '' : 'none';
+  if(reset)  reset.style.display  = hasImage ? '' : 'none';
+}
+
+function resetCropInline(){
+  G.cropOffX=0;G.cropOffY=0;G.cropZoom=1;
+  if($('cropZoom'))$('cropZoom').value=1;
+  showZoomHint();
+  showImgPreview();
+}
+
+function loadFile(f){
+  if(!f.type.startsWith('image/'))return;
+
+    document.body.classList.add('has-image');
+    updateHelpBar();
+  const rd=new FileReader();
+  rd.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      G.img=img;G.bw=true;G.cropOffX=0;G.cropOffY=0;G.cropZoom=1;
+      // Enable generate button
+      $('btnGenGreedy').disabled=false;
+      mobSyncGenBtn();
+      if($('btnCompare'))$('btnCompare').disabled=false;
+      if($('btnOptimize')) $('btnOptimize').disabled=false;
+      // Show floating image controls
+      showImageControls(true);
+      updateHelpBar();
+      // Stay on image tab
+      if(G.view!=='image') setView('image');
+      else showImgPreview(); // already on image tab, just show
+      resetResult();
+    };
+    img.src=e.target.result;
+  };
+  rd.readAsDataURL(f);
+}
+
+function resetResult(){
+  G.done=false;G.compareMode=false;G.zoom=1;
+  G.cache={greedy:null,back:null};
+  document.body.classList.remove('pb-ready'); document.body.classList.remove('has-image');
+  cvSvg.style.display='none';cvRaster.style.display='none';cvCmpSvg.style.display='none';
+  $('cDiv').style.display='none';$('cHandle').style.display='none';
+  $('cLblL').style.display='none';$('cLblR').style.display='none';
+  if(G.img && G.view==='image'){showImgPreview();}
+  else if(!G.img){$('ph').style.display='flex';if($('imgPreviewWrap'))$('imgPreviewWrap').style.display='none';}
+  if($('statSec'))$('statSec').style.display='none';
+  $('emptyMsg').style.display='block';$('nw').style.display='none';
+  $('btnRefine').style.display='none';
+  $('rollbackRow').style.display='none';
+  if($('btnCompare')){$('btnCompare').classList.remove('active');$('btnCompare').textContent='⇄ Compare side by side';}
+  // prodSec is inside collapse now
+}
+
+// ══ THUMBNAILS ══
+function updateBothThumbs(){if(!G.img)return;if($('origImg'))updateOrigThumb();if($('cropPrevImg'))updateCropThumb();}
+
+function updateOrigThumb(){
+  const c=off;c.width=200;c.height=200;const ctx=c.getContext('2d');
+  const s=Math.min(G.img.width,G.img.height);
+  if(G.bw)ctx.filter='grayscale(1)';
+  ctx.drawImage(G.img,(G.img.width-s)/2,(G.img.height-s)/2,s,s,0,0,200,200);
+  $('origImg').src=c.toDataURL('image/jpeg',.85);
+}
+
+function updateCropThumb(){
+  const c=off;c.width=200;c.height=200;const ctx=c.getContext('2d');
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,200,200);
+  drawCropped(ctx,200,G.bw);
+  const img=$('cropPrevImg');
+  if(img){img.src=c.toDataURL('image/jpeg',.9);img.style.display='block';}
+}
+
+function drawCropped(ctx,sz,gray,forcedRaw){
+  // forcedRaw=true: always draw original image (used by crop modal, bg-preview)
+  if(!G.img)return;
+  ctx.save();if(gray)ctx.filter='grayscale(1)';
+  if(false){
+    if(gray)ctx.filter='grayscale(1)';
+    ctx.drawImage(G.bgMaskImg,0,0,sz,sz);
+    ctx.restore();return;
+  }
+  const img=G.img,base=Math.min(img.width,img.height),view=base/G.cropZoom;
+  // cropOffX/Y are normalized fractions of view size (stored independently of canvas size)
+  const srcX=(img.width-view)/2 - G.cropOffX*view;
+  const srcY=(img.height-view)/2 - G.cropOffY*view;
+  ctx.drawImage(img,srcX,srcY,view,view,0,0,sz,sz);ctx.restore();
+}
+
+// ══ CROP MODAL ══
+let cDrag=false,cSX=0,cSY=0,cOX=0,cOY=0;
+const cropCont=$('cropCont');
+if($('cropPrevWrap'))$('cropPrevWrap').addEventListener('click',()=>{if(G.img)openCrop();});
+function openCrop(){renderCropCanvas();$('cropZoom').value=G.cropZoom;$('cropZV').textContent=G.cropZoom.toFixed(1)+'×';$('cropModal').classList.add('open');}
+$('btnCC').addEventListener('click',()=>$('cropModal').classList.remove('open'));
+$('btnCA').addEventListener('click',()=>{$('cropModal').classList.remove('open');updateBothThumbs();showImgPreview();resetResult();scheduleAutoGen();});
+$('cropZoom').addEventListener('input',()=>{G.cropZoom=parseFloat($('cropZoom').value);$('cropZV').textContent=G.cropZoom.toFixed(1)+'×';renderCropCanvas();});
+cropCont.addEventListener('mousedown',e=>{cDrag=true;cSX=e.clientX;cSY=e.clientY;cOX=G.cropOffX;cOY=G.cropOffY;cropCont.style.cursor='grabbing';});
+window.addEventListener('mousemove',e=>{if(!cDrag)return;const csz=380;G.cropOffX=cOX+(e.clientX-cSX)/csz;G.cropOffY=cOY+(e.clientY-cSY)/csz;renderCropCanvas();});
+window.addEventListener('mouseup',()=>{cDrag=false;cropCont.style.cursor='grab';});
+cropCont.addEventListener('wheel',e=>{e.preventDefault();G.cropZoom=Math.max(.5,Math.min(5,G.cropZoom-e.deltaY*.003));$('cropZoom').value=G.cropZoom;$('cropZV').textContent=G.cropZoom.toFixed(1)+'×';renderCropCanvas();},{passive:false});
+function renderCropCanvas(){const c=$('cropCanvas'),ctx=c.getContext('2d');ctx.fillStyle='#eee';ctx.fillRect(0,0,380,380);drawCropped(ctx,380,G.bw,true);}
+
+// ══ IMAGE → FLOAT ARRAY ══
+function prepareImage(sz){
+  off.width=sz;off.height=sz;
+  const ctx=off.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,sz,sz);
+  drawCropped(ctx,sz,G.bw);
+  const raw=ctx.getImageData(0,0,sz,sz).data;
+  const img=new Float32Array(sz*sz);
+  const cx=sz/2,cy=sz/2,R=sz/2;
+
+  // Pass 1: convert to linearised darkness [0=white,1=black], clip to circle
+  for(let y=0;y<sz;y++)for(let x=0;x<sz;x++){
+    const i=y*sz+x,pi=i*4;
+    // sRGB perceptual luminance weights (ITU-R BT.709)
+    const srgb=(0.2126*raw[pi]+0.7152*raw[pi+1]+0.0722*raw[pi+2])/255;
+    // Linearise: undo gamma so greedy sees perceptual equal-steps
+    // (Chris Wellons recommendation: "gamma 2.2 gives better results")
+    const lin = srgb<=0.04045 ? srgb/12.92 : Math.pow((srgb+0.055)/1.055,2.4);
+    const dx=x-cx,dy=y-cy;
+    img[i]=(dx*dx+dy*dy<=(R-1)*(R-1))?(1-lin):0;
+  }
+
+  // Pass 2: auto-contrast stretch inside the circle
+  // Forces the darkest pixel to 1.0 and brightest to 0.0 — full use of range.
+  // This dramatically improves light/faint images (pencil sketches, pale faces).
+  let minV=1, maxV=0;
+  for(let i=0;i<sz*sz;i++){ if(img[i]>0){if(img[i]<minV)minV=img[i];if(img[i]>maxV)maxV=img[i];} }
+  const span=maxV-minV;
+  if(span>0.15){ // only stretch if image has real range (skip near-blank images)
+    const scale=1/span;
+    for(let i=0;i<sz*sz;i++) if(img[i]>0) img[i]=Math.min(1,Math.max(0,(img[i]-minV)*scale));
+  }
+
+  return img;
+}
+
+function makeNails(N,sz){
+  const nails=[],cx=sz/2,cy=sz/2,nr=sz/2-2;
+  for(let i=0;i<N;i++){const a=(i/N)*Math.PI*2-Math.PI/2;nails.push({x:cx+nr*Math.cos(a),y:cy+nr*Math.sin(a)});}
+  return nails;
+}
+
+// ══ BRESENHAM ══
+function bresenham(x0,y0,x1,y1,sz){
+  const pts=[];
+  let dx=Math.abs(x1-x0),dy=Math.abs(y1-y0),sx=x0<x1?1:-1,sy=y0<y1?1:-1,e=dx-dy,x=x0,y=y0;
+  while(true){if(x>=0&&x<sz&&y>=0&&y<sz)pts.push(y*sz+x);if(x===x1&&y===y1)break;const e2=2*e;if(e2>-dy){e-=dy;x+=sx;}if(e2<dx){e+=dx;y+=sy;}}
+  return new Int32Array(pts);
+}
+
+function buildLC(nails,N,minG,sz){
+  const lc=[];for(let i=0;i<N;i++)lc.push({});
+  for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){
+    const diff=j-i,ad=Math.min(diff,N-diff);
+    if(ad<minG){lc[i][j]=null;continue;}
+    lc[i][j]=bresenham(Math.round(nails[i].x),Math.round(nails[i].y),Math.round(nails[j].x),Math.round(nails[j].y),sz);
+  }
+  return lc;
+}
+function getLine(lc,i,j){return i<j?lc[i][j]:lc[j][i];}
+
+// ══════════════════════════════════════════
+//  GREEDY ALGORITHM — Research-grade improvements:
+//
+//  1. Importance map (Hachnochi/McDougall): auto-built from edge strength +
+//     radial center-weight so faces/detail are hunted first, background last.
+//  2. Weighted scoring: score = Σ(err[px] * importance[px]) / Σ(importance[px])
+//     Instead of plain average — detail areas count more.
+//  3. Edge-boosted scoring: Sobel edge map added to importance so outlines
+//     are captured early (critical for portraits, as Birsak 2018 confirms).
+//  4. Adaptive fade: when err[px] is already near 0 (saturated/over-drawn),
+//     fade contribution is reduced — avoids wasting "string budget" on done areas.
+//  5. Dynamic penalty window: scales with N so larger nail counts don't loop.
+//  6. Adaptive stop threshold: relative to image average darkness (not hardcoded).
+//  7. Score normalization: per-line length normalization so short lines don't
+//     cheat by having fewer pixels to average over.
+// ══════════════════════════════════════════
+function buildImportanceMap(img, sz){
+  // Edge strength via Sobel
+  const edges = new Float32Array(sz*sz);
+  for(let y=1;y<sz-1;y++) for(let x=1;x<sz-1;x++){
+    const gx = img[(y-1)*sz+(x+1)] + 2*img[y*sz+(x+1)] + img[(y+1)*sz+(x+1)]
+              -img[(y-1)*sz+(x-1)] - 2*img[y*sz+(x-1)] - img[(y+1)*sz+(x-1)];
+    const gy = img[(y+1)*sz+(x-1)] + 2*img[(y+1)*sz+x] + img[(y+1)*sz+(x+1)]
+              -img[(y-1)*sz+(x-1)] - 2*img[(y-1)*sz+x] - img[(y-1)*sz+(x+1)];
+    edges[y*sz+x] = Math.min(1, Math.sqrt(gx*gx+gy*gy)*1.5);
+  }
+  // Soft radial center-weight: center pixels count 1.5x, edge of circle 0.7x
+  // This mimics human importance weighting for portrait subjects
+  const cx=sz/2, cy=sz/2, R=sz/2;
+  const imp = new Float32Array(sz*sz);
+  for(let y=0;y<sz;y++) for(let x=0;x<sz;x++){
+    const i=y*sz+x;
+    if(img[i]===0){imp[i]=0;continue;}
+    const r = Math.sqrt((x-cx)**2+(y-cy)**2)/R; // 0=center, 1=edge
+    const radialW = 0.7 + 0.8*(1-r*r); // 1.5 at center, 0.7 at rim
+    // Blend: 50% raw darkness + 35% edge + 15% radial
+    imp[i] = Math.min(1, img[i]*0.50 + edges[i]*0.35 + radialW*0.15);
+  }
+  return imp;
+}
+
+function runGreedy(img,nails,N,maxL,minG,fade,sz,cb){
+  const lc=buildLC(nails,N,minG,sz);
+  const err=new Float32Array(img);
+
+  // Build importance map for weighted scoring
+  const imp=buildImportanceMap(img,sz);
+
+  const result=[0]; let cur=0;
+
+  // PENALTY_WINDOW scales with N: for 100 nails=8, for 300=15, for 400=18
+  const PENALTY_WINDOW = Math.round(Math.sqrt(N)*0.85);
+
+  // Adaptive stop threshold: 0.3% of mean darkness so light images don't stop early
+  let meanDark=0; let npx=0;
+  for(let i=0;i<sz*sz;i++) if(img[i]>0){meanDark+=img[i];npx++;}
+  meanDark/=Math.max(1,npx);
+  const STOP_THRESH = meanDark * 0.008; // stop when best line < 0.8% of mean
+
+  const lastVisit=new Int32Array(N).fill(-999);
+
+  for(let iter=0;iter<maxL;iter++){
+    let best=-1, bestJ=-1;
+
+    for(let j=0;j<N;j++){
+      if(j===cur) continue;
+      const ad=Math.min(Math.abs(j-cur),N-Math.abs(j-cur));
+      if(ad<minG) continue;
+      const px=getLine(lc,cur,j);
+      if(!px||!px.length) continue;
+
+      // Weighted score: Σ(err * importance) / Σ(importance)
+      // This makes the algorithm prioritise detail/edge pixels over flat areas
+      let wsum=0, wt=0;
+      for(let k=0;k<px.length;k++){
+        const w=imp[px[k]];
+        wsum+=err[px[k]]*w;
+        wt+=w;
+      }
+      let score = wt>0 ? wsum/wt : 0;
+
+      // Recency penalty — scaled PENALTY_WINDOW
+      const age=iter-lastVisit[j];
+      if(age<PENALTY_WINDOW) score*=(age/PENALTY_WINDOW);
+
+      if(score>best){best=score;bestJ=j;}
+    }
+
+    if(bestJ<0 || best<STOP_THRESH) break;
+
+    result.push(bestJ);
+    const px=getLine(lc,cur,bestJ);
+    const fadeAmt=fade/500;
+    for(let k=0;k<px.length;k++){
+      // Adaptive fade: pixels already near 0 contribute less fade
+      // (avoids "burning" already-done areas while underdone areas wait)
+      const residual=err[px[k]];
+      const adaptFade = fadeAmt * (0.4 + 0.6*residual); // less fade when pixel is already dark
+      err[px[k]]=Math.max(0, residual-adaptFade);
+    }
+    lastVisit[cur]=iter;
+    cur=bestJ;
+    if(iter%150===0) cb(iter,maxL);
+  }
+  return{result,err,lc};
+}
+
+// ══════════════════════════════════════════
+//  RADON-STYLE ALGORITHM
+//
+//  The key insight: rather than scoring on the
+//  raw error image, we score on an EDGE-ENHANCED
+//  version of the error. This is the actual useful
+//  connection to the Radon transform in CT — it
+//  favours lines that cross strong edges (dark→light
+//  transitions), which are the contour features
+//  that make portraits readable. We compute a
+//  simple Sobel edge map once, then weight the
+//  pixel scores by edge strength during selection.
+//  Subtraction still happens on the raw error image.
+// ══════════════════════════════════════════
+function runRadon(img,nails,N,maxL,minG,fade,sz,cb){
+  const lc=buildLC(nails,N,minG,sz);
+  
+  // Build edge-enhanced scoring image: combine raw + Sobel magnitude
+  const edge=new Float32Array(sz*sz);
+  for(let y=1;y<sz-1;y++)for(let x=1;x<sz-1;x++){
+    const gx=img[(y-1)*sz+(x+1)]+2*img[y*sz+(x+1)]+img[(y+1)*sz+(x+1)]
+             -img[(y-1)*sz+(x-1)]-2*img[y*sz+(x-1)]-img[(y+1)*sz+(x-1)];
+    const gy=img[(y+1)*sz+(x-1)]+2*img[(y+1)*sz+x]+img[(y+1)*sz+(x+1)]
+             -img[(y-1)*sz+(x-1)]-2*img[(y-1)*sz+x]-img[(y-1)*sz+(x+1)];
+    edge[y*sz+x]=Math.sqrt(gx*gx+gy*gy)/4;
+  }
+  // Score image = blend of raw darkness + edge
+  const score=new Float32Array(sz*sz);
+  for(let i=0;i<sz*sz;i++) score[i]=img[i]*0.6+edge[i]*0.4;
+
+  const err=new Float32Array(img);     // working copy for subtraction
+  const scoreW=new Float32Array(score); // working copy for scoring
+
+  const result=[0];let cur=0;
+  for(let iter=0;iter<maxL;iter++){
+    let best=-1,bestJ=-1;
+    for(let j=0;j<N;j++){
+      if(j===cur)continue;
+      const ad=Math.min(Math.abs(j-cur),N-Math.abs(j-cur));
+      if(ad<minG)continue;
+      const px=getLine(lc,cur,j);
+      if(!px||!px.length)continue;
+      let sum=0;for(let k=0;k<px.length;k++)sum+=scoreW[px[k]];
+      if(sum/px.length>best){best=sum/px.length;bestJ=j;}
+    }
+    if(bestJ<0||best<0.0015)break;
+    result.push(bestJ);
+    const px=getLine(lc,cur,bestJ);
+    const f=fade/500;
+    for(let k=0;k<px.length;k++){
+      err[px[k]]=Math.max(0,err[px[k]]-f);
+      scoreW[px[k]]=Math.max(0,scoreW[px[k]]-f);
+    }
+    cur=bestJ;
+    if(iter%150===0)cb(iter,maxL);
+  }
+  return{result,err,lc};
+}
+
+// ══ ACCURACY SCORE ══
+// Measures how well the rendered string art matches the original.
+// Renders string pattern to pixel array, compares with target image.
+// Returns 0–100 (higher = better match).
+function computeScore(nailList,nailPos,imgPx,sz){
+  const SZ=sz;
+  const rendered=new Float32Array(SZ*SZ); // starts at 0 (white)
+  const thick=0.5; // fixed thin line for scoring
+  // Draw lines into rendered (additive)
+  for(let i=0;i<nailList.length-1;i++){
+    const f=nailPos[nailList[i]],t=nailPos[nailList[i+1]];
+    const px=bresenham(Math.round(f.x),Math.round(f.y),Math.round(t.x),Math.round(t.y),SZ);
+    for(let k=0;k<px.length;k++) rendered[px[k]]=Math.min(1,rendered[px[k]]+0.15);
+  }
+  // Compare with original (both are 0=white/empty, 1=dark)
+  let mse=0,count=0;
+  const cx=SZ/2,cy=SZ/2,R=SZ/2;
+  for(let y=0;y<SZ;y++)for(let x=0;x<SZ;x++){
+    const dx=x-cx,dy=y-cy;
+    if(dx*dx+dy*dy>(R-1)*(R-1))continue;
+    const d=rendered[y*SZ+x]-imgPx[y*SZ+x];
+    mse+=d*d;count++;
+  }
+  mse/=count;
+  return Math.max(0,Math.round((1-Math.sqrt(mse))*100));
+}
+
+// ══ GENERATE ══
+
+function _drawImgPreview(){
+  if(!G.img) return;
+  const wrap=$('imgPreviewWrap');
+  const cv=$('imgPreviewCanvas');
+  if(!wrap||!cv) return;
+  // Use G.circleSize (user-controlled) or fit to cWrap
+  const cWrap=$('cWrap');
+  const cw=cWrap?cWrap.clientWidth:0, ch=cWrap?cWrap.clientHeight:0;
+  const maxSz=Math.min(cw||400, ch||400)-40;
+  if(!G.circleSize) G.circleSize=maxSz;
+  const sz=Math.max(120, Math.min(G.circleSize, maxSz));
+  if(cv.width!==sz){ cv.width=sz; cv.height=sz; }
+  wrap.style.width=sz+'px'; wrap.style.height=sz+'px';
+  const ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,sz,sz);
+  ctx.fillStyle='#fff';
+  ctx.fillRect(0,0,sz,sz);
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(sz/2, sz/2, sz/2-1, 0, Math.PI*2);
+  ctx.clip();
+  const img=G.img;
+  const base=Math.min(img.width,img.height);
+  const view=base/Math.max(0.1,G.cropZoom);
+  const srcX=(img.width-view)/2 - G.cropOffX*view;
+  const srcY=(img.height-view)/2 - G.cropOffY*view;
+  // Try with filter, fallback without (some browsers ignore filter inside save/clip)
+  try{ ctx.filter='grayscale(1)'; } catch(e){}
+  ctx.drawImage(img, srcX, srcY, view, view, 0, 0, sz, sz);
+  try{ ctx.filter='none'; } catch(e){}
+  ctx.restore();
+  // Grayscale fallback via getImageData if filter didn't work
+  try{
+    const id=ctx.getImageData(0,0,sz,sz);
+    const d=id.data;
+    let hasColor=false;
+    for(let i=0;i<d.length;i+=4){
+      if(d[i]!==d[i+1]||d[i]!==d[i+2]){hasColor=true;break;}
+    }
+    if(hasColor){ // image has colour — apply manual grayscale
+      for(let i=0;i<d.length;i+=4){
+        const g=Math.round(0.2126*d[i]+0.7152*d[i+1]+0.0722*d[i+2]);
+        d[i]=d[i+1]=d[i+2]=g;
+      }
+      ctx.putImageData(id,0,0);
+    }
+  } catch(e){}
+}
+function showImgPreview(){
+  if(!G.img) return;
+  const wrap=$('imgPreviewWrap');
+  if(!wrap) return;
+  if(G.view!=='image') return; // only show preview on image tab
+  $('ph').style.display='none';
+  wrap.style.display='block';
+  // Try immediately, then retry after layout settles
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      _drawImgPreview();
+      // Extra retry in case cWrap was still 0
+      setTimeout(_drawImgPreview, 120);
+    });
+  });
+}
+
+function triggerFromBtn(){
+  // The unified button always triggers the currently selected algo
+  if(G.algo==='back'){
+    G.algo='back';
+  } else {
+    G.algo='greedy';
+  }
+  triggerGenerate();
+}
+
+function updateGenBtn(){
+  const isBack=G.algo==='back';
+  const btn=$('btnGenGreedy');
+  const lbl=$('btnInGreedy');
+  if(!btn||!lbl) return;
+  if(isBack){
+    btn.style.background='var(--accent2)';
+    btn.style.color='#fff';
+    lbl.textContent='▶ Generate';
+  } else {
+    btn.style.background='';
+    btn.style.color='';
+    lbl.textContent='▶ Generate';
+  }
+  mobSyncGenBtn();
+}
+
+function onBigGenerate(){
+  if(!G.img) return;
+  if(!G.running) triggerGenerate();
+  // finishGen will switch to result tab when done
+}
+
+
+// ══ UNIFIED ZOOM — works on all tabs ══
+function zoomIn(){
+  if(G.view==='image'){
+    const maxSz=Math.min(cWrapEl.clientWidth,cWrapEl.clientHeight)-40;
+    G.circleSize=Math.min(maxSz, Math.round(G.circleSize*1.25));
+    applyCircleSize(); showSizeHint();
+  } else {
+    G.zoom=Math.min(4,G.zoom*1.25); applyZoom();
+  }
+}
+function zoomOut(){
+  if(G.view==='image'){
+    G.circleSize=Math.max(120, Math.round(G.circleSize/1.25));
+    applyCircleSize(); showSizeHint();
+  } else {
+    G.zoom=Math.max(0.25,G.zoom/1.25); applyZoom();
+  }
+}
+function zoomFit(){
+  if(G.view==='image'){
+    const maxSz=Math.min(cWrapEl.clientWidth,cWrapEl.clientHeight)-40;
+    G.circleSize=maxSz; applyCircleSize(); showSizeHint();
+  } else {
+    G.zoom=1; applyZoom();
+  }
+}
+
+// Sync circle size ↔ SVG zoom when switching tabs
+// so the visual circle always appears the same size
+function syncZoomToCircle(){
+  // Called when leaving result/error tab → going to image tab
+  // Read current SVG size and set G.circleSize to match
+  const svgW = cvSvg.getAttribute('width');
+  if(svgW) G.circleSize = parseInt(svgW);
+  else {
+    const maxSz=Math.min(cWrapEl.clientWidth,cWrapEl.clientHeight)-40;
+    G.circleSize = Math.round(maxSz * G.zoom);
+  }
+}
+function syncCircleToZoom(){
+  // Called when leaving image tab → going to result/error tab
+  // Set G.zoom so SVG renders at same size as circle was
+  const maxSz=Math.min(cWrapEl.clientWidth,cWrapEl.clientHeight)-40;
+  if(maxSz>0 && G.circleSize>0) G.zoom=Math.min(4,Math.max(0.1,G.circleSize/maxSz));
+  else G.zoom=1;
+}
+
+function triggerGenerate(){
+  if(!G.img) return;
+  // Allow switching to Front while Back runs in background
+  // But don't allow re-triggering the same algo while it's running
+  if(G.running && G.runningAlgo===G.algo) return;
+
+  // Build a cache key from current image+params (use algo-specific sliders)
+  const _ckIsBack=G.algo==='back';
+  const cacheKey=[
+    _ckIsBack?$('snB').value:$('sn').value,
+    _ckIsBack?$('slB').value:$('sl').value,
+    _ckIsBack?$('sgB').value:$('sg').value,
+    _ckIsBack?$('sfB').value:$('sf').value,
+    G.bw,'0',G.cropOffX.toFixed(3),G.cropOffY.toFixed(3),G.cropZoom.toFixed(3)
+  ].join('|');
+
+  // If we already computed this algo with the same params — reuse instantly
+  const cached = G.cache[G.algo];
+  if(cached && cached.key===cacheKey){
+    prog(100,'Loaded from cache!');
+    $('pw').style.display='block';
+    finishGen(cached.result,cached.err,cached.img,cached.nails,
+              cached.N,cached.sz,0,cached.sc,cached.lc);
+    setTimeout(()=>$('pw').style.display='none',1000);
+    return;
+  }
+
+  G.running=true;G.runningAlgo=G.algo;G.compareMode=false;
+  // Use per-algo button and progress bar
+  const _isBack = G.algo==='back';
+  const _btnId = 'btnGenGreedy';
+  const _btnInId = 'btnInGreedy';
+  const _pwId = _isBack ? 'pwBack' : 'pwGreedy';
+  $(_btnId).disabled=true;
+  $(_btnInId).innerHTML='<div class="spin" style="display:inline-block"></div> Generating...';
+  $(_btnId).classList.add('pulsing');
+  $(_pwId).style.display='block';prog(0,'Preparing...');
+  // Also disable old btn if exists
+  if($('btnGen')) $('btnGen').disabled=true;
+  if($('btnCompare')) $('btnCompare').disabled=true;
+  const t0=performance.now();
+  setTimeout(()=>{
+    const isBack=G.algo==='back';
+    const N=parseInt(isBack&&$('snB')?$('snB').value:$('sn').value),maxL=parseInt(isBack&&$('slB')?$('slB').value:$('sl').value);
+    const sz=500,minG=parseInt(isBack&&$('sgB')?$('sgB').value:$('sg').value),fade=parseInt(isBack&&$('sfB')?$('sfB').value:$('sf').value);
+    const img=prepareImage(sz),nails=makeNails(N,sz);
+
+    G._cacheKey=cacheKey; // save so finishGen can store it
+    if(G.algo==='back'){
+      // Back Allowed is async/chunked — delivers result via callback
+      const _backAlgo='back';
+      runBackAllowed(img,nails,N,maxL,minG,fade,sz,(result,err,lc)=>{
+        if($('backTabBadge')){$('backTabBadge').textContent='';$('backTabBadge').classList.remove('visible');}
+        // Store result in cache regardless of which tab we're on now
+        const sc=computeScore(result,nails,img,sz);
+        const _key=cacheKey;
+        G.cache['back']={key:_key,result,err,img,nails,N,sz,sc,lc};
+        // Update Back tab button
+        if($('btnGenGreedy')){$('btnGenGreedy').disabled=false;$('btnGenGreedy').classList.remove('pulsing');}
+        if($('btnInGreedy')) $('btnInGreedy').innerHTML='▶ Generate';
+        if($('pwBack')) setTimeout(()=>$('pwBack').style.display='none',1500);
+        // Update Back stats
+        if($('statSecBack')) $('statSecBack').style.display='block';
+        const _sfxB='B';
+        if($('stlB')) $('stlB').textContent=result.length/2|0;
+        if($('stnB')) $('stnB').textContent=N;
+        if($('sttB')) $('sttB').textContent=((performance.now()-t0)/1000).toFixed(1);
+        if($('scoreValB')) $('scoreValB').textContent=sc+'%';
+        if($('scoreBoxB')) $('scoreBoxB').style.display='block';
+        prog(100,'Back done!');
+        const backTabEl=$('algoTabBack');
+        if(backTabEl){backTabEl.classList.remove('back-running');backTabEl.removeAttribute('data-pct');}
+        // Clear running state
+        G.running=false; G.runningAlgo=null;
+        // Only render/show if we're still on the Back tab
+        if(G.algo==='back'){
+          G.nails=result;G.errPx=err;G.imgPx=img;G.nailPos=nails;G.imgSz=sz;
+          G.done=true;G.score=sc;G.lineCache=lc;
+          if($('algoTitleOverlay')){$('algoTitleOverlay').style.display='block';$('algoTitleOverlay').textContent='Back Allowed · '+(result.length/2|0)+' lines';}
+          if($('imgPreviewWrap')) $('imgPreviewWrap').style.display='none';
+          $('ph').style.display='none';
+          pbInit();render();
+        }
+      });
+    } else {
+      const algo=G.algo==='radon'?runRadon:runGreedy;
+      const{result,err,lc}=algo(img,nails,N,maxL,minG,fade,sz,(iter,max)=>{
+        const fpct=Math.round(5+(iter/max)*88);prog(fpct,'Lines: '+(iter+1)+' / '+max+' · '+fpct+'%');
+      });
+      prog(95,'Scoring...');
+      const sc=computeScore(result,nails,img,sz);
+      finishGen(result,err,img,nails,N,sz,performance.now()-t0,sc,lc);
+    }
+  },40);
+}
+
+// unified button handled by triggerFromBtn()
+// Init tab panels
+setView('image');
+showImageControls(false);
+// Init circle size to max after layout is ready
+function _initCircleSize(){
+  const cw=cWrapEl.clientWidth||window.innerWidth-310;
+  const ch=cWrapEl.clientHeight||window.innerHeight-100;
+  const sz=Math.max(120,Math.min(cw,ch)-40);
+  if(sz>G.circleSize){ G.circleSize=sz; applyCircleSize(); }
+}
+requestAnimationFrame(()=>requestAnimationFrame(_initCircleSize));
+window.addEventListener('load',_initCircleSize);
+if($('btnGen')) $('btnGen').addEventListener('click',()=>triggerGenerate());
+
+function prog(p,msg){
+  const _isBack=G.algo==='back';
+  const pfId=_isBack?'pfBack':'pfGreedy';
+  const ptId=_isBack?'ptBack':'ptGreedy';
+  if($(pfId)) $(pfId).style.width=p+'%';
+  if($(ptId)) $(ptId).textContent=msg;
+  // Show % in the button itself while generating
+  if(!_isBack && $('btnInGreedy') && G.running){
+    $('btnInGreedy').innerHTML=`<div class="spin" style="display:inline-block"></div> ${p|0}%`;
+  }
+  if($('pf')) $('pf').style.width=p+'%';
+  if($('pt')) $('pt').textContent=msg;
+}
+
+function finishGen(result,err,img,nails,N,sz,ms,sc,lc){
+  G.nails=result;G.errPx=err;G.imgPx=img;G.nailPos=nails;G.imgSz=sz;
+  G.done=true;G.running=false;G.runningAlgo=null;G.score=sc;G.lineCache=lc;
+  // Store in cache so switching algos doesn't re-run
+  if(G.cache && G._cacheKey){
+    G.cache[G.algo]={key:G._cacheKey,result,err,img,nails,N,sz,sc,lc};
+    G._cacheKey=null;
+  }
+  prog(100,'Done!');
+  // ── Switch to String Art tab ──
+  G.view='result';
+  document.body.className=document.body.className.replace(/view-\S+/g,'').trim();
+  document.body.classList.add('view-result');
+  ['vmR','vmO','vmE'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on');});
+  const vmR=document.getElementById('vmR'); if(vmR) vmR.classList.add('on');
+  // ── Hide image-tab elements ──
+  $('ph').style.display='none';
+  if($('imgPreviewWrap')) $('imgPreviewWrap').style.display='none';
+  cvRaster.style.display='none'; cvCmpSvg.style.display='none';
+  $('cDiv').style.display='none'; $('cHandle').style.display='none';
+  $('cLblL').style.display='none'; $('cLblR').style.display='none';
+  // ── Stats ──
+  $('stl').textContent=result.length-1; $('stn').textContent=N;
+  $('stt').textContent=(ms/1000).toFixed(1);
+  $('stm').textContent=Math.round((result.length-1)*0.64*0.3);
+  $('scoreBox').style.display='block';
+  $('scoreVal').textContent=sc+'%';
+  $('scoreDelta').textContent='accuracy vs original';
+  $('emptyMsg').style.display='none';
+  if(G.showSeq){$('nw').style.display='block'; renderNailPanel(result);}
+  if($('algoTitleOverlay')){$('algoTitleOverlay').style.display='block';$('algoTitleOverlay').textContent=(G.algo==='back'?'Back Allowed':'Front (Greedy)')+' · '+((G.nails?G.nails.length:0)-1)+' lines';}
+  // ── Mobile: switch panel ──
+
+  // ── RENDER first — must happen before pbInit so a crash there can't block it ──
+  cvSvg.style.display='block';
+  render();
+  // ── Init playback bar ──
+  try { pbInit(); document.body.classList.add('pb-ready'); } catch(e) { console.warn('pbInit:', e); }
+  // Re-enable per-algo button
+  const _isBackF=G.algo==='back';
+  const _btnIdF='btnGenGreedy';
+  const _btnInIdF='btnInGreedy';
+  const _pwIdF=_isBackF?'pwBack':'pwGreedy';
+  if($(_btnIdF)){$(_btnIdF).disabled=false;$(_btnIdF).classList.remove('pulsing');}
+  if($(_btnInIdF)) $(_btnInIdF).innerHTML=_isBackF?'▶ Generate':'▶ Generate';
+  setTimeout(()=>{ if($(_pwIdF)) $(_pwIdF).style.display='none'; },2000);
+  // Per-algo stats
+  const _statId=_isBackF?'statSecBack':'statSecGreedy';
+  if($(_statId)) $(_statId).style.display='block';
+  const _sfx=_isBackF?'B':'G';
+  const _lines=G.nails?(_isBackF?G.nails.length/2:G.nails.length-1):0;
+  if($('stl'+_sfx)) $('stl'+_sfx).textContent=_lines;
+  if($('stn'+_sfx)) $('stn'+_sfx).textContent=parseInt($('sn').value);
+  if($('stm'+_sfx)){const d=parseFloat($('mDiam').value)||30;let tot=0;if(G.nailPos&&G.nails){for(let i=0;i<(_isBackF?G.nails.length/2:G.nails.length-1);i++){const ai=_isBackF?G.nails[i*2]:G.nails[i],bi=_isBackF?G.nails[i*2+1]:G.nails[i+1];if(G.nailPos[ai]&&G.nailPos[bi]){const dx=G.nailPos[ai].x-G.nailPos[bi].x,dy=G.nailPos[ai].y-G.nailPos[bi].y;tot+=Math.sqrt(dx*dx+dy*dy);}}$('stm'+_sfx).textContent=Math.round(tot/G.imgSz*d/100);}};
+  if(G.score!==null&&$('scoreVal'+_sfx)){$('scoreVal'+_sfx).textContent=G.score+'%';if($('scoreBox'+_sfx))$('scoreBox'+_sfx).style.display='block';}
+  // Back view toolbar button
+  $('tbBackView').style.display=_isBackF?'flex':'none';
+  $('backViewSep').style.display=_isBackF?'block':'none';
+  // refineRow removed
+  if($('btnRefine')) $('btnRefine').style.display='block';
+  updateProdTime();
+  setTimeout(()=>{ if($('pw')) $('pw').style.display='none'; },2000);
+  showWindTab();
+  // On mobile: switch to result tab and sync button
+  if(isMobile()){ mobSetTab('result'); mobSyncGenBtn(); }
+}
+
+// ══ ITERATIVE REFINEMENT ══
+// After generation, do a second pass targeting the highest-error regions.
+// This simulates "AI learning by trial and error" — measures the gap
+// between rendered and original, then concentrates new lines there.
+$('btnRefine').addEventListener('click',()=>{
+  if(!G.done||G.running)return;
+  G.running=true;
+  $('btnRefine').textContent='⟳ Refining...';
+  $('btnRefine').disabled=true;
+  if($('btnGen'))$('btnGen').disabled=true;
+  const t0=performance.now();
+  setTimeout(()=>{
+    const N=parseInt($('sn').value);
+    const maxExtra=Math.floor(parseInt($('sl').value)*0.3); // 30% more lines
+    const sz=G.imgSz,minG=parseInt($('sg').value),fade=parseInt($('sf').value);
+    const nails=G.nailPos;
+
+    // Compute residual: where is the rendered image still far from target?
+    // Render current result to pixel buffer
+    const rendered=new Float32Array(sz*sz);
+    for(let i=0;i<G.nails.length-1;i++){
+      const f=nails[G.nails[i]],t=nails[G.nails[i+1]];
+      const px=G.lineCache?getLine(G.lineCache,G.nails[i],G.nails[i+1]):
+                bresenham(Math.round(f.x),Math.round(f.y),Math.round(t.x),Math.round(t.y),sz);
+      if(px)for(let k=0;k<px.length;k++)rendered[px[k]]=Math.min(1,rendered[px[k]]+0.12);
+    }
+    // Residual = target darkness minus what's rendered (clamped to >0)
+    const residual=new Float32Array(sz*sz);
+    for(let i=0;i<sz*sz;i++)residual[i]=Math.max(0,G.imgPx[i]-rendered[i]);
+
+    // Run a short greedy pass on the residual
+    const{result:extra,err}=runGreedy(residual,nails,N,maxExtra,minG,fade,sz,(i,m)=>{});
+
+    // Append extra nails to existing sequence (connect from last nail)
+    const lastNail=G.nails[G.nails.length-1];
+    const extraConnected=[lastNail,...extra.slice(1)];
+    const combined=[...G.nails,...extraConnected.slice(1)];
+
+    // Recompute error image
+    const newErr=new Float32Array(G.imgPx);
+    const lc=buildLC(nails,N,minG,sz);
+    for(let i=0;i<combined.length-1;i++){
+      const px=getLine(lc,combined[i],combined[i+1]);
+      if(px)for(let k=0;k<px.length;k++)newErr[px[k]]=Math.max(0,newErr[px[k]]-fade/500);
+    }
+
+    const sc=computeScore(combined,nails,G.imgPx,sz);
+    const prev=G.score;
+    G.nails=combined;G.errPx=newErr;G.score=sc;G.lineCache=lc;
+
+    $('stl').textContent=combined.length-1;
+    $('scoreVal').textContent=sc+'%';
+    const delta=sc-prev;
+    $('scoreDelta').textContent=(delta>=0?'+':'')+delta+'% from refinement';
+    $('scoreDelta').style.color=delta>=0?'var(--accent)':'#ff6b6b';
+    if(G.showSeq){renderNailPanel(combined);}
+    render();
+    G.running=false;
+    $('btnRefine').textContent='⟳ Refine again';
+    $('btnRefine').disabled=false;
+    if($('btnGen'))$('btnGen').disabled=false;
+    $('stt').textContent=(((performance.now()-t0)/1000)+parseFloat($('stt').textContent)).toFixed(1);
+  },40);
+});
+
+// ══ SMART OPTIMIZE ══
+// Analyzes the image and suggests better parameter values.
+// Relationships it considers:
+// - Nail count ↔ Max lines (12–16× ratio is optimal)  
+// - Line darkness ↔ Max lines (more lines → less fade needed)
+// - Min nail skip ↔ Nail count (~8% of N)
+$('btnOptimize').addEventListener('click',()=>{
+  if(!G.img)return;
+
+  // Save current params for rollback
+  G.prevParams={
+    sn:$('sn').value,sl:$('sl').value,sf:$('sf').value,
+    sg:$('sg').value,
+    vn:$('vn').textContent,vl:$('vl').textContent,
+    vf:$('vf').textContent,vg:$('vg').textContent,
+  };
+
+  // Analyze image: compute average darkness to guide params
+  off.width=100;off.height=100;
+  const ctx=off.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,100,100);
+  drawCropped(ctx,100,G.bw);
+  const raw=ctx.getImageData(0,0,100,100).data;
+  let darkSum=0,darkCount=0;
+  for(let i=0;i<10000;i++){const g=(raw[i*4]+raw[i*4+1]+raw[i*4+2])/3/255;darkSum+=(1-g);darkCount++;}
+  const avgDark=darkSum/darkCount; // 0=white image, 1=black image
+
+  // Compute suggested params
+  const suggestN=Math.round(Math.min(300,Math.max(150,200+avgDark*100))/5)*5;
+  const ratioLines=avgDark>0.5?14:12; // darker images need more lines
+  const suggestL=Math.round(Math.min(5000,suggestN*ratioLines)/100)*100;
+  const suggestFade=Math.round(avgDark>0.5?20:30); // dark images → less fade
+  const suggestG=Math.round(suggestN*0.08);
+
+  // Apply
+  $('sn').value=suggestN;$('vn').textContent=suggestN;
+  $('sl').value=suggestL;$('vl').textContent=suggestL;
+  $('sf').value=suggestFade;$('vf').textContent=suggestFade;
+  $('sg').value=suggestG;$('vg').textContent=suggestG;
+
+  $('optHint').textContent=`N=${suggestN} · ${suggestL} lines · fade ${suggestFade}`;
+  $('rollbackRow').style.display='flex';
+
+  triggerGenerate();
+});
+
+$('btnRollback').addEventListener('click',()=>{
+  if(!G.prevParams)return;
+  const p=G.prevParams;
+  $('sn').value=p.sn;$('vn').textContent=p.vn;
+  $('sl').value=p.sl;$('vl').textContent=p.vl;
+  $('sf').value=p.sf;$('vf').textContent=p.vf;
+  $('sg').value=p.sg;$('vg').textContent=p.vg;
+  $('rollbackRow').style.display='none';
+  triggerGenerate();
+});
+
+// ══ COMPARE ══
+if($('btnCompare'))$('btnCompare').addEventListener('click',()=>{
+  // If already in compare mode, toggle it off
+  if(G.compareMode){
+    G.compareMode=false;
+    if($('btnCompare')){$('btnCompare').classList.remove('active');$('btnCompare').textContent='⇄ Compare side by side';}
+    cvCmpSvg.style.display='none';
+    $('cDiv').style.display='none';$('cHandle').style.display='none';
+    $('cLblL').style.display='none';$('cLblR').style.display='none';
+    if(G.done)render();
+    return;
+  }
+  if(!G.img||G.running)return;
+  G.running=true;G.compareMode=true;
+  if($('btnCompare')){$('btnCompare').classList.add('active');$('btnCompare').textContent='⇄ Exit compare';}
+  if($('btnGen'))$('btnGen').disabled=true;if($('btnCompare'))$('btnCompare').disabled=true;
+  if($('btnIn'))$('btnIn').innerHTML='<div class="spin" style="display:inline-block"></div> Running both...';
+  if($('btnGen'))$('btnGen').classList.add('pulsing');
+  if($('pw'))$('pw').style.display='block';prog(0,'Running Greedy...');
+  const t0=performance.now();
+  setTimeout(()=>{
+    const isBack=G.algo==='back';
+    const N=parseInt(isBack&&$('snB')?$('snB').value:$('sn').value),maxL=parseInt(isBack&&$('slB')?$('slB').value:$('sl').value);
+    const sz=500,minG=parseInt(isBack&&$('sgB')?$('sgB').value:$('sg').value),fade=parseInt(isBack&&$('sfB')?$('sfB').value:$('sf').value);
+    const img=prepareImage(sz),nails=makeNails(N,sz);
+    const gr=runGreedy(img,nails,N,maxL,minG,fade,sz,(i,m)=>prog(2+(i/m)*44,'Greedy: '+(i+1)+'/'+m));
+    prog(50,'Running Radon...');
+    const rd=runRadon(img,nails,N,maxL,minG,fade,sz,(i,m)=>prog(50+(i/m)*46,'Radon: '+(i+1)+'/'+m));
+    prog(100,'Drag divider to compare');
+    G.greedyNails=gr.result;G.radonNails=rd.result;
+    G.nails=gr.result;G.errPx=gr.err;G.imgPx=img;G.nailPos=nails;G.imgSz=sz;G.done=true;G.running=false;
+    // statSec/expSec inside panels now
+    $('stl').textContent=(gr.result.length-1)+' / '+(rd.result.length-1);
+    $('stn').textContent=N;$('stt').textContent=((performance.now()-t0)/1000).toFixed(1);
+    $('stm').textContent=Math.round(((gr.result.length+rd.result.length)/2-1)*0.64*0.3);
+    G.comparePct=50;
+    $('ph').style.display='none';
+  if($('imgPreviewWrap')) $('imgPreviewWrap').style.display='none';
+  if($('algoTitleOverlay')){$('algoTitleOverlay').style.display='block';$('algoTitleOverlay').textContent=(G.algo==='back'?'Back Allowed':'Front (Greedy)')+' · '+((G.nails?G.nails.length:0)-1)+' lines';}
+    renderCompare();$('emptyMsg').style.display='none';
+    if(G.showSeq){$('nw').style.display='block';renderNailPanel(gr.result);}
+    if($('btnGen'))$('btnGen').disabled=false;if($('btnCompare'))$('btnCompare').disabled=false;
+    if($('btnIn'))$('btnIn').innerHTML='▶ Regenerate';if($('btnGen'))$('btnGen').classList.remove('pulsing');
+    $('scoreBox').style.display='none';
+    updateProdTime();
+    setTimeout(()=>$('pw').style.display='none',2500);
+    setupCompareDrag();
+  },40);
+});
+
+// ══ SVG HELPERS ══
+// Build an SVG path string from a nail sequence
+function buildSvgLines(list, nailPos, imgSz){
+  const SZ=SVG_SZ, sc=SZ/imgSz;
+  const parts=[];
+  for(let i=0;i<list.length-1;i++){
+    const f=nailPos[list[i]],t=nailPos[list[i+1]];
+    parts.push(`M${(f.x*sc).toFixed(2)},${(f.y*sc).toFixed(2)}L${(t.x*sc).toFixed(2)},${(t.y*sc).toFixed(2)}`);
+  }
+  return parts.join('');
+}
+
+// Write the result SVG (lines only — no pixel scaling possible)
+function setSvgContent(svgEl, list, nailPos, imgSz, showNails){
+  const SZ=SVG_SZ, sc=SZ/imgSz;
+  // thick = "target screen pixels per stroke" (user-facing value)
+  // We must convert to viewBox units: viewBox_stroke = thick_px * (SZ / displaySz)
+  // Get actual display size of the SVG element
+  const thickPx=parseFloat($('st').value);
+  // Use BASE (zoom=1) display size for thickness — keeps lines same visual weight at all zoom levels
+  const baseSz=Math.min($('cWrap').clientWidth, $('cWrap').clientHeight)-40;
+  const thickVB=Math.min(0.4, thickPx*(SZ/Math.max(200,baseSz)));
+
+  const col=G.color;
+  const [r,g,b]=hexRgb(col);
+  const d=buildSvgLines(list,nailPos,imgSz);
+  let nailDots='';
+  if(showNails){
+    nailPos.forEach(n=>{
+      nailDots+=`<circle cx="${(n.x*sc).toFixed(1)}" cy="${(n.y*sc).toFixed(1)}" r="1.8" fill="rgba(0,0,0,0.3)"/>`;
+    });
+  }
+  const bgFill='#ffffff';
+
+  // Opacity scales with line count so darkness is consistent
+  const lineCount=Math.max(1, list.length-1);
+  const baseOpacity=Math.min(0.85, Math.max(0.06, 750/lineCount));
+  const opacity=baseOpacity.toFixed(3);
+
+  svgEl.innerHTML=
+    `<defs>`+
+      `<clipPath id="cp${svgEl.id}"><circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2-1}"/></clipPath>`+
+    `</defs>`+
+    `<circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2}" fill="${bgFill}"/>`+
+    `<g clip-path="url(#cp${svgEl.id})">`+
+      `<path d="${d}" fill="none" stroke="rgba(${r},${g},${b},${opacity})" stroke-width="${thickVB.toFixed(3)}" stroke-linecap="round"/>`+
+      nailDots+
+    `</g>`+
+    `<circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2-1}" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="1.5"/>`;
+}
+
+function applySvgSize(svgEl, zoom){
+  const wrap=$('cWrap');
+  const maxSz=Math.min(wrap.clientWidth, wrap.clientHeight)-40;
+  const sz=Math.min(maxSz, Math.round(maxSz*zoom)); // never exceed fit size
+  svgEl.setAttribute('width',sz);
+  svgEl.setAttribute('height',sz);
+  svgEl.style.width=sz+'px';
+  svgEl.style.height=sz+'px';
+  svgEl.setAttribute('viewBox',`0 0 ${SVG_SZ} ${SVG_SZ}`);
+}
+
+// ══ RENDER ══
+// Single unified render path: always SVG for result (infinitely sharp),
+// always canvas for original/error. The SVG viewBox stays fixed at SVG_SZ,
+// only the element's pixel size changes with zoom.
+function render(){
+  if(!G.done||G.compareMode)return;
+  const sz=G.imgSz;
+  const baseDisplaySz=Math.round(Math.min($('cWrap').clientWidth,$('cWrap').clientHeight)-40);
+  const displaySz=Math.round(baseDisplaySz*G.zoom);
+
+  if(G.view==='result'){
+    // SVG — infinitely sharp vector at any zoom level
+    cvRaster.style.display='none';
+    cvSvg.style.display='block';
+    applySvgSize(cvSvg, G.zoom); // set width FIRST so setSvgContent can read it
+    setSvgContent(cvSvg, G.nails, G.nailPos, sz, G.showNails);
+  } else {
+    // Raster views: original photo or error map
+    cvSvg.style.display='none';
+    const wrap=$('cWrap');
+    const maxSz=Math.min(wrap.clientWidth,wrap.clientHeight)-40;
+    const displaySz=Math.min(maxSz, Math.round(maxSz*G.zoom));
+    const rasterSz=Math.min(4000,displaySz);
+    cvRaster.width=rasterSz;cvRaster.height=rasterSz;
+    cvRaster.style.width=displaySz+'px';cvRaster.style.height=displaySz+'px';
+    cvRaster.style.display='block';
+    const ctx=cvRaster.getContext('2d');
+    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,rasterSz,rasterSz);
+    ctx.save();ctx.beginPath();ctx.arc(rasterSz/2,rasterSz/2,rasterSz/2-1,0,Math.PI*2);ctx.clip();
+    if(G.view==='original'){
+      // Draw cropped image
+      off.width=rasterSz;off.height=rasterSz;
+      const tc=off.getContext('2d');tc.fillStyle='#fff';tc.fillRect(0,0,rasterSz,rasterSz);
+      drawCropped(tc,rasterSz,G.bw);
+      ctx.drawImage(off,0,0,rasterSz,rasterSz);
+    } else { // error map — scale from algorithm's pixel buffer
+      const scE=sz/rasterSz;
+      const id=ctx.createImageData(rasterSz,rasterSz);
+      for(let y=0;y<rasterSz;y++)for(let x=0;x<rasterSz;x++){
+        const v=Math.min(1,G.errPx[Math.min(sz-1,Math.floor(y*scE))*sz+Math.min(sz-1,Math.floor(x*scE))]);
+        const c2=Math.floor(v*255),i=(y*rasterSz+x)*4;
+        id.data[i]=c2;id.data[i+1]=Math.floor(c2*.3);id.data[i+2]=0;id.data[i+3]=255;
+      }
+      ctx.putImageData(id,0,0);
+    }
+    ctx.restore();
+    ctx.beginPath();ctx.arc(displaySz/2,displaySz/2,displaySz/2-1,0,Math.PI*2);
+    ctx.strokeStyle='rgba(0,0,0,.1)';ctx.lineWidth=1.5;ctx.stroke();
+  }
+}
+
+// ══ COMPARE (SVG-based, clipped with CSS) ══
+function renderCompare(){
+  // Left SVG = Greedy
+  cvRaster.style.display='none';
+  cvSvg.style.display='block';
+  applySvgSize(cvSvg, G.zoom);
+  setSvgContent(cvSvg, G.greedyNails||G.nails, G.nailPos, G.imgSz, G.showNails);
+
+  // Right SVG = Radon, positioned exactly over left, clipped to right portion
+  cvCmpSvg.style.display='block';
+  applySvgSize(cvCmpSvg, G.zoom);
+  setSvgContent(cvCmpSvg, G.radonNails||G.nails, G.nailPos, G.imgSz, G.showNails);
+
+  // Position overlay SVG on top of main SVG
+  requestAnimationFrame(()=>{
+    const cwr=$('cWrap'),cvR=cvSvg.getBoundingClientRect(),wR=cwr.getBoundingClientRect();
+    const oL=cvR.left-wR.left,oT=cvR.top-wR.top,dw=cvR.width,dh=cvR.height;
+    const clipX=dw*(G.comparePct/100);
+    cvCmpSvg.style.cssText=
+      `display:block;position:absolute;left:${oL}px;top:${oT}px;`+
+      `width:${dw}px;height:${dh}px;border-radius:50%;`+
+      `clip-path:inset(0 0 0 ${clipX}px);pointer-events:none;`;
+    const div=$('cDiv');div.style.cssText=`display:block;left:${oL+clipX}px;top:${oT}px;height:${dh}px;`;
+    const h=$('cHandle');h.style.cssText=`display:block;left:${oL+clipX}px;top:${oT+dh/2}px;`;
+    $('cLblL').style.cssText=`display:block;left:${oL+10}px;top:${oT+10}px;`;
+    $('cLblR').style.cssText=`display:block;left:${oL+dw-56}px;top:${oT+10}px;`;
+  });
+}
+
+function setupCompareDrag(){
+  $('cHandle').onmousedown=e=>{
+    e.preventDefault();
+    const move=ev=>{
+      const cvR=cvSvg.getBoundingClientRect();
+      G.comparePct=Math.max(5,Math.min(95,((ev.clientX-cvR.left)/cvR.width)*100));
+      renderCompare();
+    };
+    const up=()=>{window.removeEventListener('mousemove',move);window.removeEventListener('mouseup',up);};
+    window.addEventListener('mousemove',move);window.addEventListener('mouseup',up);
+  };
+}
+
+// ══ PRODUCTION TIME ══
+// Calculates machine winding time and mechanical stats from the nail sequence.
+// All machine parameters are tunable — this lets you calibrate once the hardware exists.
+function updateProdTime(){
+  if(!G.done||!G.nails||G.nails.length<2)return;
+  // prodSec inside collapse
+
+  const N=parseInt($('sn').value);
+  const diam=parseFloat($('mDiam').value)||30;        // cm
+  const motorDegPerSec=parseFloat($('mSpeed').value)||60; // degrees/sec
+  const feedCmPerSec=parseFloat($('mFeed').value)||5;     // cm/sec
+  const dwellSec=parseFloat($('mDwell').value)||0.3;       // sec per nail
+
+  const R=diam/2; // radius in cm
+  const nailAngleDeg=360/N; // degrees between adjacent nails
+  const circumference=Math.PI*diam; // cm
+
+  const list=G.nails;
+  let totalRotDeg=0,totalChordCm=0,maxRot=0;
+  const lines=list.length-1;
+
+  for(let i=0;i<lines;i++){
+    const from=list[i],to=list[i+1];
+    // Clockwise angular distance (always take shortest arc)
+    const diff=Math.abs(to-from);
+    const shortArc=Math.min(diff,N-diff);
+    const rotDeg=shortArc*nailAngleDeg;
+    totalRotDeg+=rotDeg;
+    if(rotDeg>maxRot)maxRot=rotDeg;
+    // Chord length: 2R·sin(θ/2)
+    const theta=(rotDeg*Math.PI)/180;
+    const chord=2*R*Math.sin(theta/2);
+    totalChordCm+=chord;
+  }
+
+  const avgRotDeg=totalRotDeg/lines;
+  const avgChordCm=totalChordCm/lines;
+
+  // Time breakdown:
+  // - Rotation time: total degrees / motor speed
+  const rotTimeSec=totalRotDeg/motorDegPerSec;
+  // - Feed time: total thread length / feed speed
+  const feedTimeSec=totalChordCm/feedCmPerSec;
+  // - Dwell time: one dwell per nail visit
+  const dwellTimeSec=lines*dwellSec;
+  // - Total
+  const totalSec=rotTimeSec+feedTimeSec+dwellTimeSec;
+
+  // Format time nicely
+  function fmtTime(s){
+    if(s<60)return Math.round(s)+'s';
+    const m=Math.floor(s/60),sec=Math.round(s%60);
+    if(m<60)return m+'m '+(sec>0?sec+'s':'');
+    const h=Math.floor(m/60),min=m%60;
+    return h+'h '+(min>0?min+'m':'');
+  }
+
+  function fmtCm(cm){
+    return cm>=100?(cm/100).toFixed(1)+'m':Math.round(cm)+'cm';
+  }
+
+  $('pTime').textContent=fmtTime(totalSec);
+  $('pThread').textContent=fmtCm(totalChordCm);
+  $('pAvgDeg').textContent=avgRotDeg.toFixed(1)+'°';
+  $('pMaxDeg').textContent=maxRot.toFixed(0)+'°';
+  $('pAvgChord').textContent=fmtCm(avgChordCm)+' avg chord · '+fmtCm(totalChordCm)+' total';
+
+  $('prodBreakdown').innerHTML=
+    `<strong>Rotation:</strong> ${fmtTime(rotTimeSec)} &nbsp;·&nbsp; `+
+    `<strong>Thread feed:</strong> ${fmtTime(feedTimeSec)} &nbsp;·&nbsp; `+
+    `<strong>Nail dwell:</strong> ${fmtTime(dwellTimeSec)}<br>`+
+    `Board: ⌀${diam}cm · ${N} nails · ${lines.toLocaleString()} moves`;
+}
+
+// Re-calculate when any machine param changes
+['mDiam','mSpeed','mFeed','mDwell'].forEach(id=>{
+  $(id).addEventListener('input',()=>updateProdTime());
+  $(id).addEventListener('change',()=>updateProdTime());
+});
+
+function hexRgb(h){const r=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h);return r?[parseInt(r[1],16),parseInt(r[2],16),parseInt(r[3],16)]:[0,0,0];}
+
+// ══ SWATCHES ══
+document.querySelectorAll('.swatch').forEach(sw=>{
+  sw.addEventListener('click',()=>{
+    document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('on'));
+    sw.classList.add('on');G.color=sw.dataset.c;
+    if(G.done&&!G.compareMode)render();
+  });
+});
+
+// ══ NAIL PANEL ══
+function renderNailPanel(list){
+  const isBack=G.algo==='back';
+  let h='';const rec=Math.max(0,list.length-8);
+  for(let i=0;i<list.length;i++){
+    const label=isBack?list[i]+(i%2===0?'F':'B'):list[i];
+    h+=`<span${i>=rec?' class="hi"':''}>${label}</span>`;
+    if(i<list.length-1)h+=isBack&&i%2===0?'<span style="color:var(--accent)">→</span>':'→';
+    if(i>0&&i%8===0)h+='<br>';
+  }
+  $('nl').innerHTML=h;setTimeout(()=>$('nw').scrollTop=$('nw').scrollHeight,50);
+}
+if($('btnHide'))$('btnHide').addEventListener('click',()=>{
+  G.showSeq=!G.showSeq;$('btnHide').textContent=G.showSeq?'hide':'show';
+  $('nw').style.display=(G.showSeq&&G.done)?'block':'none';
+});
+
+// ══ EXPORT ══
+$('ePNG').addEventListener('click',()=>{
+  if(!G.nails||G.nails.length<2)return;
+  // Render to a fresh canvas at high res for export
+  const SZ=1200,sz=G.imgSz,sc=SZ/sz;
+  const ec=document.createElement('canvas');ec.width=SZ;ec.height=SZ;
+  const ctx=ec.getContext('2d');
+  const thick=parseFloat($('st').value)*2; // scale thickness for 2× size
+  const[r,g,b]=hexRgb(G.color);
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,SZ,SZ);
+  ctx.save();ctx.beginPath();ctx.arc(SZ/2,SZ/2,SZ/2-1,0,Math.PI*2);ctx.clip();
+  const exportOpacity=Math.min(0.9,Math.max(0.04,550/Math.max(1,G.nails.length-1)));
+  ctx.strokeStyle=`rgba(${r},${g},${b},${exportOpacity.toFixed(3)})`;ctx.lineWidth=thick;ctx.beginPath();
+  const np=G.nailPos,list=G.nails;
+  for(let i=0;i<list.length-1;i++){const f=np[list[i]],t=np[list[i+1]];ctx.moveTo(f.x*sc,f.y*sc);ctx.lineTo(t.x*sc,t.y*sc);}
+  ctx.stroke();ctx.restore();
+  ctx.beginPath();ctx.arc(SZ/2,SZ/2,SZ/2-1,0,Math.PI*2);
+  ctx.strokeStyle='rgba(0,0,0,.1)';ctx.lineWidth=2;ctx.stroke();
+  const a=document.createElement('a');a.download='shweka-string-art.png';a.href=ec.toDataURL();a.click();
+});
+$('eSVG').addEventListener('click',()=>{
+  if(!G.nails||G.nails.length<2)return;
+  const np=G.nailPos,list=G.nails,SZ=SVG_SZ,sc=SZ/G.imgSz;
+  const thick=parseFloat($('st').value),col=G.color;
+  const d=buildSvgLines(list,np,G.imgSz);
+  const[r,g,b]=hexRgb(col);
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${SZ}" height="${SZ}" viewBox="0 0 ${SZ} ${SZ}">`+
+    `<defs><clipPath id="c"><circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2-1}"/></clipPath></defs>`+
+    `<circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2}" fill="#ffffff"/>`+
+    `<g clip-path="url(#c)"><path d="${d}" fill="none" stroke="rgba(${r},${g},${b},${(Math.min(0.9,Math.max(0.04,550/Math.max(1,G.nails.length-1)))).toFixed(3)})" stroke-width="${thick}" stroke-linecap="round"/></g>`+
+    `<circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2-1}" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="1.5"/>`+
+    `</svg>`;
+  const a=document.createElement('a');a.download='shweka-string-art.svg';
+  a.href=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));a.click();
+});
+$('eTXT').addEventListener('click',()=>{
+  if(!G.nails||G.nails.length<2)return;
+  const N=parseInt($('sn').value);
+  const isBack = G.algo==='back';
+  const seqStr = isBack
+    ? G.nails.map((n,i)=>n+(i%2===0?'F':'B')).join('\n')
+    : G.nails.join('\n');
+  const t=`Shweka Studio - String Art Nail Sequence\n==========================================\nAlgorithm: ${isBack?'Back Allowed':'Greedy'}\nNails: ${N}, CCW from top (0 to ${N-1})\nLines: ${G.nails.length-1}\nBoard: 30cm diameter\n\nSEQUENCE:\n`+seqStr;
+  const a=document.createElement('a');a.download=`nail-sequence-${N}.txt`;a.href=URL.createObjectURL(new Blob([t],{type:'text/plain'}));a.click();
+});
+
+// ══ ZOOM ══
+
+// ══════════════════════════════════════════
+//  BACK ALLOWED ALGORITHM
+//  Chunked async — runs in small batches with setTimeout between,
+//  so the browser stays responsive and shows live canvas updates.
+// ══════════════════════════════════════════
+function runBackAllowed(img,nails,N,maxL,minG,fade,sz,onDone){
+  const lc=buildLC(nails,N,minG,sz);
+  const err=new Float32Array(img);
+  const maxSkipVal=parseInt($('maxSkip').value)||999;
+  const routePenalty=parseFloat($('routePen').value)||0;
+  const PENALTY_WINDOW=10;
+  const lastVisit=new Int32Array(N).fill(-999);
+  const result=[];
+  const CHUNK=40; // strings per chunk before yielding to browser
+
+  function doChunk(iter){
+    const end=Math.min(iter+CHUNK,maxL);
+    for(;iter<end;iter++){
+      let bestScore=-1,bestA=-1,bestB=-1;
+      const stride=Math.max(1,Math.floor(N/180));
+      for(let a=0;a<N;a+=stride){
+        const ageA=iter-lastVisit[a];
+        const penA=ageA<PENALTY_WINDOW?(ageA/PENALTY_WINDOW):1;
+        if(penA<0.05) continue;
+        const maxJ=Math.min(N/2, maxSkipVal===999?N/2:maxSkipVal);
+        for(let j=minG;j<=maxJ;j++){
+          const b=(a+j)%N;
+          const px=getLine(lc,a,b);
+          if(!px||!px.length) continue;
+          let sum=0;
+          for(let k=0;k<px.length;k++) sum+=err[px[k]];
+          let score=(sum/px.length)*penA;
+          const ageB=iter-lastVisit[b];
+          if(ageB<PENALTY_WINDOW) score*=(ageB/PENALTY_WINDOW);
+          if(routePenalty>0) score*=(1-(routePenalty/100)*(j/N));
+          if(score>bestScore){bestScore=score;bestA=a;bestB=b;}
+        }
+      }
+      if(bestA<0||bestScore<0.002){iter=maxL;break;}
+      result.push(bestA,bestB);
+      const px=getLine(lc,bestA,bestB);
+      for(let k=0;k<px.length;k++) err[px[k]]=Math.max(0,err[px[k]]-fade/500);
+      lastVisit[bestA]=iter;
+      lastVisit[bestB]=iter;
+    }
+
+    // Update progress bar and live preview
+    const pct=Math.min(100,Math.round((iter/maxL)*88)+5);
+    const backPct=Math.round(iter/maxL*100);
+    prog(pct, `Back: ${result.length/2|0} strings · ${backPct}%`);
+    // Update Back tab with flashing progress
+    const backTab=$('algoTabBack');
+    if(backTab){
+      backTab.classList.add('back-running');
+      backTab.setAttribute('data-pct',backPct+'%');
+    }
+
+    // Show live preview only when on Back tab (don't corrupt Front result)
+    if(result.length>=2 && G.algo==='back'){
+      const tempTotal=result.length/2|0;
+      const saved=PB.total;
+      G.nails=result; G.nailPos=nails; G.imgSz=sz; G.done=true;
+      PB.total=tempTotal;
+      pbRender(tempTotal,false);
+      G.done=false; // still generating
+      PB.total=saved;
+    }
+
+    if(!G.running){onDone(result,err,lc);return;} // cancelled
+    if(iter>=maxL){onDone(result,err,lc);return;}
+    setTimeout(()=>doChunk(iter),0);
+  }
+
+  doChunk(0);
+  // Return null — result delivered via callback when done
+  return null;
+}
+
+// ══════════════════════════════════════════
+//  PLAYBACK BAR
+// ══════════════════════════════════════════
+
+function pbToggleSpeedPopup(){
+  $('pbSpeedPopup').classList.toggle('open');
+}
+
+// slider value = strings per second directly (1–1000)
+function pbSetSpeed(v){
+  PB.speed = Math.max(1, Math.min(5000, Math.round(v)));
+  const label = PB.speed >= 1000 ? '5000/s' : PB.speed + '/s';
+  $('pbSpeedBtn').textContent = label;
+  $('pbSpeedLbl').textContent = label;
+}
+
+// Close popup when clicking outside
+document.addEventListener('click', e=>{
+  const wrap = $('pbSpeedWrap');
+  if(wrap && !wrap.contains(e.target)) $('pbSpeedPopup').classList.remove('open');
+});
+
+function pbInit(){
+  if(!G.nails||G.nails.length<2) return;
+  // For greedy: total = nails.length-1 strings
+  // For back: total = nails.length/2 chords
+  PB.total = G.algo==='back'
+    ? Math.floor(G.nails.length/2)
+    : G.nails.length-1;
+  PB.pos = PB.total; // start fully drawn
+  $('pbSlider').max = PB.total;
+  $('pbSlider').value = PB.total;
+  $('pbCount').textContent = PB.total+' of '+PB.total+' lines';
+  $('playBar').style.display='flex';
+  document.body.classList.add('pb-ready');
+  // Show back view button only for back algo
+  $('pbViewBtn').style.display = G.algo==='back'?'flex':'none';
+  PB.backView=(G.algo==='back'); // Back algo defaults to flipped (back-of-board view)
+  document.body.classList.toggle('pb-back-view', PB.backView);
+  $('pbViewBtn').textContent=PB.backView?'↺ Front':'↺ Flip Plate';
+  if($('tbBackView')) $('tbBackView').textContent=PB.backView?'↺ Front':'↺ Flip Plate';
+  // Reset speed to default 500/s
+  PB.speed=2500;
+  $('pbSpeedBtn').textContent='2500/s';
+  $('pbSpeedLbl').textContent='2500/s';
+  if($('pbSpeedSlider')) $('pbSpeedSlider').value=500;
+}
+
+function pbScrub(val){
+  if(G.view==='wind'){ WD.pos=+val; windRender(); return; }
+  if(PB.playing) pbPause();
+  PB.pos=val;
+  $('pbCount').textContent=val+' of '+PB.total+' lines';
+  pbRender(val);
+}
+
+function pbTogglePlay(){
+  if(PB.playing) pbPause();
+  else pbPlay();
+}
+
+function pbPlay(){
+  if(PB.pos>=PB.total) PB.pos=0; // restart from beginning
+  PB.playing=true;
+  $('pbPlay').textContent='⏸';
+  $('pbPlay').classList.add('playing');
+  // Lock zoom during playback
+  $('bZI').disabled=true;$('bZO').disabled=true;$('bZR').disabled=true;
+  PB.lastTime=performance.now();
+  PB.frame=requestAnimationFrame(pbTick);
+}
+
+function pbPause(){
+  PB.playing=false;
+  if(PB.frame){cancelAnimationFrame(PB.frame);PB.frame=null;}
+  $('pbPlay').textContent='▶';
+  $('pbPlay').classList.remove('playing');
+  $('bZI').disabled=false;$('bZO').disabled=false;$('bZR').disabled=false;
+}
+
+function pbTick(now){
+  if(!PB.playing) return;
+  const speed=PB.speed||500;
+  const interval=1000/speed; // ms per string (speed = strings/sec)
+  if(now-PB.lastTime >= interval){
+    PB.pos++;
+    $('pbSlider').value=PB.pos;
+    $('pbCount').textContent=PB.pos+' of '+PB.total+' lines';
+    pbRender(PB.pos, true); // true = animate
+    PB.lastTime=now;
+    if(PB.pos>=PB.total){pbPause();return;}
+  }
+  PB.frame=requestAnimationFrame(pbTick);
+}
+
+function pbToggleView(){
+  PB.backView=!PB.backView;
+  document.body.classList.toggle('pb-back-view',PB.backView);
+  $('pbViewBtn').textContent=PB.backView?'↺ View Front':'↺ Flip Plate';
+  if($('tbBackView')) $('tbBackView').textContent=PB.backView?'↺ View Front':'↺ Flip Plate';
+  // Update algo title
+  if($('algoTitleOverlay') && G.algo==='back'){
+    const lines=G.nails?G.nails.length/2|0:0;
+    $('algoTitleOverlay').textContent=PB.backView
+      ? 'Back Routing · '+lines+' lines (back of board)'
+      : 'Back Allowed · '+lines+' lines (front)';
+  }
+  pbRender(PB.pos);
+}
+
+function pbRender(n, animate){
+  if(!G.done||!G.nails||!G.nailPos) return;
+  const nails=G.nailPos, sz=G.imgSz;
+  const SZ=SVG_SZ, sc=SZ/sz;
+  const thickPx=parseFloat($('st').value);
+  const baseSz=Math.min($('cWrap').clientWidth,$('cWrap').clientHeight)-40;
+  const thickVB=Math.min(0.4, thickPx*(SZ/Math.max(200,baseSz)));
+  const col=G.color;
+  const [r,g,b]=hexRgb(col);
+  const isBack=G.algo==='back';
+
+  // Build lines up to index n
+  // Opacity is fixed to TOTAL strings — not current position.
+  // This ensures strings don't change darkness as you scrub.
+  let frontLines='', backLines='', lastLine=null;
+  const lineCount = Math.max(1, PB.total || n);
+  const opacity=Math.min(0.85,Math.max(0.06,750/lineCount)).toFixed(3);
+
+  if(isBack){
+    const N=G.nailPos.length;
+    const cx=SZ/2, cy=SZ/2, R=SZ/2-2;
+    if(PB.backView){
+      // ── BACK-OF-BOARD VIEW ──
+      // The thread goes: front chord a→b, then routes STRAIGHT across the back b→a[next]
+      // Mirror x coords (SZ - x) because you're looking from behind.
+      // These are plain straight lines — the thread stretched across the back face.
+      for(let i=0;i<n;i++){
+        const bi=G.nails[i*2+1];       // end of front chord i
+        const na=G.nails[(i+1)*2];     // start of front chord i+1
+        if(bi===undefined||na===undefined) break;
+        // Mirror x: SZ - x
+        const bxm=(SZ - nails[bi].x*sc).toFixed(2), bym=(nails[bi].y*sc).toFixed(2);
+        const nxm=(SZ - nails[na].x*sc).toFixed(2), nym=(nails[na].y*sc).toFixed(2);
+        if(i===n-1 && animate){
+          lastLine={ax:bxm,ay:bym,bx:nxm,by:nym};
+        } else {
+          backLines+=`M${bxm},${bym}L${nxm},${nym}`;
+        }
+      }
+    } else {
+      // ── FRONT VIEW: draw the actual chords ──
+      for(let i=0;i<n;i++){
+        const ai=G.nails[i*2], bi=G.nails[i*2+1];
+        if(ai===undefined||bi===undefined) break;
+        const ax=(nails[ai].x*sc).toFixed(2), ay=(nails[ai].y*sc).toFixed(2);
+        const bx=(nails[bi].x*sc).toFixed(2), by=(nails[bi].y*sc).toFixed(2);
+        if(i===n-1 && animate){
+          lastLine={ax,ay,bx,by,type:'front'};
+        } else {
+          frontLines+=`M${ax},${ay}L${bx},${by}`;
+        }
+      }
+    }
+  } else {
+    // Greedy: nails = [n0,n1,n2,...]
+    for(let i=0;i<n;i++){
+      const ai=G.nails[i], bi=G.nails[i+1];
+      if(bi===undefined) break;
+      const ax=(nails[ai].x*sc).toFixed(2), ay=(nails[ai].y*sc).toFixed(2);
+      const bx=(nails[bi].x*sc).toFixed(2), by=(nails[bi].y*sc).toFixed(2);
+      if(i===n-1 && animate){
+        lastLine={ax,ay,bx,by};
+      } else {
+        frontLines+=`M${ax},${ay}L${bx},${by}`;
+      }
+    }
+  }
+
+  // Show nails
+  let nailDots='';
+  if(G.showNails){
+    nails.forEach(nail=>{
+      nailDots+=`<circle cx="${(nail.x*sc).toFixed(1)}" cy="${(nail.y*sc).toFixed(1)}" r="1.8" fill="rgba(0,0,0,0.3)"/>`;
+    });
+  }
+
+  const animLine = lastLine
+    ? `<path d="M${lastLine.ax},${lastLine.ay}L${lastLine.bx},${lastLine.by}" fill="none" stroke="rgba(${r},${g},${b},${opacity})" stroke-width="${thickVB}" stroke-linecap="round" class="pb-drawing-line"/>`
+    : '';
+
+  // Back routing arcs (shown in Flip Plate view) or front chords
+  const backLinesHtml = (isBack && PB.backView && backLines)
+    ? `<path d="${backLines}" fill="none" stroke="rgba(${r},${g},${b},${opacity})" stroke-width="${thickVB}" stroke-linecap="round"/>`
+    : '';
+
+  const svgEl=cvSvg;
+  svgEl.style.display='block';
+  applySvgSize(svgEl, G.zoom);
+  svgEl.innerHTML=
+    `<defs><clipPath id="cpcvSvg"><circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2-1}"/></clipPath></defs>`+
+    `<circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2}" fill="#ffffff"/>`+
+    `<g clip-path="url(#cpcvSvg)">`+
+      (frontLines?`<path d="${frontLines}" fill="none" stroke="rgba(${r},${g},${b},${opacity})" stroke-width="${thickVB}" stroke-linecap="round"/>`:'') +
+      backLinesHtml +
+      animLine +
+      nailDots+
+    `</g>`+
+    `<circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2-1}" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="1.5"/>`;
+}
+
+function applyZoom(){
+  if(!G.done)return;
+  if(G.view==='wind'){windRender();return;}
+  if(G.compareMode){renderCompare();return;}
+  render();
+}
+// zoom buttons now use inline onclick
+
+// Redraw on window resize (e.g. maximizing the window)
+let _resizeTimer;
+window.addEventListener('resize',()=>{
+  clearTimeout(_resizeTimer);
+  _resizeTimer=setTimeout(()=>{
+    if(G.done){
+      if(G.view==='wind') windRender();
+      else if(G.compareMode)renderCompare();
+      else render();
+    }
+  },150);
+});
+
+// Mouse scroll zoom on the display area
+const displayArea=document.querySelector('.canvas-wrap');
+if(displayArea){
+  displayArea.addEventListener('wheel',e=>{
+    if(!G.done)return;
+    e.preventDefault();
+    const delta=e.deltaY>0?-1:1;
+    const factor=1+(delta*0.12);
+    const newZoom=Math.max(0.25,Math.min(1,G.zoom*factor));
+    if(newZoom===G.zoom)return;
+    G.zoom=newZoom;
+    applyZoom();
+  },{passive:false});
+
+  // ── TOUCH: pinch-to-zoom + pan ──
+  let _touches={};
+  let _lastPinchDist=null;
+  let _panStart=null;
+  let _scrollStart=null;
+
+  function getTouchDist(t1,t2){
+    const dx=t1.clientX-t2.clientX, dy=t1.clientY-t2.clientY;
+    return Math.sqrt(dx*dx+dy*dy);
+  }
+
+  displayArea.addEventListener('touchstart',e=>{
+    if(!G.done)return;
+    if(e.touches.length===2){
+      // Pinch start
+      _lastPinchDist=getTouchDist(e.touches[0],e.touches[1]);
+      _panStart=null;
+    } else if(e.touches.length===1){
+      // Pan start
+      _panStart={x:e.touches[0].clientX, y:e.touches[0].clientY};
+      _scrollStart={left:displayArea.scrollLeft, top:displayArea.scrollTop};
+      _lastPinchDist=null;
+    }
+  },{passive:true});
+
+  displayArea.addEventListener('touchmove',e=>{
+    if(!G.done)return;
+    if(e.touches.length===2 && _lastPinchDist!==null){
+      // Pinch zoom
+      e.preventDefault();
+      const dist=getTouchDist(e.touches[0],e.touches[1]);
+      const factor=dist/_lastPinchDist;
+      _lastPinchDist=dist;
+      const newZoom=Math.max(0.25,Math.min(1,G.zoom*factor));
+      if(newZoom!==G.zoom){G.zoom=newZoom;applyZoom();}
+    } else if(e.touches.length===1 && _panStart && _scrollStart){
+      // Pan (only useful when zoomed in, i.e. overflow is scrollable)
+      e.preventDefault();
+      const dx=e.touches[0].clientX-_panStart.x;
+      const dy=e.touches[0].clientY-_panStart.y;
+      displayArea.scrollLeft=_scrollStart.left-dx;
+      displayArea.scrollTop=_scrollStart.top-dy;
+    }
+  },{passive:false});
+
+  displayArea.addEventListener('touchend',e=>{
+    if(e.touches.length<2) _lastPinchDist=null;
+    if(e.touches.length===0){_panStart=null;_scrollStart=null;}
+  },{passive:true});
+}
+
+// ── MOBILE TABS ──
+// ══════════════════════════════════════════
+//  MOBILE LAYOUT (≤600px)
+//  Bottom sheet for settings, top bar for tabs/generate.
+// ══════════════════════════════════════════
+const MOB_BP = 600;
+let _mobInited = false;
+
+function isMobile(){ return window.innerWidth <= MOB_BP; }
+
+function mobInit(){
+  if(!isMobile()) return;
+  if(_mobInited) return;
+  _mobInited = true;
+  // Move panel-left contents into the sheet
+  const panelLeft = document.querySelector('.panel-left');
+  const sheetInner = $('mobSheetInner');
+  if(panelLeft && sheetInner){
+    // Move all children
+    while(panelLeft.firstChild) sheetInner.appendChild(panelLeft.firstChild);
+  }
+}
+
+function mobSyncGenBtn(){
+  const btn = $('mobGenBtn');
+  if(!btn) return;
+  const srcBtn = $('btnGenGreedy');
+  if(!srcBtn) return;
+  btn.disabled = srcBtn.disabled;
+  btn.textContent = G.running ? '⏹ Stop' : '▶ Go';
+}
+
+function mobSetTab(tab){
+  if(!isMobile()) return;
+  // sync with desktop setView
+  setView(tab);
+  // update mobile tab button highlights
+  ['Image','Result','Wind'].forEach(t=>{
+    const b = $('mbt'+t);
+    if(!b) return;
+    const isWind = t==='Wind' && tab==='wind';
+    const isActive = tab === t.toLowerCase() || (tab==='result' && t==='Result') || (tab==='image' && t==='Image');
+    b.classList.toggle('active', isActive && !isWind);
+    b.classList.toggle('wind-active', isWind);
+  });
+}
+
+function mobOpenSheet(){
+  $('mobSheetBackdrop').classList.add('open');
+  $('mobSheet').classList.add('open');
+}
+
+function mobCloseSheet(){
+  $('mobSheetBackdrop').classList.remove('open');
+  $('mobSheet').classList.remove('open');
+}
+
+// Show wind tab button in mobile bar after generation
+const _origShowWindTab = showWindTab;
+function showWindTab(){
+  _origShowWindTab();
+  const b = $('mbtWind');
+  if(b) b.style.display = '';
+}
+
+function mobTab(tab){ /* stub — unified */ }
+function initMobile(){
+  mobInit();
+  mobSyncGenBtn();
+}
+
+window.addEventListener('resize',()=>{
+  if(isMobile()) mobInit();
+});
+initMobile();
+
+// ══════════════════════════════════════════
+//  WIND TAB
+//  Tap-to-advance hand-winding guide.
+//  Uses G.nails + G.nailPos from current result.
+// ══════════════════════════════════════════
+const WD = { pos: 0 }; // current step (0 = no strings drawn yet)
+
+function windInit(){
+  if(!G.nails||G.nails.length<2) return;
+  WD.pos = 0;
+  // Reset scrubber so it doesn't show old playback position
+  const total = G.nails.length-1;
+  if($('pbSlider')){ $('pbSlider').max=total; $('pbSlider').value=0; }
+  if($('pbCount')) $('pbCount').textContent = '0 of '+total+' lines';
+  // defer so display:block has taken effect before we read clientWidth
+  requestAnimationFrame(()=>requestAnimationFrame(windRender));
+}
+
+function windBack(){
+  if(WD.pos > 0) WD.pos--;
+  windRender();
+}
+
+function windAdvance(){
+  if(!G.nails||G.nails.length<2) return;
+  const total = G.nails.length-1;
+  if(WD.pos < total) WD.pos++;
+  windRender();
+}
+
+function windRender(){
+  if(!G.nails||!G.nailPos) return;
+  const cvWind = $('cvWind');
+  if(!cvWind) return;
+
+  const nails = G.nailPos, sz = G.imgSz;
+  const SZ = SVG_SZ, sc = SZ/sz;
+  const total = G.nails.length-1;
+  const n = WD.pos;
+
+  // Size exactly like the result SVG
+  applySvgSize(cvWind, G.zoom);
+  const maxSz = Math.min($('cWrap').clientWidth, $('cWrap').clientHeight)-40;
+  cvWind.setAttribute('viewBox', `0 0 ${SZ} ${SZ}`);
+
+  // Build past strings (dim)
+  const thickPx = parseFloat($('st').value);
+  const thickVB = Math.min(0.4, thickPx*(SZ/Math.max(200,maxSz)));
+  const col = G.color;
+  const [r,g,b] = hexRgb(col);
+  const opacity = Math.min(0.85, Math.max(0.06, 750/Math.max(1,total))).toFixed(3);
+
+  let pastLines = '';
+  for(let i=0; i<n-1; i++){
+    const ai=G.nails[i], bi=G.nails[i+1];
+    if(bi===undefined) break;
+    pastLines += `M${(nails[ai].x*sc).toFixed(2)},${(nails[ai].y*sc).toFixed(2)}L${(nails[bi].x*sc).toFixed(2)},${(nails[bi].y*sc).toFixed(2)}`;
+  }
+
+  // Current string = red, thicker
+  let currentLine = '';
+  if(n >= 1){
+    const ai=G.nails[n-1], bi=G.nails[n];
+    if(bi!==undefined){
+      currentLine = `<path d="M${(nails[ai].x*sc).toFixed(2)},${(nails[ai].y*sc).toFixed(2)}L${(nails[bi].x*sc).toFixed(2)},${(nails[bi].y*sc).toFixed(2)}" fill="none" stroke="rgba(220,40,40,0.95)" stroke-width="${(thickVB*2.5).toFixed(3)}" stroke-linecap="round"/>`;
+    }
+  }
+
+  // Nail dots
+  let nailDots = '';
+  nails.forEach(nail=>{
+    nailDots += `<circle cx="${(nail.x*sc).toFixed(1)}" cy="${(nail.y*sc).toFixed(1)}" r="2.2" fill="rgba(0,0,0,0.25)"/>`;
+  });
+  // Highlight current nail and next nail
+  if(n >= 1 && G.nails[n]!==undefined){
+    const cur = nails[G.nails[n]];
+    nailDots += `<circle cx="${(cur.x*sc).toFixed(1)}" cy="${(cur.y*sc).toFixed(1)}" r="5" fill="rgba(220,40,40,0.9)" stroke="#fff" stroke-width="1.5"/>`;
+  }
+
+  cvWind.innerHTML =
+    `<defs><clipPath id="cpWind"><circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2-1}"/></clipPath></defs>`+
+    `<circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2}" fill="#ffffff"/>`+
+    `<g clip-path="url(#cpWind)">`+
+      (pastLines ? `<path d="${pastLines}" fill="none" stroke="rgba(${r},${g},${b},${opacity})" stroke-width="${thickVB.toFixed(3)}" stroke-linecap="round"/>` : '')+
+      currentLine+
+      nailDots+
+    `</g>`+
+    `<circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2-1}" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="1.5"/>`;
+
+  // Update scrubber
+  const slider = $('pbSlider');
+  if(slider){ slider.max = total; slider.value = n; }
+  if($('pbCount')) $('pbCount').textContent = n + ' of ' + total + ' lines';
+
+  // Big nail number — show next nail to go to
+  const nextNail = G.nails[n]; // next nail to wrap to
+  const numEl = $('windNailNum');
+  if(numEl){
+    if(n < total && nextNail !== undefined){
+      numEl.textContent = nextNail;
+      numEl.style.display = 'block';
+    } else if(n >= total){
+      numEl.textContent = '✓';
+      numEl.style.display = 'block';
+    } else {
+      numEl.textContent = G.nails[0]; // show starting nail
+      numEl.style.display = 'block';
+    }
+  }
+
+  // Step info
+  const infoEl = $('windStepInfo');
+  if(infoEl) infoEl.textContent = `Step ${n} / ${total}`;
+}
+
+// Tap/click on wind SVG → advance (delegated from cWrap so it works regardless of display state at load)
+$('cWrap').addEventListener('click', e=>{
+  if(G.view!=='wind') return;
+  windAdvance();
+});
+$('cWrap').addEventListener('touchend', e=>{
+  if(G.view!=='wind') return;
+  e.preventDefault();
+  windAdvance();
+}, {passive:false});
+
+// Show Wind tab after generation
+function showWindTab(){
+  const btn = $('vmW');
+  if(btn) btn.style.display = '';
+}
+
+// ── CAMERA / FILE PICKER ──
+function openCamera(){
+  // Create a temporary input that asks for camera specifically
+  const input=document.createElement('input');
+  input.type='file';
+  input.accept='image/*';
+  input.capture='user'; // front camera (selfie); change to 'environment' for back
+  input.onchange=e=>{
+    if(e.target.files&&e.target.files[0]){
+      loadFile(e.target.files[0]);
+    }
+  };
+  input.click();
+}
+</script>
+</body>
+</html>
