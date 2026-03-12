@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SA v0.59 · Shweka Studio</title>
+<title>SA v0.79 · Shweka Studio</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧵</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -16,10 +17,10 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;background:var(--surface);}
 .logo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1rem;color:var(--accent);letter-spacing:-0.02em;line-height:1.1;}
 .logo-sub{font-family:'Space Grotesk',sans-serif;font-size:0.55rem;font-weight:400;color:var(--dim);letter-spacing:0.12em;text-transform:uppercase;}
-.main{display:flex;flex:1;overflow:hidden;}
+.main{display:flex;flex:1;overflow:hidden;min-height:0;}
 
 .panel{display:flex;flex-direction:column;}
-.panel-left{width:300px;min-width:300px;background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;overflow-x:hidden;}
+.panel-left{width:300px;min-width:300px;background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;overflow-x:hidden;min-height:0;}
 
 .section{padding:14px 16px;border-bottom:1px solid var(--border);}
 .sec-title{font-family:'Space Grotesk',sans-serif;font-size:0.7rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--mid);margin-bottom:9px;}
@@ -152,21 +153,21 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3);}
 .mi-unit{font-size:.74rem;color:var(--dim);width:22px;}
 
 /* CENTER */
-.panel-center{flex:1;display:flex;flex-direction:column;background:var(--surface);overflow:hidden;min-width:0;}
+.panel-center{flex:1;display:flex;flex-direction:column;background:var(--surface);overflow:hidden;min-width:0;min-height:0;}
 .toolbar{padding:7px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0;}
 .t-sep{width:1px;height:14px;background:var(--border);}
 .t-btn{padding:4px 9px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Inter',sans-serif;font-size:.64rem;cursor:pointer;transition:all .15s;}
 .t-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(90,122,240,.05);}
-.canvas-wrap{flex:1;overflow:hidden;position:relative;background:#e4e6eb;display:flex;align-items:center;justify-content:center;}
-#cvInner{display:flex;align-items:center;justify-content:center;width:100%;height:100%;}
-#cvInner svg, #cvInner canvas{display:block;flex-shrink:0;}
+.canvas-wrap{flex:1;overflow:hidden;position:relative;background:#e4e6eb;min-height:0;}
+#cvInner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+#cvInner svg, #cvInner canvas{display:block;flex-shrink:0;pointer-events:auto;}
 #cvSvg,#cvRaster{max-width:min(calc(100vw - 530px),calc(100vh - 96px));max-height:min(calc(100vw - 530px),calc(100vh - 96px));width:auto;height:auto;}
 #cvCmpSvg{position:absolute;border-radius:50%;display:none;pointer-events:none;}
 .cmp-div{position:absolute;width:2px;background:var(--accent);display:none;pointer-events:none;box-shadow:0 0 8px rgba(90,122,240,.4);}
 .cmp-handle{position:absolute;width:28px;height:28px;border-radius:50%;background:var(--accent);display:none;cursor:ew-resize;z-index:6;box-shadow:0 2px 8px rgba(0,0,0,.5);transform:translate(-50%,-50%);}
 .cmp-lbl{position:absolute;font-size:.57rem;color:rgba(0,0,0,.6);background:rgba(255,255,255,.85);padding:2px 7px;border-radius:4px;pointer-events:none;display:none;z-index:5;font-weight:600;}
-.ph{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;color:#999;font-size:.7rem;text-align:center;pointer-events:none;}
-.ph.ph-upload{pointer-events:auto;}
+.ph{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;color:#999;font-size:.7rem;text-align:center;pointer-events:none;z-index:5;}
+.ph-upload{pointer-events:auto;z-index:5;}
 .ph-ring{display:none;}
 .ph-nail{position:absolute;width:4px;height:4px;border-radius:50%;background:var(--border);transform:translate(-50%,-50%);animation:pdot 2.5s ease-in-out infinite;}
 @keyframes pdot{0%,100%{opacity:.1}50%{opacity:.65}}
@@ -192,20 +193,142 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.3);}
 .btn-apply{background:var(--accent);border-color:var(--accent);color:#0a0a0a;font-weight:700;}
 .crop-hint{font-size:.57rem;color:rgba(255,255,255,.6);}
 
-/* ── MOBILE TAB BAR ── */
-.mob-tabs{display:none;}
-.mob-camera-btn{display:none;}
+/* ════ MOBILE LAYOUT (≤600px) ════ */
+/* On mobile: canvas fills screen, settings slide up from bottom */
 
-@media (max-width: 768px) {
-  body{height:100dvh;}
-  header{padding:8px 14px;}
-  .logo{font-size:.85rem;}
-  .toolbar{padding:6px 10px;}
-  .canvas-wrap{padding:8px;}
-  .section{padding:10px 14px;}
+/* Mobile floating top bar */
+#mobTopBar{display:none;}
+
+/* Mobile settings sheet */
+#mobSheet{display:none;}
+#mobSheetBackdrop{display:none;}
+
+@media (max-width: 540px) {
+  body{height:100dvh;overflow:hidden;}
+  header{display:none;} /* hide desktop header on mobile */
+
+  /* Mobile floating top bar */
+  #mobTopBar{
+    display:flex;
+    position:fixed;top:0;left:0;right:0;z-index:200;
+    height:52px;
+    background:var(--surface);
+    border-bottom:1px solid var(--border);
+    box-shadow:0 2px 10px rgba(0,0,0,.08);
+    align-items:center;
+    padding:0 10px;
+    gap:6px;
+  }
+  #mobTopBar .mob-logo{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.85rem;
+    color:var(--accent);white-space:nowrap;margin-right:4px;
+  }
+  #mobTopBar .mob-tabs-row{
+    display:flex;gap:3px;flex:1;
+  }
+  #mobTopBar .mob-tab-btn{
+    flex:1;padding:6px 4px;background:var(--surface2);
+    border:none;border-radius:6px;
+    font-family:'Inter',sans-serif;font-size:.68rem;color:var(--dim);
+    cursor:pointer;transition:all .15s;white-space:nowrap;text-align:center;
+  }
+  #mobTopBar .mob-tab-btn.active{
+    background:var(--accent);color:#fff;
+  }
+  #mobTopBar .mob-tab-btn.wind-active{background:#e85d00;color:#fff;}
+  #mobTopBar .mob-gen-btn{
+    padding:7px 12px;background:var(--accent);color:#fff;
+    border:none;border-radius:7px;font-family:'Space Grotesk',sans-serif;
+    font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap;
+    flex-shrink:0;
+  }
+  #mobTopBar .mob-gen-btn:disabled{opacity:.35;cursor:not-allowed;}
+  #mobTopBar .mob-settings-btn{
+    width:36px;height:36px;border-radius:8px;
+    background:var(--surface2);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;flex-shrink:0;color:var(--mid);font-size:1rem;
+  }
+
+  /* Push main content below the top bar */
+  .main{
+    flex-direction:column;
+    padding-top:52px;
+  }
+
+  /* Left panel hidden on mobile by default — shown via sheet */
+  .panel-left{
+    display:none !important;
+  }
+
+  /* Center panel takes full remaining height */
+  .panel-center{
+    flex:1;min-height:0;
+  }
+
+  /* Seq drawer hidden on mobile */
+  .seq-drawer{display:none !important;}
+
+  /* playbar smaller on mobile */
+  #playBar{height:40px;padding:0 10px;gap:6px;}
+  .pb-count{font-size:.62rem;min-width:55px;}
+
+  /* Wind nav buttons even bigger on mobile */
+  #windNav button:not(#windPlayBtn){font-size:1.2rem !important;padding:14px 28px !important;min-width:100px !important;}
+  #windPlayBtn{font-size:1.5rem !important;width:62px !important;height:62px !important;padding:0 !important;min-width:0 !important;}
+  #windNailNum{font-size:clamp(3rem,12vw,6rem) !important;}
+  #windActions button,#windActions label{font-size:0.95rem !important;padding:10px 18px !important;}
+  #windSpeedRow input[type=range]{width:110px !important;}
+
+  /* Settings bottom sheet backdrop */
+  #mobSheetBackdrop{
+    display:none;
+    position:fixed;inset:0;z-index:300;
+    background:rgba(0,0,0,.4);
+    backdrop-filter:blur(2px);
+  }
+  #mobSheetBackdrop.open{display:block;}
+
+  /* Settings bottom sheet */
+  #mobSheet{
+    display:flex;
+    position:fixed;bottom:0;left:0;right:0;z-index:301;
+    background:var(--surface);
+    border-radius:18px 18px 0 0;
+    box-shadow:0 -8px 40px rgba(0,0,0,.18);
+    flex-direction:column;
+    max-height:82dvh;
+    transform:translateY(100%);
+    transition:transform .3s cubic-bezier(.4,0,.2,1);
+  }
+  #mobSheet.open{transform:translateY(0);}
+  #mobSheetHandle{
+    width:40px;height:4px;border-radius:2px;
+    background:var(--border);margin:10px auto 4px;flex-shrink:0;
+  }
+  #mobSheetTitle{
+    font-family:'Space Grotesk',sans-serif;font-size:.8rem;font-weight:700;
+    color:var(--text);padding:4px 16px 10px;flex-shrink:0;
+    border-bottom:1px solid var(--border);
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  #mobSheetTitle button{
+    background:none;border:none;font-size:1.1rem;cursor:pointer;
+    color:var(--mid);padding:0 4px;
+  }
+  #mobSheetInner{
+    overflow-y:auto;flex:1;
+    /* Contains the panel-left contents, cloned/moved here */
+  }
+
+  /* Hide desktop toolbar row — mobile uses #mobTopBar instead */
+  .toolbar{display:none !important;}
+
+  /* Hide Go + Settings when no image loaded (empty home screen) */
+  body.no-img #mobGenBtn, body.no-img #mobTopBar .mob-settings-btn { display:none; }
+  /* Hide Go + Settings on wind tab (controls are locked) */
+  body.view-wind #mobGenBtn, body.view-wind #mobTopBar .mob-settings-btn { display:none; }
 }
-
-/* Panel hiding only when JS confirms mobile (body.is-mobile) — REMOVED, layout is unified */
 
 
 /* ════ PLAYBACK BAR ════ */
@@ -455,6 +578,8 @@ body.pb-back-view .pb-view{color:var(--accent);border-color:var(--accent);}
   background:transparent;
   transition:background .2s, border-color .2s;
   pointer-events:auto;
+  position:relative;
+  flex-shrink:0;
 }
 .ph-upload:hover{border-color:var(--accent);background:rgba(90,122,240,.04);}
 .ph-upload.drag-over{
@@ -463,11 +588,10 @@ body.pb-back-view .pb-view{color:var(--accent);border-color:var(--accent);}
   border-style:solid !important;
   box-shadow:0 0 0 6px rgba(90,122,240,.12);
 }
-.ph-upload-inner{display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:auto;}
+.ph-upload-inner{display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;}
 .ph-txt{font-size:.9rem;font-weight:600;color:var(--text);}
 .ph-hint{font-size:.75rem;color:var(--dim);}
 /* bigger on image tab */
-body.view-image .ph-upload{width:320px;height:320px;}
 body.view-image .ph-txt{font-size:1rem;}
 body.view-image .ph-hint{font-size:.8rem;}
 
@@ -515,8 +639,10 @@ body:not(.view-image) .img-prev-hover-ov{display:none;}
 /* panel-left always visible — same width on all tabs keeps circle position stable */
 body.view-image .panel-left { border-right: 1px solid var(--border); }
 body.view-image .panel-left > * { opacity: 0.18; pointer-events: none; }
+body.view-image #genTopSec { opacity: 1 !important; pointer-events: auto !important; }
 body.view-image .panel-left input[type=range] { pointer-events: none; }
 body.view-image .panel-left button { pointer-events: none; }
+body.view-image #btnGenGreedy { pointer-events: auto !important; }
 body.view-image .panel-center { flex: 1; }
 /* toolbar always visible so tab buttons work */
 body.view-image .zoom-btns { display: none; } /* hide zoom buttons on image tab */
@@ -648,14 +774,60 @@ body.view-error   #vmE { background: #d97706; color: #fff; border-color: #d97706
 #cvWind{cursor:pointer;}
 #cvWind:active{opacity:0.92;}
 body.view-wind #vmW{background:#e85d00;color:#fff;border-color:#e85d00;}
+/* Wind-only mode: result and error tabs look disabled */
+body.wind-only #vmR,
+body.wind-only #vmE { opacity:0.3; pointer-events:none; cursor:not-allowed; }
+/* Lock left panel during winding — no changes allowed */
+body.view-wind .panel-left { pointer-events: none; }
+body.view-wind #genTopSec,
+body.view-wind #algoTabBar,
+body.view-wind .ctrl,
+body.view-wind .collapse-toggle,
+body.view-wind .collapse-body,
+body.view-wind .btn-optimize { opacity: 0.2; }
+/* Stats, score, and thread info stay fully readable */
+body.view-wind #statSecGreedy,
+body.view-wind #statSecBack,
+body.view-wind .stats-grid,
+body.view-wind .score-box { opacity: 1 !important; }
+#windSpeedRow input[type=range]{accent-color:#e85d00;cursor:pointer;}
+#windActions button,#windActions label{
+  display:inline-flex;align-items:center;justify-content:center;
+  cursor:pointer;user-select:none;-webkit-user-select:none;
+}
 </style>
 </head>
-<body class="view-image">
+<body class="view-image no-img">
+
+<!-- ════ MOBILE TOP BAR (≤600px only) ════ -->
+<div id="mobTopBar">
+  <span class="mob-logo">Shweka</span>
+  <div class="mob-tabs-row">
+    <button class="mob-tab-btn active" id="mbtImage" onclick="mobSetTab('image')">Image</button>
+    <button class="mob-tab-btn" id="mbtResult" onclick="mobSetTab('result')">String Art</button>
+    <label class="mob-tab-btn" id="mbtWind" onclick="_windTabClick(event)" style="position:relative;">🧵 Wind<input type="file" id="windHomeInput" accept=".txt" style="position:absolute;inset:0;opacity:0;width:100%;height:100%;pointer-events:none;" onchange="if(this.files[0]){loadWindFile(this.files[0]);this.value=''}"></label>
+  </div>
+  <button class="mob-gen-btn" id="mobGenBtn" disabled onclick="triggerFromBtn()">▶ Go</button>
+  <button class="mob-settings-btn" onclick="mobOpenSheet()">⚙</button>
+</div>
+
+<!-- ════ MOBILE SETTINGS SHEET ════ -->
+<div id="mobSheetBackdrop" onclick="mobCloseSheet()"></div>
+<div id="mobSheet">
+  <div id="mobSheetHandle"></div>
+  <div id="mobSheetTitle">
+    Settings
+    <button onclick="mobCloseSheet()">✕</button>
+  </div>
+  <div id="mobSheetInner">
+    <!-- panel-left contents are moved here by JS on mobile -->
+  </div>
+</div>
 <header>
   <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:nowrap;">
     <div class="logo" style="font-size:1.15rem;white-space:nowrap;">String Art Generator</div>
     <span class="logo-sub" style="font-size:0.65rem;white-space:nowrap;">by Shweka Studio</span>
-    <span class="logo-sub" style="font-size:0.6rem;color:var(--accent);opacity:0.7;white-space:nowrap;">v0.59</span>
+    <span class="logo-sub" style="font-size:0.6rem;color:var(--accent);opacity:0.7;white-space:nowrap;">v0.79</span>
   </div>
 </header>
 <div class="main">
@@ -893,7 +1065,7 @@ body.view-wind #vmW{background:#e85d00;color:#fff;border-color:#e85d00;}
       <button class="ds-btn on" id="vmO" onclick="setView('image')">Image</button>
       <button class="ds-btn" id="vmR" onclick="setView('result')">String Art</button>
       <button class="ds-btn" id="vmE" onclick="setView('error')">Error map</button>
-      <button class="ds-btn" id="vmW" onclick="setView('wind')" style="display:none">🧵 Wind</button>
+      <button class="ds-btn" id="vmW" onclick="_windBtnClick()">🧵 Wind</button>
     </div>
     <div class="zoom-btns" style="display:flex;align-items:center;gap:8px;">
       <div class="t-sep"></div>
@@ -907,13 +1079,13 @@ body.view-wind #vmW{background:#e85d00;color:#fff;border-color:#e85d00;}
   <div class="big-gen-wrap"><button class="btn-big-gen" onclick="onBigGenerate()">▶ Generate</button></div>
   <div class="canvas-wrap" id="cWrap">
     <!-- Image tab: circle IS the upload/crop zone -->
-    <div class="ph ph-upload" id="ph">
+    <label class="ph ph-upload" id="ph" for="fi">
       <div class="ph-upload-inner" id="phInner">
-        <div class="ph-txt">Drop an image</div>
-        <div class="ph-hint">or</div>
-        <button class="ph-upload-btn" onclick="event.stopPropagation();document.getElementById('fi').click()">Upload</button>
+        <div class="ph-txt">Drop or tap to upload</div>
+        <div class="ph-hint">an image</div>
+        <div class="ph-upload-btn">Upload</div>
       </div>
-    </div>
+    </label>
     <!-- Image preview circle: shown on Image tab after upload -->
     <div class="img-preview-wrap" id="imgPreviewWrap" style="display:none;" ondblclick="document.getElementById('fi').click()">
       <canvas id="imgPreviewCanvas" class="img-preview-canvas"></canvas>
@@ -930,11 +1102,8 @@ body.view-wind #vmW{background:#e85d00;color:#fff;border-color:#e85d00;}
     </div>
     <!-- Floating controls bar: shown on image tab -->
     <div class="img-tab-controls" id="imgTabControls">
-      <!-- fi is inside ph label click handler — file input lives here hidden -->
-      <input type="file" id="fi" accept="image/*" style="display:none;">
       <!-- After image: change + crop + reset -->
-      <label class="img-ctrl-btn has-image" id="ctrlChange" title="Upload new image" style="display:none;">
-        <input type="file" id="fi2" accept="image/*" style="display:none;">
+      <label class="img-ctrl-btn has-image" id="ctrlChange" for="fi2" title="Upload new image" style="display:none;">
         ↺ Change
       </label>
       <button class="img-ctrl-btn has-image" id="ctrlCrop" onclick="openCrop()" style="display:none;">
@@ -947,12 +1116,27 @@ body.view-wind #vmW{background:#e85d00;color:#fff;border-color:#e85d00;}
     <!-- Wind tab overlay -->
     <!-- Wind nail number display -->
     <div id="windNailNum" style="display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:'Space Grotesk',sans-serif;font-size:clamp(2.5rem,8vw,5rem);font-weight:700;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,.7),0 0 40px rgba(0,0,0,.4);pointer-events:none;z-index:10;line-height:1;text-align:center;"></div>
-    <div id="windStepInfo" style="display:none;position:absolute;left:50%;bottom:18%;transform:translateX(-50%);font-family:'Inter',sans-serif;font-size:0.75rem;color:rgba(255,255,255,0.8);text-shadow:0 1px 6px rgba(0,0,0,.6);pointer-events:none;z-index:10;white-space:nowrap;background:rgba(0,0,0,0.35);padding:4px 10px;border-radius:20px;"></div>
-    <div id="windTapHint" style="display:none;position:absolute;left:50%;top:18%;transform:translateX(-50%);font-family:'Inter',sans-serif;font-size:0.7rem;color:rgba(255,255,255,0.6);text-shadow:0 1px 4px rgba(0,0,0,.5);pointer-events:none;z-index:10;white-space:nowrap;">tap circle to advance</div>
-    <!-- Wind nav buttons -->
-    <div id="windNav" style="display:none;position:absolute;bottom:14%;left:50%;transform:translateX(-50%);z-index:12;gap:12px;align-items:center;">
+    <div id="windStepInfo" style="display:none;position:absolute;left:50%;bottom:26%;transform:translateX(-50%);font-family:'Space Grotesk',sans-serif;font-size:clamp(1rem,3.5vw,1.4rem);font-weight:600;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.7);pointer-events:none;z-index:10;white-space:nowrap;background:rgba(0,0,0,0.45);padding:6px 18px;border-radius:24px;letter-spacing:0.02em;"></div>
+    <div id="windTapHint" style="display:none;position:absolute;left:50%;top:14%;transform:translateX(-50%);font-family:'Inter',sans-serif;font-size:0.7rem;color:rgba(255,255,255,0.6);text-shadow:0 1px 4px rgba(0,0,0,.5);pointer-events:none;z-index:10;white-space:nowrap;">tap circle to advance</div>
+    <!-- Wind artwork name (shown when loaded from .txt file) -->
+    <div id="windArtName" style="display:none;position:absolute;left:50%;top:5%;transform:translateX(-50%);font-family:'Inter',sans-serif;font-size:0.68rem;color:rgba(255,255,255,0.8);text-shadow:0 1px 4px rgba(0,0,0,.5);pointer-events:none;z-index:10;white-space:nowrap;background:rgba(0,0,0,0.35);padding:3px 12px;border-radius:20px;max-width:75%;overflow:hidden;text-overflow:ellipsis;"></div>
+    <!-- Wind speed row (above nav) -->
+    <div id="windSpeedRow" style="display:none;position:absolute;bottom:19%;left:50%;transform:translateX(-50%);z-index:12;gap:8px;align-items:center;background:rgba(0,0,0,0.4);padding:5px 14px;border-radius:20px;">
+      <span style="font-size:0.68rem;color:rgba(255,255,255,0.75);font-family:'Inter',sans-serif;pointer-events:none;">⏱</span>
+      <input id="windSpeedSlider" type="range" min="3" max="15" step="1" value="5" style="width:90px;" oninput="event.stopPropagation();windSetSpeed(+this.value)">
+      <span id="windSpeedLabel" style="font-size:0.68rem;color:rgba(255,255,255,0.9);font-family:'Inter',sans-serif;min-width:26px;pointer-events:none;">5s</span>
+    </div>
+    <!-- Wind nav buttons (Back | Play | Next) -->
+    <div id="windNav" style="display:none;position:absolute;bottom:11%;left:50%;transform:translateX(-50%);z-index:12;gap:12px;align-items:center;">
       <button onclick="event.stopPropagation();windBack()" style="font-size:1.1rem;padding:12px 24px;border-radius:30px;border:none;background:rgba(0,0,0,0.5);color:#fff;cursor:pointer;font-family:inherit;min-width:90px;box-shadow:0 2px 12px rgba(0,0,0,.25);">◀ Back</button>
+      <button id="windPlayBtn" onclick="event.stopPropagation();windPlayToggle()" style="font-size:1.3rem;padding:0;border-radius:50%;border:none;background:rgba(232,93,0,0.85);color:#fff;cursor:pointer;font-family:inherit;width:56px;height:56px;flex-shrink:0;box-shadow:0 2px 16px rgba(180,50,0,.4);">▶</button>
       <button onclick="event.stopPropagation();windAdvance()" style="font-size:1.1rem;padding:12px 24px;border-radius:30px;border:none;background:rgba(220,40,40,0.9);color:#fff;cursor:pointer;font-family:inherit;min-width:90px;box-shadow:0 2px 12px rgba(180,20,20,.4);">Next ▶</button>
+    </div>
+    <!-- Wind action bar: Load · Save · Voice -->
+    <div id="windActions" style="display:none;position:absolute;bottom:3%;left:50%;transform:translateX(-50%);z-index:12;gap:10px;align-items:center;">
+      <button id="windVoiceBtn" onclick="event.stopPropagation();windVoiceToggle()" style="font-size:0.82rem;padding:7px 14px;border-radius:20px;border:none;background:rgba(0,0,0,0.45);color:#fff;cursor:pointer;font-family:inherit;box-shadow:0 1px 8px rgba(0,0,0,.3);">🔊 HE</button>
+      <label style="font-size:0.82rem;padding:7px 14px;border-radius:20px;border:none;background:rgba(0,0,0,0.45);color:#fff;cursor:pointer;font-family:inherit;box-shadow:0 1px 8px rgba(0,0,0,.3);" onclick="event.stopPropagation()">↑ Load<input type="file" accept=".txt" id="windFileInput" style="display:none" onchange="event.stopPropagation();if(this.files[0])loadWindFile(this.files[0]);this.value=''"></label>
+      <button id="windSaveBtn" onclick="event.stopPropagation();windSave()" style="font-size:0.82rem;padding:7px 14px;border-radius:20px;border:none;background:rgba(0,0,0,0.45);color:#fff;cursor:pointer;font-family:inherit;box-shadow:0 1px 8px rgba(0,0,0,.3);">↓ Save</button>
     </div>
     <!-- Inner container gets explicit pixel size set by JS so overflow:auto actually scrolls -->
     <div id="cvInner">
@@ -1053,6 +1237,7 @@ const G={
   nails:[],imgPx:null,errPx:null,imgSz:0,nailPos:null,
   color:'#111111',algo:'greedy',showNails:true,
   view:'image',zoom:1,done:false,running:false,showSeq:true,
+  imgName:'',windOnly:false,
   compareMode:false,comparePct:50,greedyCv:null,radonCv:null,
   // Result cache — keyed by algo+image+params so switching algo reuses stored result
   cache:{greedy:null,back:null},
@@ -1120,6 +1305,23 @@ function toggleCollapse(id){
 }
 function setNails(v){G.showNails=v;$('nailsShow').classList.toggle('on',v);$('nailsHide').classList.toggle('on',!v);if(G.done)render();}
 function setView(v){
+  // Any time user is on wind tab and tries to leave — protect the winding session
+  if(G.view==='wind' && v!=='wind'){
+    // Wind-only mode (loaded from file): result/error have no data — block silently
+    if(G.windOnly && (v==='result'||v==='error')) return;
+    // All other exits: confirm
+    if(!confirm('Leave wind mode?')) return;
+    windPause();
+    // Wind-only mode cleanup: offer save, reset state
+    if(G.windOnly){
+      if(confirm('Save your sequence before leaving?')) windSave();
+      G.windOnly=false;
+      document.body.classList.remove('wind-only');
+      document.body.classList.add('no-img');
+      G.nails=[]; G.nailPos=null; G.done=false; G.img=null; WD.artName='';
+      if($('windArtName')) $('windArtName').style.display='none';
+    }
+  }
   const prev=G.view;
   G.view=v;
   document.body.className=document.body.className.replace(/view-\S+/g,'').trim();
@@ -1135,13 +1337,16 @@ function setView(v){
   if($('windStepInfo')) $('windStepInfo').style.display='none';
   if($('windTapHint')) $('windTapHint').style.display='none';
   if($('windNav')) $('windNav').style.display='none';
+  if($('windSpeedRow')) $('windSpeedRow').style.display='none';
+  if($('windActions')) $('windActions').style.display='none';
+  if($('windArtName')) $('windArtName').style.display='none';
   // Restore play/speed controls (hidden only in wind mode)
   if($('pbPlay')) $('pbPlay').style.visibility='visible';
   if($('pbSpeedWrap')) $('pbSpeedWrap').style.visibility='visible';
 
   if(v==='image'){
     if(prev==='result'||prev==='error'||prev==='wind') syncZoomToCircle();
-    if($('phInner')) $('phInner').innerHTML='<div class="ph-txt">Drop an image</div><div class="ph-hint">or</div><button class="ph-upload-btn" onclick="event.stopPropagation();document.getElementById(\'fi\').click()">Upload</button>';
+    if($('phInner')) $('phInner').innerHTML=isMobile()?'<div class="ph-txt">Tap to upload</div><div class="ph-hint">your image</div><div class="ph-upload-btn">Upload</div>':'<div class="ph-txt">Drop an image</div><div class="ph-hint">or tap to upload</div><div class="ph-upload-btn">Upload</div>';
     applyCircleSize();
     if(G.img){
       $('ph').style.display='none';
@@ -1187,6 +1392,10 @@ function setView(v){
       if($('windStepInfo')) $('windStepInfo').style.display='block';
       if($('windTapHint')) $('windTapHint').style.display='block';
       if($('windNav')) $('windNav').style.display='flex';
+      if($('windSpeedRow')) $('windSpeedRow').style.display='flex';
+      if($('windActions')) $('windActions').style.display='flex';
+      if($('windArtName') && WD.artName){ $('windArtName').textContent=WD.artName; $('windArtName').style.display='block'; }
+      pbPause();
       windInit();
     }
 
@@ -1337,7 +1546,9 @@ cWrapEl.addEventListener('dragover',e=>{
   e.preventDefault();
   $('ph').classList.add('drag-over');
 });
-cWrapEl.addEventListener('dragleave',()=>$('ph').classList.remove('drag-over'));
+cWrapEl.addEventListener('dragleave',()=>{
+  $('ph').classList.remove('drag-over');
+});
 cWrapEl.addEventListener('drop',e=>{
   if(G.view!=='image') return;
   e.preventDefault();
@@ -1345,10 +1556,7 @@ cWrapEl.addEventListener('drop',e=>{
   if(e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
 });
 
-// ── Click on placeholder = upload ──
-$('ph').addEventListener('click',()=>{
-  if(G.view==='image') $('fi').click();
-});
+// Upload handled natively by <label for="fi"> wrapping the circle
 
 // ── Scroll to zoom — image tab: crop/resize; result/error: zoom SVG ──
 let _zoomHintTimer=null;
@@ -1493,7 +1701,13 @@ function resetCropInline(){
 
 function loadFile(f){
   if(!f.type.startsWith('image/'))return;
-
+  G.imgName = f.name.replace(/\.[^.]+$/,'');
+  G.windOnly = false;
+  document.body.classList.remove('wind-only');
+  // Restore tabs that were visible before wind-only mode
+  if($('vmO')) $('vmO').style.display='';
+  if($('vmR')) $('vmR').style.display='';
+  if($('vmE')) $('vmE').style.display='';
     document.body.classList.add('has-image');
     updateHelpBar();
   const rd=new FileReader();
@@ -1501,9 +1715,10 @@ function loadFile(f){
     const img=new Image();
     img.onload=()=>{
       G.img=img;G.bw=true;G.cropOffX=0;G.cropOffY=0;G.cropZoom=1;
+      document.body.classList.remove('no-img');
       // Enable generate button
       $('btnGenGreedy').disabled=false;
-      if($('btnGen'))$('btnGen').disabled=false;
+      mobSyncGenBtn();
       if($('btnCompare'))$('btnCompare').disabled=false;
       if($('btnOptimize')) $('btnOptimize').disabled=false;
       // Show floating image controls
@@ -1929,6 +2144,7 @@ function updateGenBtn(){
     btn.style.color='';
     lbl.textContent='▶ Generate';
   }
+  mobSyncGenBtn();
 }
 
 function onBigGenerate(){
@@ -2173,6 +2389,8 @@ function finishGen(result,err,img,nails,N,sz,ms,sc,lc){
   updateProdTime();
   setTimeout(()=>{ if($('pw')) $('pw').style.display='none'; },2000);
   showWindTab();
+  // On mobile: switch to result tab and sync button
+  if(isMobile()){ mobSetTab('result'); mobSyncGenBtn(); }
 }
 
 // ══ ITERATIVE REFINEMENT ══
@@ -2651,8 +2869,9 @@ $('eTXT').addEventListener('click',()=>{
   const seqStr = isBack
     ? G.nails.map((n,i)=>n+(i%2===0?'F':'B')).join('\n')
     : G.nails.join('\n');
-  const t=`Shweka Studio - String Art Nail Sequence\n==========================================\nAlgorithm: ${isBack?'Back Allowed':'Greedy'}\nNails: ${N}, CCW from top (0 to ${N-1})\nLines: ${G.nails.length-1}\nBoard: 30cm diameter\n\nSEQUENCE:\n`+seqStr;
-  const a=document.createElement('a');a.download=`nail-sequence-${N}.txt`;a.href=URL.createObjectURL(new Blob([t],{type:'text/plain'}));a.click();
+  const artName = G.imgName||'string-art';
+  const t=`Shweka Studio - String Art Nail Sequence\n==========================================\nArtwork: ${artName}\nAlgorithm: ${isBack?'Back Allowed':'Greedy'}\nNails: ${N}, CCW from top (0 to ${N-1})\nLines: ${G.nails.length-1}\nStep: ${WD.pos}\nBoard: 30cm diameter\n\nSEQUENCE:\n`+seqStr;
+  const a=document.createElement('a');a.download=artName+'-nails.txt';a.href=URL.createObjectURL(new Blob([t],{type:'text/plain'}));a.click();
 });
 
 // ══ ZOOM ══
@@ -2846,6 +3065,7 @@ function pbToggleView(){
 }
 
 function pbRender(n, animate){
+  if(G.view==='wind') return;
   if(!G.done||!G.nails||!G.nailPos) return;
   const nails=G.nailPos, sz=G.imgSz;
   const SZ=SVG_SZ, sc=SZ/sz;
@@ -2947,6 +3167,7 @@ function pbRender(n, animate){
 
 function applyZoom(){
   if(!G.done)return;
+  if(G.view==='image'){applyCircleSize();return;}
   if(G.view==='wind'){windRender();return;}
   if(G.compareMode){renderCompare();return;}
   render();
@@ -2958,6 +3179,7 @@ let _resizeTimer;
 window.addEventListener('resize',()=>{
   clearTimeout(_resizeTimer);
   _resizeTimer=setTimeout(()=>{
+    if(G.view==='image'){applyCircleSize();return;}
     if(G.done){
       if(G.view==='wind') windRender();
       else if(G.compareMode)renderCompare();
@@ -3032,12 +3254,91 @@ if(displayArea){
 }
 
 // ── MOBILE TABS ──
-function mobTab(tab){ /* mobile tab bar removed — unified layout */ }
+// ══════════════════════════════════════════
+//  MOBILE LAYOUT (≤600px)
+//  Bottom sheet for settings, top bar for tabs/generate.
+// ══════════════════════════════════════════
+const MOB_BP = 540;
+let _mobInited = false;
 
-// No mobile init needed — layout is the same on all screen sizes
-function initMobile(){}
+function isMobile(){ return window.innerWidth <= 540; }
+
+function mobInit(){
+  if(!isMobile()) return;
+  if(_mobInited) return;
+  _mobInited = true;
+  // Move panel-left contents into the sheet
+  const panelLeft = document.querySelector('.panel-left');
+  const sheetInner = $('mobSheetInner');
+  if(panelLeft && sheetInner){
+    // Move all children
+    while(panelLeft.firstChild) sheetInner.appendChild(panelLeft.firstChild);
+  }
+  // Set mobile-appropriate upload circle text
+  if($('phInner')) $('phInner').innerHTML='<div class="ph-txt">Tap to upload</div><div class="ph-hint">your image</div><div class="ph-upload-btn">Upload</div>';
+}
+
+function mobSyncGenBtn(){
+  const btn = $('mobGenBtn');
+  if(!btn) return;
+  const srcBtn = $('btnGenGreedy');
+  if(!srcBtn) return;
+  btn.disabled = srcBtn.disabled;
+  btn.textContent = G.running ? '⏹ Stop' : '▶ Go';
+}
+
+function mobSetTab(tab){
+  if(!isMobile()) return;
+  // sync with desktop setView
+  setView(tab);
+  // update mobile tab button highlights
+  ['Image','Result','Wind'].forEach(t=>{
+    const b = $('mbt'+t);
+    if(!b) return;
+    const isWind = t==='Wind' && tab==='wind';
+    const isActive = tab === t.toLowerCase() || (tab==='result' && t==='Result') || (tab==='image' && t==='Image');
+    b.classList.toggle('active', isActive && !isWind);
+    b.classList.toggle('wind-active', isWind);
+  });
+}
+
+// Wind tab click on mobile — label wraps input for direct file picker access when !G.done
+function _windTabClick(e){
+  if(G.done){ e.preventDefault(); mobSetTab('wind'); }
+  // else: let label naturally open windHomeInput
+}
+// Wind tab click on desktop
+function _windBtnClick(){
+  if(!G.done){ const wfi=$('windFileInput'); if(wfi) wfi.click(); return; }
+  setView('wind');
+}
+
+function mobOpenSheet(){
+  $('mobSheetBackdrop').classList.add('open');
+  $('mobSheet').classList.add('open');
+}
+
+function mobCloseSheet(){
+  $('mobSheetBackdrop').classList.remove('open');
+  $('mobSheet').classList.remove('open');
+}
+
+// Show wind tab button in mobile bar after generation
+const _origShowWindTab = showWindTab;
+function showWindTab(){
+  _origShowWindTab();
+  const b = $('mbtWind');
+  if(b) b.style.display = '';
+}
+
+function mobTab(tab){ /* stub — unified */ }
+function initMobile(){
+  mobInit();
+  mobSyncGenBtn();
+}
+
 window.addEventListener('resize',()=>{
-  // unified layout — just re-render on resize if done
+  if(isMobile()) mobInit();
 });
 initMobile();
 
@@ -3049,8 +3350,10 @@ initMobile();
 const WD = { pos: 0 }; // current step (0 = no strings drawn yet)
 
 function windInit(){
+  windPause();
   if(!G.nails||G.nails.length<2) return;
-  WD.pos = 0;
+  if(!WD._keepPos) WD.pos=0;
+  WD._keepPos=false;
   // Reset scrubber so it doesn't show old playback position
   const total = G.nails.length-1;
   if($('pbSlider')){ $('pbSlider').max=total; $('pbSlider').value=0; }
@@ -3060,6 +3363,7 @@ function windInit(){
 }
 
 function windBack(){
+  windPause();
   if(WD.pos > 0) WD.pos--;
   windRender();
 }
@@ -3067,8 +3371,7 @@ function windBack(){
 function windAdvance(){
   if(!G.nails||G.nails.length<2) return;
   const total = G.nails.length-1;
-  if(WD.pos < total) WD.pos++;
-  windRender();
+  if(WD.pos < total){ WD.pos++; windRender(); windSpeak(G.nails[WD.pos]); }
 }
 
 function windRender(){
@@ -3171,6 +3474,169 @@ $('cWrap').addEventListener('touchend', e=>{
 function showWindTab(){
   const btn = $('vmW');
   if(btn) btn.style.display = '';
+}
+
+// ══ WIND: AUTO-PLAY + VOICE + LOAD/SAVE ══
+
+// Extend WD with new state
+WD.playing  = false;
+WD.speed    = 5000;   // ms between auto-advance steps (3000–15000)
+WD.playTimer= null;
+WD.voice    = 'he';   // 'he' | 'en' | 'off' — Hebrew is default
+WD.artName  = '';     // artwork name shown in overlay
+WD._keepPos = false;  // when true, windInit skips resetting pos
+WD._heAudio = null;   // current Hebrew audio element
+
+function windPlayToggle(){
+  if(WD.playing) windPause(); else windPlay();
+}
+
+function windPlay(){
+  if(!G.nails||G.nails.length<2) return;
+  const total=G.nails.length-1;
+  if(WD.pos>=total) WD.pos=0; // restart if at end
+  WD.playing=true;
+  _windUpdatePlayBtn();
+  _windScheduleNext();
+}
+
+function windPause(){
+  WD.playing=false;
+  clearTimeout(WD.playTimer);
+  _windUpdatePlayBtn();
+}
+
+function _windScheduleNext(){
+  if(!WD.playing) return;
+  WD.playTimer=setTimeout(()=>{
+    if(!WD.playing) return;
+    const total=G.nails.length-1;
+    if(WD.pos<total){
+      WD.pos++;
+      windRender();
+      windSpeak(G.nails[WD.pos]);
+      _windScheduleNext();
+    } else {
+      windPause(); // finished
+    }
+  }, WD.speed);
+}
+
+function _windUpdatePlayBtn(){
+  const btn=$('windPlayBtn');
+  if(btn) btn.textContent=WD.playing?'⏸':'▶';
+}
+
+// ── Speed ──
+function windSetSpeed(secs){
+  WD.speed=secs*1000;
+  const lbl=$('windSpeedLabel');
+  if(lbl) lbl.textContent=secs+'s';
+}
+
+// ── Voice ──
+function windVoiceToggle(){
+  const order=['he','en','off'];
+  WD.voice=order[(order.indexOf(WD.voice)+1)%3];
+  _windUpdateVoiceBtn();
+}
+
+function _windUpdateVoiceBtn(){
+  const btn=$('windVoiceBtn');
+  if(!btn) return;
+  const labels={off:'🔇 Off',en:'🔊 EN',he:'🔊 HE'};
+  btn.textContent=labels[WD.voice];
+}
+
+function windSpeak(num){
+  if(WD.voice==='off') return;
+  if(WD.voice==='he'){
+    // Hebrew via Google Translate TTS — works cross-platform without any voice install
+    if(WD._heAudio){ WD._heAudio.pause(); WD._heAudio.src=''; }
+    WD._heAudio=new Audio('https://translate.googleapis.com/translate_tts?ie=UTF-8&q='+encodeURIComponent(String(num))+'&tl=he&client=gtx&ttsspeed=0.7');
+    WD._heAudio.play().catch(()=>{});
+  } else {
+    // English via Web Speech API
+    if(!window.speechSynthesis) return;
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(String(num));
+    u.lang='en-US'; u.rate=0.85;
+    speechSynthesis.speak(u);
+  }
+}
+
+// ── Save from wind overlay ──
+function windSave(){
+  if(!G.nails||G.nails.length<2) return;
+  const defaultName=G.imgName||WD.artName||'string-art';
+  const entered=prompt('Save sequence as:',defaultName);
+  if(entered===null) return; // cancelled
+  const artName=entered.trim()||defaultName;
+  // Update stored name so it shows in the overlay
+  if(G.imgName) G.imgName=artName; else WD.artName=artName;
+  if($('windArtName')&&artName){ $('windArtName').textContent=artName; $('windArtName').style.display='block'; }
+  const N=G.nailPos?G.nailPos.length:parseInt($('sn').value);
+  const isBack=G.algo==='back';
+  const seqStr=isBack
+    ?G.nails.map((n,i)=>n+(i%2===0?'F':'B')).join('\n')
+    :G.nails.join('\n');
+  const t=`Shweka Studio - String Art Nail Sequence\n==========================================\nArtwork: ${artName}\nAlgorithm: ${isBack?'Back Allowed':'Greedy'}\nNails: ${N}, CCW from top (0 to ${N-1})\nLines: ${G.nails.length-1}\nStep: ${WD.pos}\nBoard: 30cm diameter\n\nSEQUENCE:\n`+seqStr;
+  const a=document.createElement('a');
+  a.download=artName+'-nails.txt';
+  a.href=URL.createObjectURL(new Blob([t],{type:'text/plain'}));
+  a.click();
+}
+
+// ── Load wind file ──
+function _parseWindFile(text){
+  const lines=text.split('\n');
+  let N=0, artName='', savedStep=0;
+  const nails=[];
+  for(const line of lines){
+    const l=line.trim();
+    if(!l) continue;
+    const mN=l.match(/^Nails:\s*(\d+)/i);
+    if(mN){ N=parseInt(mN[1]); continue; }
+    const mA=l.match(/^Artwork:\s*(.+)/i);
+    if(mA){ artName=mA[1].trim(); continue; }
+    const mS=l.match(/^Step:\s*(\d+)/i);
+    if(mS){ savedStep=parseInt(mS[1]); continue; }
+    const mNum=l.match(/^(\d+)/);
+    if(mNum) nails.push(parseInt(mNum[1]));
+  }
+  if(!N&&nails.length) N=Math.max(...nails)+1;
+  return {N, artName, savedStep, nails};
+}
+
+function loadWindFile(file){
+  const rd=new FileReader();
+  rd.onload=e=>{
+    const {N, artName, savedStep, nails}=_parseWindFile(e.target.result);
+    if(!nails.length){ alert('No nail sequence found in file.'); return; }
+    G.nails=nails;
+    G.nailPos=makeNails(N,500);
+    G.imgSz=500;
+    G.algo='greedy';
+    G.done=true;
+    G.img=null; G.bw=null; G.imgPx=null; G.errPx=null;
+    G.windOnly=true;
+    document.body.classList.add('no-img');
+    WD.artName=artName||file.name.replace(/\.[^.]+$/,'');
+    // Restore saved step position if present
+    WD.pos=savedStep||0;
+    WD._keepPos=true;
+    // Mark body as wind-only (grays result/error tabs via CSS, image tab stays clickable)
+    document.body.classList.add('wind-only');
+    showWindTab();
+    setView('wind');
+    // Brief confirmation toast
+    const msg=document.createElement('div');
+    msg.textContent=`✓ Loaded ${nails.length-1} lines · ${N} nails · "${WD.artName}"`;
+    msg.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:rgba(20,20,20,0.85);color:#fff;padding:10px 20px;border-radius:24px;font-family:Inter,sans-serif;font-size:0.85rem;z-index:9999;pointer-events:none;white-space:nowrap;';
+    document.body.appendChild(msg);
+    setTimeout(()=>msg.remove(),3000);
+  };
+  rd.readAsText(file);
 }
 
 // ── CAMERA / FILE PICKER ──
