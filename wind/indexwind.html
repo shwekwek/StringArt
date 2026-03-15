@@ -277,7 +277,7 @@ header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;alig
 'use strict';
 
 // ── Version — bump this (and version-wind.json + sw-wind.js CACHE) on every change ──
-const APP_VER = 'v1.13';
+const APP_VER = 'v1.14';
 document.title = '🧵 Shweka Wind ' + APP_VER;
 const _vEl = document.getElementById('appVer');
 if(_vEl) _vEl.textContent = APP_VER;
@@ -747,12 +747,24 @@ function _windUpdateVoiceBtn(){
 function windSpeak(num){
   if(WD.voice==='off') return;
   if(WD.voice==='he'){
+    // 1. Try Web Speech API if a Hebrew voice is installed (Android has he-IL natively)
+    if(window.speechSynthesis){
+      const voices=speechSynthesis.getVoices();
+      const heVoice=voices.find(v=>v.lang.startsWith('he'));
+      if(heVoice){
+        speechSynthesis.cancel();
+        const u=new SpeechSynthesisUtterance(String(num));
+        u.voice=heVoice; u.lang='he-IL'; u.rate=0.85;
+        speechSynthesis.speak(u);
+        return;
+      }
+    }
+    // 2. Fall back to Google Translate TTS (desktop without Hebrew voice)
     if(WD._heAudio){ WD._heAudio.pause(); WD._heAudio.src=''; }
-    // client=tw-ob on translate.google.com — more reliable than the old client=gtx
-    const url='https://translate.google.com/translate_tts?ie=UTF-8&q='+encodeURIComponent(String(num))+'&tl=he&client=tw-ob&ttsspeed=0.7';
+    const url='https://translate.google.com/translate_tts?ie=UTF-8&q='+encodeURIComponent(String(num))+'&tl=he&client=tw-ob';
     WD._heAudio=new Audio(url);
     WD._heAudio.play().catch(()=>{
-      // Fallback: Web Speech API with Hebrew locale (works on Android with Google TTS engine)
+      // 3. Last resort: Web Speech API even without a Hebrew voice
       if(window.speechSynthesis){
         speechSynthesis.cancel();
         const u=new SpeechSynthesisUtterance(String(num));
