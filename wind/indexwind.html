@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>🧵 Shweka Wind v1.9</title>
+<title>🧵 Shweka Wind v1.10</title>
 <link rel="icon" href="wind-icon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- PWA manifest + Apple meta -->
@@ -274,7 +274,7 @@ header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;alig
 'use strict';
 
 // ── Version — bump this (and version-wind.json + sw-wind.js CACHE) on every change ──
-const APP_VER = 'v1.9';
+const APP_VER = 'v1.10';
 document.title = '🧵 Shweka Wind ' + APP_VER;
 const _vEl = document.getElementById('appVer');
 if(_vEl) _vEl.textContent = APP_VER;
@@ -410,15 +410,16 @@ function windInit(){
 }
 
 function windBack(){
-  windPause();
   if(WD.pos > 0) WD.pos--;
   windRender();
+  if(WD.playing){ clearTimeout(WD.playTimer); _windScheduleNext(); }
 }
 
 function windAdvance(){
   if(!G.nails||G.nails.length<2) return;
   const total=G.nails.length-1;
   if(WD.pos < total){ WD.pos++; windRender(); windSpeak(G.nails[WD.pos]); }
+  if(WD.playing){ clearTimeout(WD.playTimer); _windScheduleNext(); }
 }
 
 function windRender(){
