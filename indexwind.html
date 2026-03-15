@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>🧵 Shweka Wind</title>
+<title>🧵 Shweka Wind v1.4</title>
 <link rel="icon" href="wind-icon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- PWA manifest + Apple meta -->
@@ -56,6 +56,7 @@ header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;alig
 #dragOverlay.show{display:flex;}
 
 /* ── Wind overlays — positions set by JS (_posOverlays) relative to circle ── */
+#windPrevNail{display:none;position:absolute;left:50%;transform:translateX(-50%);font-family:'Space Grotesk',sans-serif;font-size:clamp(1.4rem,4.5vw,2.8rem);font-weight:600;color:rgba(255,255,255,0.38);text-shadow:0 1px 8px rgba(0,0,0,.5);pointer-events:none;z-index:10;line-height:1;text-align:center;}
 #windNailNum{display:none;position:absolute;left:50%;transform:translateX(-50%);font-family:'Space Grotesk',sans-serif;font-size:clamp(2.5rem,8vw,5rem);font-weight:700;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,.7),0 0 40px rgba(0,0,0,.4);pointer-events:none;z-index:10;line-height:1;text-align:center;}
 #windStepInfo{display:none;position:absolute;left:50%;transform:translateX(-50%);font-family:'Space Grotesk',sans-serif;font-size:clamp(.9rem,3vw,1.25rem);font-weight:600;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.7);pointer-events:auto;z-index:10;white-space:nowrap;background:rgba(0,0,0,0.45);padding:5px 16px;border-radius:24px;letter-spacing:0.02em;cursor:pointer;}
 #windTapHint{display:none;position:absolute;left:50%;transform:translateX(-50%);font-family:'Inter',sans-serif;font-size:0.7rem;color:rgba(255,255,255,0.6);text-shadow:0 1px 4px rgba(0,0,0,.5);pointer-events:none;z-index:10;white-space:nowrap;}
@@ -123,6 +124,11 @@ header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;alig
 #pasteOk{background:var(--accent);color:#fff;}
 #pasteCancel{background:var(--surface2);color:var(--text);}
 
+/* ── Update toast ── */
+#updateToast{display:none;position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:400;background:#1a1a2e;color:#fff;border-radius:24px;padding:10px 18px;font-size:.82rem;font-family:'Inter',sans-serif;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.35);align-items:center;gap:12px;white-space:nowrap;}
+#updateToast.show{display:flex;}
+#updateToast button{padding:5px 14px;border:none;border-radius:16px;background:var(--accent);color:#fff;font-family:inherit;font-size:.78rem;font-weight:700;cursor:pointer;}
+
 @media(max-width:540px){
   #windNav #bWindBack,#windNav #bWindNext{font-size:1.2rem !important;padding:14px 28px !important;min-width:100px !important;}
   #windPlayBtn{font-size:1.5rem !important;width:62px !important;height:62px !important;}
@@ -137,6 +143,7 @@ header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;alig
 <header>
   <div class="logo">🧵 Shweka Wind</div>
   <span class="logo-sub">by Shweka Studio</span>
+  <span class="logo-sub" id="appVer" style="color:var(--accent);opacity:.6;margin-left:-4px;">v1.3</span>
   <div class="hdr-right">
     <button class="hdr-btn on" id="hdrVoiceBtn" onclick="windVoiceToggle()">🔊 HE</button>
     <label class="hdr-btn" for="windFileInput">↑ Load file</label>
@@ -161,6 +168,7 @@ header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;alig
   <!-- Wind overlays — same IDs and positions as index81 -->
   <div id="windArtName"></div>
   <div id="windTapHint">tap circle to advance</div>
+  <div id="windPrevNail"></div>
   <div id="windNailNum"></div>
   <div id="windStepInfo" title="Click to jump to step"></div>
 
@@ -219,6 +227,13 @@ header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;alig
   <button onclick="windFindOpen()">? Find</button>
 </div>
 
+<!-- Update toast -->
+<div id="updateToast">
+  <span id="updateToastMsg">✓ App updated</span>
+  <button onclick="window.location.reload()">Reload</button>
+  <button style="background:transparent;color:rgba(255,255,255,.5);padding:4px 8px;" onclick="document.getElementById('updateToast').classList.remove('show')">✕</button>
+</div>
+
 <!-- Drag overlay -->
 <div id="dragOverlay">Drop .txt file here</div>
 
@@ -254,6 +269,12 @@ header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;alig
 
 <script>
 'use strict';
+
+// ── Version — bump this on every change ──
+const APP_VER = 'v1.4';
+document.title = '🧵 Shweka Wind ' + APP_VER;
+const _vEl = document.getElementById('appVer');
+if(_vEl) _vEl.textContent = APP_VER;
 
 // ── Globals (matches sa-globals.js) ──
 const $ = id => document.getElementById(id);
@@ -380,6 +401,17 @@ function windRender(){
   if(slider){ slider.max=total; slider.value=n; }
   if($('windCountTxt')) $('windCountTxt').textContent='# '+n+' of '+total+' — tap to jump';
 
+  // Previous nail (dim, above main number)
+  const prevEl=$('windPrevNail');
+  if(prevEl){
+    if(n > 0 && G.nails[n-1]!==undefined){
+      prevEl.textContent=G.nails[n-1];
+      prevEl.style.display='block';
+    } else {
+      prevEl.style.display='none';
+    }
+  }
+
   // Nail number display
   const numEl=$('windNailNum');
   if(numEl){
@@ -415,6 +447,7 @@ function _posOverlays(){
   const set=(id,top)=>{const el=$(id);if(el) el.style.top=top;};
   set('windArtName',  px(0.05));
   set('windTapHint',  px(0.13));
+  set('windPrevNail', px(0.27));
   set('windNailNum',  px(0.36));
   set('windStepInfo', px(0.62));
   set('windNav',      (cb+10)+'px');
@@ -596,7 +629,7 @@ function loadWindFile(file){
     // Show wind UI, hide empty state
     $('emptyState').classList.add('hidden');
     $('cvWind').style.display='block';
-    ['windTapHint','windNailNum','windStepInfo','windNav'].forEach(id=>{
+    ['windTapHint','windNailNum','windPrevNail','windStepInfo','windNav'].forEach(id=>{
       const el=$(id); if(el) el.style.display='flex';
     });
     $('windBottomBar').classList.add('visible');
@@ -784,10 +817,20 @@ async function _keepAwake(){if(!('wakeLock'in navigator))return;try{await naviga
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')_keepAwake();});
 _keepAwake();
 
-// ── PWA: Service Worker registration ──
+// ── PWA: Service Worker registration + update detection ──
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
     navigator.serviceWorker.register('sw-wind.js').catch(()=>{});
+  });
+  // SW posts SW_UPDATED when a new version activates — show reload toast
+  navigator.serviceWorker.addEventListener('message', e=>{
+    if(e.data && e.data.type==='SW_UPDATED'){
+      const ver=(e.data.cache||'').replace('shweka-wind-','');
+      const msg=$('updateToastMsg');
+      if(msg) msg.textContent='✓ App updated to '+ver+' — reload to apply';
+      const t=$('updateToast');
+      if(t) t.classList.add('show');
+    }
   });
 }
 
