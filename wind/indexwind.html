@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>🧵 Shweka Wind v1.11</title>
+<title>🧵 Shweka Wind v1.12</title>
 <link rel="icon" href="wind-icon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- PWA manifest + Apple meta -->
@@ -147,7 +147,7 @@ header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;alig
 <header>
   <div class="logo">🧵 Shweka Wind</div>
   <span class="logo-sub">by Shweka Studio</span>
-  <span class="logo-sub" id="appVer" onclick="_checkForUpdate(true)" title="Tap to check for updates" style="color:var(--accent);opacity:.6;margin-left:-4px;cursor:pointer;font-size:0.85rem;">v1.11</span>
+  <span class="logo-sub" id="appVer" onclick="_checkForUpdate(true)" title="Tap to check for updates" style="color:var(--accent);opacity:.6;margin-left:-4px;cursor:pointer;font-size:0.85rem;">v1.12</span>
   <div class="hdr-right">
     <button class="hdr-btn" id="installBtn" onclick="_installApp()" style="display:none;background:var(--accent);color:#fff;border-color:var(--accent);">⬇ Install</button>
     <button class="hdr-btn on" id="hdrVoiceBtn" onclick="windVoiceToggle()">🔊 HE</button>
@@ -277,7 +277,7 @@ header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;alig
 'use strict';
 
 // ── Version — bump this (and version-wind.json + sw-wind.js CACHE) on every change ──
-const APP_VER = 'v1.11';
+const APP_VER = 'v1.12';
 document.title = '🧵 Shweka Wind ' + APP_VER;
 const _vEl = document.getElementById('appVer');
 if(_vEl) _vEl.textContent = APP_VER;
@@ -389,7 +389,11 @@ function hexRgb(h){const r=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h);r
 // ── applySvgSize (from sa-render.js) ──
 function applySvgSize(svgEl, zoom){
   const wrap=$('cWrap');
-  const maxSz=Math.min(wrap.clientWidth, wrap.clientHeight)-16;
+  // Reserve 160px below circle for windNav + scrubBar + countRow (desktop fix)
+  const RESERVE=160;
+  const maxW=wrap.clientWidth-16;
+  const maxH=Math.max(200, wrap.clientHeight-RESERVE);
+  const maxSz=Math.min(maxW, maxH);
   const sz=Math.min(maxSz, Math.round(maxSz*zoom));
   svgEl.setAttribute('width',sz);
   svgEl.setAttribute('height',sz);
