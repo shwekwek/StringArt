@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>🧵 Shweka Wind v1.7</title>
+<title>🧵 Shweka Wind v1.8</title>
 <link rel="icon" href="wind-icon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- PWA manifest + Apple meta -->
@@ -143,8 +143,9 @@ header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;alig
 <header>
   <div class="logo">🧵 Shweka Wind</div>
   <span class="logo-sub">by Shweka Studio</span>
-  <span class="logo-sub" id="appVer" onclick="_checkForUpdate(true)" title="Tap to check for updates" style="color:var(--accent);opacity:.6;margin-left:-4px;cursor:pointer;">v1.7</span>
+  <span class="logo-sub" id="appVer" onclick="_checkForUpdate(true)" title="Tap to check for updates" style="color:var(--accent);opacity:.6;margin-left:-4px;cursor:pointer;">v1.8</span>
   <div class="hdr-right">
+    <button class="hdr-btn" id="installBtn" onclick="_installApp()" style="display:none;background:var(--accent);color:#fff;border-color:var(--accent);">⬇ Install</button>
     <button class="hdr-btn on" id="hdrVoiceBtn" onclick="windVoiceToggle()">🔊 HE</button>
     <label class="hdr-btn" for="windFileInput">↑ Load file</label>
     <button class="hdr-btn" onclick="openPasteModal()">✎ Paste</button>
@@ -271,7 +272,7 @@ header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;alig
 'use strict';
 
 // ── Version — bump this (and version-wind.json + sw-wind.js CACHE) on every change ──
-const APP_VER = 'v1.7';
+const APP_VER = 'v1.8';
 document.title = '🧵 Shweka Wind ' + APP_VER;
 const _vEl = document.getElementById('appVer');
 if(_vEl) _vEl.textContent = APP_VER;
@@ -323,6 +324,33 @@ async function forceUpdate(){
 
 // Auto-check silently on every launch (fires after page settles)
 setTimeout(()=>_checkForUpdate(false), 2500);
+
+// ── PWA Install prompt ──
+let _installPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _installPrompt = e;
+  // Show the Install button in the header
+  const btn = $('installBtn');
+  if(btn) btn.style.display = '';
+});
+window.addEventListener('appinstalled', () => {
+  _installPrompt = null;
+  const btn = $('installBtn');
+  if(btn) btn.style.display = 'none';
+  _windSaveToast('✓ App installed! Open from your home screen.');
+});
+function _installApp(){
+  if(_installPrompt){
+    _installPrompt.prompt();
+    _installPrompt.userChoice.then(r => {
+      if(r.outcome==='accepted') _installPrompt=null;
+    });
+  } else {
+    // Prompt already used or not available — show manual instructions
+    _windSaveToast('Tap ⋮ → "Add to Home Screen" in Chrome to install');
+  }
+}
 
 // ── Globals (matches sa-globals.js) ──
 const $ = id => document.getElementById(id);
