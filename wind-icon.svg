@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background rounded square -->
+  <rect width="512" height="512" rx="110" fill="#5a7af0"/>
+  <!-- String art circle ring -->
+  <circle cx="256" cy="224" r="158" fill="none" stroke="white" stroke-width="10" opacity="0.85"/>
+  <!-- Nail dots (6 evenly spaced) -->
+  <circle cx="256" cy="66"  r="9" fill="white" opacity="0.85"/>
+  <circle cx="393" cy="145" r="9" fill="white" opacity="0.85"/>
+  <circle cx="393" cy="303" r="9" fill="white" opacity="0.85"/>
+  <circle cx="256" cy="382" r="9" fill="white" opacity="0.85"/>
+  <circle cx="119" cy="303" r="9" fill="white" opacity="0.85"/>
+  <circle cx="119" cy="145" r="9" fill="white" opacity="0.85"/>
+  <!-- Background string lines -->
+  <line x1="256" y1="66"  x2="393" y2="303" stroke="white" stroke-width="3.5" opacity="0.55"/>
+  <line x1="393" y1="145" x2="119" y2="303" stroke="white" stroke-width="3.5" opacity="0.55"/>
+  <line x1="256" y1="382" x2="119" y2="145" stroke="white" stroke-width="3.5" opacity="0.55"/>
+  <line x1="393" y1="145" x2="256" y2="382" stroke="white" stroke-width="3.5" opacity="0.35"/>
+  <line x1="119" y1="145" x2="393" y2="303" stroke="white" stroke-width="3.5" opacity="0.35"/>
+  <!-- Red current-step line -->
+  <line x1="256" y1="66" x2="119" y2="303" stroke="#ff5c5c" stroke-width="5"/>
+  <circle cx="119" cy="303" r="11" fill="#ff5c5c"/>
+  <!-- App label -->
+  <text x="256" y="474" font-size="54" fill="white" text-anchor="middle"
+        font-family="'Arial',sans-serif" font-weight="700" opacity="0.92" letter-spacing="4">WIND</text>
+</svg>

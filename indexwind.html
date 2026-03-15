@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>🧵 Shweka Wind</title>
+<link rel="icon" href="wind-icon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- PWA manifest + Apple meta -->
+<link rel="manifest" href="manifest-wind.json">
+<meta name="theme-color" content="#5a7af0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Shweka Wind">
+<style>
+:root{
+  --bg:#f5f5f7;--surface:#ffffff;--surface2:#eef0f3;
+  --border:#d8dae0;--accent:#5a7af0;--accent2:#0a8f6e;
+  --text:#1a1a2e;--dim:#8890a4;--mid:#555e74;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden;}
+header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;background:var(--surface);}
+.logo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1rem;color:var(--accent);letter-spacing:-0.02em;}
+.logo-sub{font-family:'Space Grotesk',sans-serif;font-size:0.55rem;font-weight:400;color:var(--dim);letter-spacing:0.12em;text-transform:uppercase;}
+.hdr-right{margin-left:auto;display:flex;gap:8px;align-items:center;}
+.hdr-btn{padding:6px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-family:'Inter',sans-serif;font-size:.75rem;cursor:pointer;color:var(--text);transition:all .15s;}
+.hdr-btn:hover{border-color:var(--accent);color:var(--accent);}
+.hdr-btn.on{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+.main{display:flex;flex:1;overflow:hidden;min-height:0;}
+.panel-center{flex:1;display:flex;flex-direction:column;background:var(--bg);overflow:hidden;min-width:0;min-height:0;}
+
+/* Canvas wrap */
+.canvas-wrap{flex:1;overflow:hidden;position:relative;background:var(--bg);min-height:0;}
+/* Circle sits at top of cWrap — overlays positioned by JS relative to circle bounds */
+#cvInner{position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;padding-top:6px;pointer-events:none;}
+#cvInner svg,#cvInner canvas{display:block;flex-shrink:0;pointer-events:auto;}
+
+/* Wind SVG */
+#cvWind{cursor:pointer;}
+#cvWind:active{opacity:0.92;}
+
+/* ── Empty state ── */
+#emptyState{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:5;}
+#emptyState.hidden{display:none;}
+.empty-circle{width:min(72vw,300px);aspect-ratio:1/1;border-radius:50%;background:#1a1a2e;box-shadow:0 4px 28px rgba(0,0,0,.35);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;transition:opacity .15s;}
+.empty-circle:hover{opacity:.88;}
+.empty-icon{font-size:2.8rem;}
+.empty-txt{font-size:.85rem;color:rgba(255,255,255,.7);font-weight:600;}
+.empty-hint{font-size:.7rem;color:rgba(255,255,255,.4);}
+
+/* ── Drag overlay ── */
+#dragOverlay{display:none;position:fixed;inset:0;background:rgba(90,122,240,.18);border:3px dashed var(--accent);z-index:100;align-items:center;justify-content:center;font-size:1.4rem;color:var(--accent);font-weight:700;pointer-events:none;}
+#dragOverlay.show{display:flex;}
+
+/* ── Wind overlays — positions set by JS (_posOverlays) relative to circle ── */
+#windNailNum{display:none;position:absolute;left:50%;transform:translateX(-50%);font-family:'Space Grotesk',sans-serif;font-size:clamp(2.5rem,8vw,5rem);font-weight:700;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,.7),0 0 40px rgba(0,0,0,.4);pointer-events:none;z-index:10;line-height:1;text-align:center;}
+#windStepInfo{display:none;position:absolute;left:50%;transform:translateX(-50%);font-family:'Space Grotesk',sans-serif;font-size:clamp(.9rem,3vw,1.25rem);font-weight:600;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.7);pointer-events:auto;z-index:10;white-space:nowrap;background:rgba(0,0,0,0.45);padding:5px 16px;border-radius:24px;letter-spacing:0.02em;cursor:pointer;}
+#windTapHint{display:none;position:absolute;left:50%;transform:translateX(-50%);font-family:'Inter',sans-serif;font-size:0.7rem;color:rgba(255,255,255,0.6);text-shadow:0 1px 4px rgba(0,0,0,.5);pointer-events:none;z-index:10;white-space:nowrap;}
+#windArtName{display:none;position:absolute;left:50%;transform:translateX(-50%);font-family:'Inter',sans-serif;font-size:0.68rem;color:rgba(255,255,255,0.8);text-shadow:0 1px 4px rgba(0,0,0,.5);pointer-events:none;z-index:10;white-space:nowrap;background:rgba(0,0,0,0.35);padding:3px 12px;border-radius:20px;max-width:75%;overflow:hidden;text-overflow:ellipsis;}
+#windNav{display:none;position:absolute;left:50%;transform:translateX(-50%);z-index:12;gap:12px;align-items:center;}
+#windNav button{cursor:pointer;font-family:inherit;}
+#windPlayBtn{font-size:1.3rem;padding:0;border-radius:50%;border:none;background:rgba(10,143,110,0.9);color:#fff;width:56px;height:56px;flex-shrink:0;box-shadow:0 2px 16px rgba(0,100,60,.35);}
+#windPlayBtn.playing{background:rgba(220,40,40,0.9);box-shadow:0 2px 16px rgba(180,20,20,.4);}
+#bWindBack{font-size:1.1rem;padding:12px 24px;border-radius:30px;border:none;background:rgba(0,0,0,0.5);color:#fff;min-width:90px;box-shadow:0 2px 12px rgba(0,0,0,.25);}
+#bWindNext{font-size:1.1rem;padding:12px 24px;border-radius:30px;border:none;background:rgba(220,40,40,0.9);color:#fff;min-width:90px;box-shadow:0 2px 12px rgba(180,20,20,.4);}
+/* ── Fixed bottom action bar ── */
+#windBottomBar{display:none;align-items:center;justify-content:center;gap:8px;padding:8px 12px calc(8px + env(safe-area-inset-bottom));background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;box-shadow:0 -2px 8px rgba(0,0,0,.06);}
+#windBottomBar.visible{display:flex;}
+/* ── Step jump modal ── */
+#stepModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:flex-end;justify-content:center;}
+#stepModal.open{display:flex;}
+#stepBox{background:var(--surface);border-radius:20px 20px 0 0;padding:24px 20px calc(24px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:16px;width:100%;max-width:480px;}
+#stepBox h3{font-size:.9rem;font-weight:700;color:var(--text);}
+#stepInp{width:100%;padding:12px 16px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:1.3rem;font-family:inherit;text-align:center;outline:none;}
+#stepInp:focus{border-color:var(--accent);}
+#stepBtns{display:flex;gap:8px;}
+#stepBtns button{flex:1;padding:12px;border:none;border-radius:10px;font-size:.9rem;cursor:pointer;font-family:inherit;font-weight:600;}
+#stepGoBtn{background:var(--accent);color:#fff;}
+#stepCancelBtn{background:var(--surface2);color:var(--text);}
+#windBottomBar button,#windBottomBar label{font-size:0.82rem;padding:7px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;user-select:none;white-space:nowrap;}
+#windBottomBar button:hover,#windBottomBar label:hover{border-color:var(--accent);color:var(--accent);}
+/* ── Speed popup — fixed, opens above bottom bars ── */
+#windSpeedPopup{display:none;position:fixed;bottom:112px;left:50%;transform:translateX(-50%);z-index:50;background:rgba(10,10,30,0.92);border-radius:14px;padding:10px 16px 8px;box-shadow:0 4px 24px rgba(0,0,0,.5);flex-direction:column;align-items:center;gap:6px;}
+#windSpeedPopup.open{display:flex;}
+#windSpeedPopup .sp-lbl{font-size:.6rem;color:rgba(255,255,255,.45);font-family:'Inter',sans-serif;}
+#windSpeedSlider{-webkit-appearance:slider-vertical;writing-mode:vertical-lr;direction:rtl;width:6px;height:110px;accent-color:#e85d00;cursor:pointer;}
+#windSpeedVal{font-size:.8rem;color:#fff;font-weight:700;font-family:'Inter',sans-serif;min-width:24px;text-align:center;}
+#windFindPanel{display:none;position:absolute;left:50%;transform:translateX(-50%);z-index:13;background:rgba(10,10,30,0.92);padding:12px 16px;border-radius:18px;box-shadow:0 4px 24px rgba(0,0,0,.5);font-family:'Inter',sans-serif;min-width:240px;text-align:center;}
+#windFindPanel .fp-title{font-size:0.72rem;color:rgba(255,255,255,0.6);margin-bottom:8px;}
+#windFindPanel .fp-row{display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:10px;}
+#windFindA,#windFindB{width:76px;padding:6px 8px;border-radius:9px;border:1.5px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.1);color:#fff;font-size:0.88rem;font-family:inherit;text-align:center;}
+#windFindA:focus,#windFindB:focus{outline:none;border-color:var(--accent);}
+#windFindPanel .fp-arrow{color:rgba(255,255,255,0.5);font-size:.85rem;}
+#windFindPanel .fp-btns{display:flex;gap:8px;justify-content:center;}
+#windFindPanel .fp-btns button{padding:6px 14px;border-radius:10px;border:none;cursor:pointer;font-family:inherit;font-size:0.8rem;}
+#windFindPrev{background:rgba(255,255,255,0.15);color:#fff;}
+#windFindNext{background:rgba(90,122,240,0.85);color:#fff;}
+#windFindClose{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.6);}
+#windFindStatus{font-size:.7rem;color:rgba(255,255,255,.5);margin-top:8px;min-height:1em;}
+
+/* ── Step scrubber pill (inside cWrap, positioned by JS) ── */
+#windScrubBar{display:none;position:absolute;left:50%;transform:translateX(-50%);z-index:12;background:rgba(0,0,0,0.42);border-radius:30px;padding:10px 18px;align-items:center;}
+#windScrubBar.show{display:flex;}
+#pbSlider{-webkit-appearance:none;width:100%;height:4px;background:rgba(255,255,255,0.28);border-radius:2px;outline:none;cursor:pointer;}
+#pbSlider::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.45);}
+/* ── Step count / jump row (inside cWrap, positioned by JS) ── */
+#windCountRow{display:none;position:absolute;left:50%;transform:translateX(-50%);z-index:12;background:rgba(0,0,0,0.38);border-radius:24px;padding:6px 20px;color:rgba(255,255,255,0.88);font-family:'Inter',sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;white-space:nowrap;text-align:center;}
+#windCountRow.show{display:block;}
+
+/* ── Paste modal ── */
+#pasteModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-start;justify-content:center;padding:16px;padding-top:max(16px,env(safe-area-inset-top));}
+#pasteModal.open{display:flex;}
+#pasteBox{background:var(--surface);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:12px;width:min(520px,100%);max-height:90dvh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25);margin-top:auto;margin-bottom:auto;}
+#pasteBox h3{font-size:.9rem;font-weight:700;color:var(--text);}
+#pasteBox p{font-size:.72rem;color:var(--dim);line-height:1.5;}
+#pasteTa{width:100%;height:200px;padding:10px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:monospace;font-size:.78rem;resize:vertical;outline:none;}
+#pasteTa:focus{border-color:var(--accent);}
+#pasteBtns{display:flex;gap:8px;}
+#pasteBtns button{flex:1;padding:10px;border:none;border-radius:9px;font-size:.85rem;cursor:pointer;font-family:inherit;font-weight:600;}
+#pasteOk{background:var(--accent);color:#fff;}
+#pasteCancel{background:var(--surface2);color:var(--text);}
+
+@media(max-width:540px){
+  #windNav #bWindBack,#windNav #bWindNext{font-size:1.2rem !important;padding:14px 28px !important;min-width:100px !important;}
+  #windPlayBtn{font-size:1.5rem !important;width:62px !important;height:62px !important;}
+  #windNailNum{font-size:clamp(3rem,12vw,6rem) !important;}
+  #windBottomBar{gap:6px;}
+  #windBottomBar button,#windBottomBar label{font-size:.9rem !important;padding:8px 12px !important;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🧵 Shweka Wind</div>
+  <span class="logo-sub">by Shweka Studio</span>
+  <div class="hdr-right">
+    <button class="hdr-btn on" id="hdrVoiceBtn" onclick="windVoiceToggle()">🔊 HE</button>
+    <label class="hdr-btn" for="windFileInput">↑ Load file</label>
+    <button class="hdr-btn" onclick="openPasteModal()">✎ Paste</button>
+  </div>
+</header>
+
+<div class="main">
+<div class="panel-center">
+<div class="canvas-wrap" id="cWrap">
+
+  <!-- Empty state -->
+  <div id="emptyState">
+    <div class="empty-circle" onclick="document.getElementById('windFileInput').click()">
+      <div class="empty-icon">📂</div>
+      <div class="empty-txt">Load nail sequence</div>
+      <div class="empty-hint">or drag &amp; drop a .txt file</div>
+    </div>
+    <button style="padding:10px 28px;border-radius:20px;border:none;background:rgba(90,122,240,0.15);color:var(--accent);font-family:inherit;font-size:.85rem;font-weight:600;cursor:pointer;" onclick="openPasteModal()">✎ Paste sequence text</button>
+  </div>
+
+  <!-- Wind overlays — same IDs and positions as index81 -->
+  <div id="windArtName"></div>
+  <div id="windTapHint">tap circle to advance</div>
+  <div id="windNailNum"></div>
+  <div id="windStepInfo" title="Click to jump to step"></div>
+
+  <div id="windNav">
+    <button id="bWindBack" onclick="event.stopPropagation();windBack()">◀ Back</button>
+    <button id="windPlayBtn" onclick="event.stopPropagation();windPlayToggle()">▶</button>
+    <button id="bWindNext" onclick="event.stopPropagation();windAdvance()">Next ▶</button>
+  </div>
+
+  <!-- Step scrubber pill — same width as windNav, positioned by JS -->
+  <div id="windScrubBar" onclick="event.stopPropagation()">
+    <input type="range" id="pbSlider" min="0" max="100" value="0" oninput="pbScrub(+this.value)">
+  </div>
+
+  <!-- Step count + jump prompt — positioned by JS -->
+  <div id="windCountRow" onclick="event.stopPropagation();_openStepModal()">
+    <span id="windCountTxt"># 0 of 0</span>
+  </div>
+
+  <div id="windFindPanel" onclick="event.stopPropagation()">
+    <div class="fp-title" id="windFindTitle">Find nail sequence: from → to</div>
+    <div class="fp-row">
+      <input id="windFindA" type="number" min="0" placeholder="Nail A" inputmode="numeric">
+      <span class="fp-arrow">→</span>
+      <input id="windFindB" type="number" min="0" placeholder="Nail B" inputmode="numeric">
+    </div>
+    <div class="fp-btns">
+      <button id="windFindPrev" onclick="windFindPrev()">◀ Prev</button>
+      <button id="windFindNext" onclick="windFindNext()">Next ▶</button>
+      <button id="windFindClose" onclick="windFindClose()">✕</button>
+    </div>
+    <div id="windFindStatus"></div>
+  </div>
+
+  <!-- The wind SVG — same as index81 -->
+  <div id="cvInner">
+    <svg id="cvWind" xmlns="http://www.w3.org/2000/svg" style="display:none;border-radius:50%;box-shadow:0 4px 32px rgba(0,0,0,.18);cursor:pointer;"></svg>
+  </div>
+
+</div><!-- /cWrap -->
+</div><!-- /panel-center -->
+</div><!-- /main -->
+
+<!-- Speed popup — fixed above bottom bars -->
+<div id="windSpeedPopup" onclick="event.stopPropagation()">
+  <span class="sp-lbl">slow</span>
+  <input id="windSpeedSlider" type="range" min="3" max="15" step="1" value="5" oninput="windSetSpeed(+this.value);_scheduleSpeedClose()">
+  <span class="sp-lbl">fast</span>
+  <span id="windSpeedVal">5s</span>
+</div>
+
+<!-- Fixed bottom action bar -->
+<div id="windBottomBar">
+  <button id="windSpeedBtn" onclick="_windSpeedPopupToggle()">⏱ 5s</button>
+  <button id="windSaveBtn" onclick="windSave()">↓ Save</button>
+  <button onclick="windFindOpen()">? Find</button>
+</div>
+
+<!-- Drag overlay -->
+<div id="dragOverlay">Drop .txt file here</div>
+
+<!-- Step jump modal -->
+<div id="stepModal" onclick="if(event.target===this)_closeStepModal()">
+  <div id="stepBox">
+    <h3>Jump to step</h3>
+    <input id="stepInp" type="number" min="0" inputmode="numeric" placeholder="Step number">
+    <div id="stepBtns">
+      <button id="stepCancelBtn" onclick="_closeStepModal()">Cancel</button>
+      <button id="stepGoBtn" onclick="_doStepJump()">Go</button>
+    </div>
+  </div>
+</div>
+
+<!-- Paste modal -->
+<div id="pasteModal" onclick="if(event.target===this)closePasteModal()">
+  <div id="pasteBox">
+    <h3>Paste nail sequence</h3>
+    <p>Paste the contents of a .txt sequence file. The header (Artwork, Step, Nails) and the SEQUENCE: section are all supported.</p>
+    <textarea id="pasteTa" placeholder="Paste sequence text here...&#10;&#10;Example:&#10;Artwork: My Art&#10;Step: 0&#10;Nails: 300&#10;&#10;SEQUENCE:&#10;0&#10;142&#10;83&#10;..."></textarea>
+    <div id="pasteBtns">
+      <button id="pasteCancel" onclick="closePasteModal()">Cancel</button>
+      <button id="pasteOk" onclick="loadFromPaste()">Load</button>
+    </div>
+  </div>
+</div>
+
+<!-- File input -->
+<input type="file" id="windFileInput" accept=".txt" style="display:none" onchange="if(this.files[0]){loadWindFile(this.files[0]);this.value='';}">
+<!-- Hidden thread thickness value (windRender reads $('st').value) -->
+<input type="range" id="st" value="0.4" min="0.05" max="0.7" step="0.05" style="display:none">
+
+<script>
+'use strict';
+
+// ── Globals (matches sa-globals.js) ──
+const $ = id => document.getElementById(id);
+const SVG_SZ = 600; // must match sa-globals.js
+const G = {
+  nails:[], nailPos:null, imgSz:0,
+  color:'#111111', zoom:1, done:false,
+};
+const WD = {
+  pos:0, playing:false, speed:5000, playTimer:null,
+  voice:'he', lang:'he',
+  artName:'', fileName:'', fileHandle:null,
+  _keepPos:false, _heAudio:null,
+};
+const WF = { hits:[], idx:-1 };
+const cWrapEl = $('cWrap');
+
+// ── makeNails (matches sa-generate.js) ──
+function makeNails(N, sz){
+  const nails=[], cx=sz/2, cy=sz/2, nr=sz/2-2;
+  for(let i=0;i<N;i++){
+    const a=(i/N)*Math.PI*2-Math.PI/2;
+    nails.push({x:cx+nr*Math.cos(a), y:cy+nr*Math.sin(a)});
+  }
+  return nails;
+}
+
+// ── hexRgb (from sa-render.js) ──
+function hexRgb(h){const r=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h);return r?[parseInt(r[1],16),parseInt(r[2],16),parseInt(r[3],16)]:[0,0,0];}
+
+// ── applySvgSize (from sa-render.js) ──
+function applySvgSize(svgEl, zoom){
+  const wrap=$('cWrap');
+  const maxSz=Math.min(wrap.clientWidth, wrap.clientHeight)-16;
+  const sz=Math.min(maxSz, Math.round(maxSz*zoom));
+  svgEl.setAttribute('width',sz);
+  svgEl.setAttribute('height',sz);
+  svgEl.style.width=sz+'px';
+  svgEl.style.height=sz+'px';
+  svgEl.setAttribute('viewBox',`0 0 ${SVG_SZ} ${SVG_SZ}`);
+}
+
+// ══════════════════════════════════════════
+//  WIND RENDER — exact copy of sa-wind.js
+// ══════════════════════════════════════════
+
+function windInit(){
+  windPause();
+  if(!G.nails||G.nails.length<2) return;
+  if(!WD._keepPos) WD.pos=0;
+  WD._keepPos=false;
+  const total=G.nails.length-1;
+  if($('pbSlider')){ $('pbSlider').max=total; $('pbSlider').value=WD.pos; }
+  requestAnimationFrame(()=>requestAnimationFrame(windRender));
+}
+
+function windBack(){
+  windPause();
+  if(WD.pos > 0) WD.pos--;
+  windRender();
+}
+
+function windAdvance(){
+  if(!G.nails||G.nails.length<2) return;
+  const total=G.nails.length-1;
+  if(WD.pos < total){ WD.pos++; windRender(); windSpeak(G.nails[WD.pos]); }
+}
+
+function windRender(){
+  if(!G.nails||!G.nailPos) return;
+  const cvWind=$('cvWind');
+  if(!cvWind) return;
+
+  const nails=G.nailPos, sz=G.imgSz;
+  const SZ=SVG_SZ, sc=SZ/sz;
+  const total=G.nails.length-1;
+  const n=WD.pos;
+
+  applySvgSize(cvWind, G.zoom);
+  const maxSz=Math.min($('cWrap').clientWidth, $('cWrap').clientHeight)-16;
+  cvWind.setAttribute('viewBox',`0 0 ${SZ} ${SZ}`);
+
+  const thickPx=parseFloat($('st').value);
+  const thickVB=Math.min(0.4, thickPx*(SZ/Math.max(200,maxSz)));
+  const col=G.color;
+  const [r,g,b]=hexRgb(col);
+  const opacity=Math.min(0.85, Math.max(0.06, 750/Math.max(1,total))).toFixed(3);
+
+  let pastLines='';
+  for(let i=0; i<n-1; i++){
+    const ai=G.nails[i], bi=G.nails[i+1];
+    if(bi===undefined) break;
+    pastLines+=`M${(nails[ai].x*sc).toFixed(2)},${(nails[ai].y*sc).toFixed(2)}L${(nails[bi].x*sc).toFixed(2)},${(nails[bi].y*sc).toFixed(2)}`;
+  }
+
+  let currentLine='';
+  if(n >= 1){
+    const ai=G.nails[n-1], bi=G.nails[n];
+    if(bi!==undefined){
+      currentLine=`<path d="M${(nails[ai].x*sc).toFixed(2)},${(nails[ai].y*sc).toFixed(2)}L${(nails[bi].x*sc).toFixed(2)},${(nails[bi].y*sc).toFixed(2)}" fill="none" stroke="rgba(220,40,40,0.95)" stroke-width="${(thickVB*2.5).toFixed(3)}" stroke-linecap="round"/>`;
+    }
+  }
+
+  let nailDots='';
+  nails.forEach(nail=>{
+    nailDots+=`<circle cx="${(nail.x*sc).toFixed(1)}" cy="${(nail.y*sc).toFixed(1)}" r="2.2" fill="rgba(0,0,0,0.25)"/>`;
+  });
+  if(n >= 1 && G.nails[n]!==undefined){
+    const cur=nails[G.nails[n]];
+    nailDots+=`<circle cx="${(cur.x*sc).toFixed(1)}" cy="${(cur.y*sc).toFixed(1)}" r="5" fill="rgba(220,40,40,0.9)" stroke="#fff" stroke-width="1.5"/>`;
+  }
+
+  cvWind.innerHTML=
+    `<defs><clipPath id="cpWind"><circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2-1}"/></clipPath></defs>`+
+    `<circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2}" fill="#ffffff"/>`+
+    `<g clip-path="url(#cpWind)">`+
+      (pastLines?`<path d="${pastLines}" fill="none" stroke="rgba(${r},${g},${b},${opacity})" stroke-width="${thickVB.toFixed(3)}" stroke-linecap="round"/>`:'') +
+      currentLine+nailDots+
+    `</g>`+
+    `<circle cx="${SZ/2}" cy="${SZ/2}" r="${SZ/2-1}" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="1.5"/>`;
+
+  // Scrubber + count
+  const slider=$('pbSlider');
+  if(slider){ slider.max=total; slider.value=n; }
+  if($('windCountTxt')) $('windCountTxt').textContent='# '+n+' of '+total+' — tap to jump';
+
+  // Nail number display
+  const numEl=$('windNailNum');
+  if(numEl){
+    if(n < total && G.nails[n]!==undefined){
+      numEl.textContent=G.nails[n];
+      numEl.style.display='block';
+    } else if(n >= total){
+      numEl.textContent='✓';
+      numEl.style.display='block';
+    } else {
+      numEl.textContent=G.nails[0];
+      numEl.style.display='block';
+    }
+  }
+
+  // Step info
+  const infoEl=$('windStepInfo');
+  if(infoEl) infoEl.textContent=`Step ${n} / ${total}`;
+
+  // Position overlays relative to circle bounds
+  requestAnimationFrame(_posOverlays);
+}
+
+// ── Position overlays relative to actual circle bounds ──
+function _posOverlays(){
+  const svg=$('cvWind'), wrap=$('cWrap');
+  if(!svg||!wrap||svg.style.display==='none') return;
+  const sr=svg.getBoundingClientRect(), wr=wrap.getBoundingClientRect();
+  const ct=sr.top-wr.top, sz=sr.height;
+  const cb=ct+sz; // circle bottom in cWrap
+  const px=f=>( ct + sz*f )+'px';
+
+  const set=(id,top)=>{const el=$(id);if(el) el.style.top=top;};
+  set('windArtName',  px(0.05));
+  set('windTapHint',  px(0.13));
+  set('windNailNum',  px(0.36));
+  set('windStepInfo', px(0.62));
+  set('windNav',      (cb+10)+'px');
+  set('windFindPanel',(cb+10)+'px');
+
+  // Scrub bar: match windNav width, sit below windNav
+  const nav=$('windNav');
+  const navH=nav ? nav.offsetHeight : 62;
+  const navW=nav ? nav.offsetWidth  : 290;
+  const scrub=$('windScrubBar');
+  if(scrub){
+    scrub.style.width=navW+'px';
+    set('windScrubBar', (cb+10+navH+10)+'px');
+  }
+  // Count row: below scrub bar
+  const scrubH=scrub ? scrub.offsetHeight : 40;
+  set('windCountRow', (cb+10+navH+10+scrubH+6)+'px');
+}
+
+// Click on step counter → open step jump modal
+$('windStepInfo').addEventListener('click', e=>{ e.stopPropagation(); _openStepModal(); });
+
+function _openStepModal(){
+  if(!G.nails||!G.nails.length) return;
+  const inp=$('stepInp');
+  inp.max=G.nails.length-1;
+  inp.value=WD.pos;
+  $('stepModal').classList.add('open');
+  setTimeout(()=>{ inp.focus(); inp.select(); },80);
+}
+function _closeStepModal(){ $('stepModal').classList.remove('open'); }
+function _doStepJump(){
+  const v=parseInt($('stepInp').value);
+  if(!isNaN(v)){ WD.pos=Math.max(0,Math.min(G.nails.length-1,v)); windRender(); windSpeak(G.nails[WD.pos]); }
+  _closeStepModal();
+}
+
+// Tap/click on circle → advance
+$('cWrap').addEventListener('click', e=>{
+  if(!G.nails||!G.nails.length) return;
+  // Don't advance if clicking overlay buttons
+  if(e.target.closest('#windActions,#windNav,#windStepInfo,#windFindPanel,#emptyState,#windScrubBar,#windCountRow')) return;
+  windAdvance();
+});
+$('cWrap').addEventListener('touchend', e=>{
+  if(!G.nails||!G.nails.length) return;
+  if(e.target.closest('#windActions,#windNav,#windStepInfo,#windFindPanel,#emptyState,#windScrubBar,#windCountRow')) return;
+  e.preventDefault();
+  windAdvance();
+},{passive:false});
+
+// ── Playback ──
+function windPlayToggle(){ if(WD.playing) windPause(); else windPlay(); }
+
+function windPlay(){
+  if(!G.nails||G.nails.length<2) return;
+  const total=G.nails.length-1;
+  if(WD.pos>=total) WD.pos=0;
+  WD.playing=true;
+  _windUpdatePlayBtn();
+  _windScheduleNext();
+}
+
+function windPause(){
+  WD.playing=false;
+  clearTimeout(WD.playTimer);
+  _windUpdatePlayBtn();
+}
+
+function _windScheduleNext(){
+  if(!WD.playing) return;
+  WD.playTimer=setTimeout(()=>{
+    if(!WD.playing) return;
+    const total=G.nails.length-1;
+    if(WD.pos<total){ WD.pos++; windRender(); windSpeak(G.nails[WD.pos]); _windScheduleNext(); }
+    else windPause();
+  }, WD.speed);
+}
+
+function _windUpdatePlayBtn(){
+  const btn=$('windPlayBtn');
+  if(btn){ btn.textContent=WD.playing?'⏸':'▶'; btn.className=WD.playing?'playing':''; }
+}
+
+function windSetSpeed(secs){
+  WD.speed=secs*1000;
+  const v=$('windSpeedVal'); if(v) v.textContent=secs+'s';
+  const b=$('windSpeedBtn'); if(b) b.textContent='⏱ '+secs+'s';
+  const sl=$('windSpeedSlider'); if(sl) sl.value=secs;
+  // Reschedule immediately if already playing
+  if(WD.playing){ clearTimeout(WD.playTimer); _windScheduleNext(); }
+}
+
+// ── Speed popup ──
+let _speedAutoClose;
+function _scheduleSpeedClose(){
+  clearTimeout(_speedAutoClose);
+  _speedAutoClose=setTimeout(()=>{ $('windSpeedPopup').classList.remove('open'); }, 2000);
+}
+function _windSpeedPopupToggle(){
+  const popup=$('windSpeedPopup');
+  if(popup.classList.contains('open')){ popup.classList.remove('open'); clearTimeout(_speedAutoClose); return; }
+  popup.classList.add('open');
+  _scheduleSpeedClose();
+}
+document.addEventListener('click', e=>{
+  if(!e.target.closest('#windSpeedPopup,#windSpeedBtn')){ $('windSpeedPopup').classList.remove('open'); clearTimeout(_speedAutoClose); }
+});
+
+// ── Voice ──
+function windVoiceToggle(){
+  const order=['he','en','off'];
+  WD.voice=order[(order.indexOf(WD.voice)+1)%3];
+  _windUpdateVoiceBtn();
+}
+
+function windLangToggle(){
+  WD.lang=WD.lang==='he'?'en':'he';
+}
+
+function _windUpdateVoiceBtn(){
+  const labels={off:'🔇 Off',en:'🔊 EN',he:'🔊 HE'};
+  const lbl=labels[WD.voice];
+  const b=$('hdrVoiceBtn');
+  if(b){ b.textContent=lbl; b.className='hdr-btn'+(WD.voice!=='off'?' on':''); }
+}
+
+function windSpeak(num){
+  if(WD.voice==='off') return;
+  if(WD.voice==='he'){
+    if(WD._heAudio){ WD._heAudio.pause(); WD._heAudio.src=''; }
+    WD._heAudio=new Audio('https://translate.googleapis.com/translate_tts?ie=UTF-8&q='+encodeURIComponent(String(num))+'&tl=he&client=gtx&ttsspeed=0.7');
+    WD._heAudio.play().catch(()=>{});
+  } else {
+    if(!window.speechSynthesis) return;
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(String(num));
+    u.lang='en-US'; u.rate=0.85;
+    speechSynthesis.speak(u);
+  }
+}
+
+// ── File parsing (from sa-wind.js) ──
+function _parseWindFile(text){
+  const lines=text.split('\n');
+  let N=0, artName='', savedStep=0;
+  const nails=[];
+  for(const line of lines){
+    const l=line.trim();
+    if(!l) continue;
+    const mN=l.match(/^Nails:\s*(\d+)/i); if(mN){ N=parseInt(mN[1]); continue; }
+    const mA=l.match(/^Artwork:\s*(.+)/i); if(mA){ artName=mA[1].trim(); continue; }
+    const mS=l.match(/^Step:\s*(\d+)/i); if(mS){ savedStep=parseInt(mS[1]); continue; }
+    const mNum=l.match(/^(\d+)/); if(mNum) nails.push(parseInt(mNum[1]));
+  }
+  if(!N&&nails.length) N=Math.max(...nails)+1;
+  return {N, artName, savedStep, nails};
+}
+
+function loadWindFile(file){
+  const rd=new FileReader();
+  rd.onload=e=>{
+    const {N, artName, savedStep, nails}=_parseWindFile(e.target.result);
+    if(!nails.length){ alert('No nail sequence found in file.'); return; }
+    G.nails=nails;
+    G.nailPos=makeNails(N,500);
+    G.imgSz=500;
+    G.done=true;
+    WD.artName=artName||file.name.replace(/\.[^.]+$/,'');
+    WD.fileName=file.name;
+    WD.fileHandle=null;
+    WD.pos=savedStep||0;
+    WD._keepPos=true;
+
+    // Show art name
+    const an=$('windArtName');
+    if(an){ an.textContent=WD.artName; an.style.display='block'; }
+
+    // Show wind UI, hide empty state
+    $('emptyState').classList.add('hidden');
+    $('cvWind').style.display='block';
+    ['windTapHint','windNailNum','windStepInfo','windNav'].forEach(id=>{
+      const el=$(id); if(el) el.style.display='flex';
+    });
+    $('windBottomBar').classList.add('visible');
+    $('windNailNum').style.display='block';
+    $('windStepInfo').style.display='block';
+    $('windTapHint').style.display='block';
+    $('windScrubBar').classList.add('show');
+    $('windCountRow').classList.add('show');
+
+    windInit();
+    _windSaveToast(`✓ Loaded ${nails.length-1} lines · ${N} nails · "${WD.artName}"${savedStep?' · step '+savedStep:''}`);
+  };
+  rd.readAsText(file);
+}
+
+// ── Paste modal ──
+function openPasteModal(){
+  $('pasteTa').value='';
+  $('pasteModal').classList.add('open');
+  setTimeout(()=>$('pasteTa').focus(),80);
+}
+function closePasteModal(){ $('pasteModal').classList.remove('open'); }
+function loadFromPaste(){
+  const text=$('pasteTa').value.trim();
+  if(!text){ alert('Nothing to load — please paste a sequence first.'); return; }
+  const {N, artName, savedStep, nails}=_parseWindFile(text);
+  if(!nails.length){ alert('No nail sequence found. Make sure the text includes nail numbers.'); return; }
+  closePasteModal();
+  G.nails=nails;
+  G.nailPos=makeNails(N,500);
+  G.imgSz=500;
+  G.done=true;
+  WD.artName=artName||'Pasted sequence';
+  WD.fileName=''; WD.fileHandle=null;
+  WD.pos=savedStep||0;
+  WD._keepPos=true;
+  const an=$('windArtName');
+  if(an){ an.textContent=WD.artName; an.style.display='block'; }
+  $('emptyState').classList.add('hidden');
+  $('cvWind').style.display='block';
+  ['windTapHint','windNailNum','windStepInfo','windNav'].forEach(id=>{
+    const el=$(id); if(el) el.style.display='flex';
+  });
+  $('windBottomBar').classList.add('visible');
+  $('windNailNum').style.display='block';
+  $('windStepInfo').style.display='block';
+  $('windTapHint').style.display='block';
+  $('windScrubBar').classList.add('show');
+  $('windCountRow').classList.add('show');
+  windInit();
+  _windSaveToast(`✓ Loaded ${nails.length-1} lines · ${N} nails · "${WD.artName}"${savedStep?' · step '+savedStep:''}`);
+}
+
+// ── Scrubber ──
+function pbScrub(val){
+  WD.pos=+val;
+  windRender();
+}
+
+
+// ── Find (from sa-wind.js) ──
+function _windFindSearch(){
+  const a=parseInt($('windFindA').value);
+  const b=parseInt($('windFindB').value);
+  if(isNaN(a)||isNaN(b)){ $('windFindStatus').textContent='Enter both nail numbers.'; return false; }
+  const nails=G.nails; WF.hits=[];
+  for(let i=0;i<nails.length-1;i++){
+    if(nails[i]===a&&nails[i+1]===b) WF.hits.push(i+1);
+  }
+  WF.idx=-1;
+  if(!WF.hits.length){ $('windFindStatus').textContent=`No match for ${a} → ${b}`; return false; }
+  return true;
+}
+
+function windFindOpen(){
+  $('windFindPanel').style.display='block';
+  $('windFindA').focus();
+  WF.hits=[]; WF.idx=-1;
+  $('windFindStatus').textContent='';
+  [$('windFindA'),$('windFindB')].forEach(inp=>{
+    inp.addEventListener('keydown',e=>{ if(e.key==='Enter') windFindNext(); },{once:false});
+  });
+}
+
+function windFindClose(){
+  $('windFindPanel').style.display='none';
+  WF.hits=[]; WF.idx=-1;
+}
+
+function windFindNext(){
+  if(!WF.hits.length&&!_windFindSearch()) return;
+  if(!WF.hits.length) return;
+  WF.idx=(WF.idx+1)%WF.hits.length;
+  WD.pos=WF.hits[WF.idx];
+  windRender();
+  $('windFindStatus').textContent=`Match ${WF.idx+1} of ${WF.hits.length} (step ${WD.pos})`;
+}
+
+function windFindPrev(){
+  if(!WF.hits.length&&!_windFindSearch()) return;
+  if(!WF.hits.length) return;
+  WF.idx=(WF.idx-1+WF.hits.length)%WF.hits.length;
+  WD.pos=WF.hits[WF.idx];
+  windRender();
+  $('windFindStatus').textContent=`Match ${WF.idx+1} of ${WF.hits.length} (step ${WD.pos})`;
+}
+
+// ── Save (from sa-export.js) ──
+function _windBuildText(){
+  const N=G.nailPos?G.nailPos.length:0;
+  const artName=WD.artName||'string-art';
+  return `Shweka Studio - String Art Nail Sequence\n==========================================\nArtwork: ${artName}\nAlgorithm: Greedy\nNails: ${N}, CCW from top (0 to ${N-1})\nLines: ${G.nails.length-1}\nStep: ${WD.pos}\nBoard: 30cm diameter\n\nSEQUENCE:\n`+G.nails.join('\n');
+}
+
+async function windSave(){
+  if(!G.nails||G.nails.length<2) return;
+  const text=_windBuildText();
+  const artName=WD.artName||'string-art';
+  const suggestedName=WD.fileName||(artName+'-nails.txt');
+  if('showSaveFilePicker'in window){
+    try{
+      if(!WD.fileHandle){
+        WD.fileHandle=await window.showSaveFilePicker({suggestedName,types:[{description:'Text file',accept:{'text/plain':['.txt']}}]});
+        WD.fileName=WD.fileHandle.name;
+      }
+      const w=await WD.fileHandle.createWritable();
+      await w.write(text); await w.close();
+      _windSaveToast('✓ Saved — '+WD.fileName+' (step '+WD.pos+')');
+      return;
+    }catch(e){ if(e.name==='AbortError') return; WD.fileHandle=null; }
+  }
+  const a=document.createElement('a');
+  a.download=suggestedName;
+  a.href=URL.createObjectURL(new Blob([text],{type:'text/plain'}));
+  a.click();
+  WD.fileName=suggestedName;
+  _windSaveToast('✓ Downloaded — '+suggestedName);
+}
+
+function _windSaveToast(msg){
+  const d=document.createElement('div');
+  d.textContent=msg;
+  d.style.cssText='position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:rgba(20,20,20,.88);color:#fff;padding:9px 20px;border-radius:22px;font-family:Inter,sans-serif;font-size:.82rem;z-index:9999;pointer-events:none;white-space:nowrap;box-shadow:0 2px 12px rgba(0,0,0,.3);';
+  document.body.appendChild(d);
+  setTimeout(()=>d.remove(),2800);
+}
+
+// ── Resize ──
+let _rsz;
+window.addEventListener('resize',()=>{
+  clearTimeout(_rsz);
+  _rsz=setTimeout(()=>{ if(G.done) windRender(); else _posOverlays(); },150);
+});
+
+// ── Keyboard ──
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'){e.preventDefault();windAdvance();}
+  else if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();windBack();}
+  else if(e.key===' '){e.preventDefault();windPlayToggle();}
+  else if(e.key==='Escape'){ windFindClose(); closePasteModal(); _closeStepModal(); }
+});
+$('stepInp').addEventListener('keydown',e=>{ if(e.key==='Enter') _doStepJump(); });
+
+// ── Drag & drop ──
+document.addEventListener('dragover',e=>{ e.preventDefault(); $('dragOverlay').classList.add('show'); });
+document.addEventListener('dragleave',e=>{ if(!e.relatedTarget) $('dragOverlay').classList.remove('show'); });
+document.addEventListener('drop',e=>{
+  e.preventDefault(); $('dragOverlay').classList.remove('show');
+  const f=e.dataTransfer.files[0];
+  if(f&&(f.name.endsWith('.txt')||f.type==='text/plain')) loadWindFile(f);
+  else if(f) _windSaveToast('Please drop a .txt sequence file');
+});
+
+// ── Media session ──
+if('mediaSession'in navigator){
+  navigator.mediaSession.setActionHandler('previoustrack',windBack);
+  navigator.mediaSession.setActionHandler('nexttrack',windAdvance);
+  navigator.mediaSession.setActionHandler('play',windPlay);
+  navigator.mediaSession.setActionHandler('pause',windPause);
+}
+
+// ── Wake lock ──
+async function _keepAwake(){if(!('wakeLock'in navigator))return;try{await navigator.wakeLock.request('screen');}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')_keepAwake();});
+_keepAwake();
+
+// ── PWA: Service Worker registration ──
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw-wind.js').catch(()=>{});
+  });
+}
+
+// ── PWA: iOS apple-touch-icon — generated on canvas so no extra PNG file needed ──
+(function(){
+  const C=document.createElement('canvas'); C.width=C.height=180;
+  const ctx=C.getContext('2d');
+  // Background rounded rect
+  const r=36;
+  ctx.fillStyle='#5a7af0';
+  ctx.beginPath();
+  ctx.moveTo(r,0);ctx.lineTo(180-r,0);ctx.quadraticCurveTo(180,0,180,r);
+  ctx.lineTo(180,180-r);ctx.quadraticCurveTo(180,180,180-r,180);
+  ctx.lineTo(r,180);ctx.quadraticCurveTo(0,180,0,180-r);
+  ctx.lineTo(0,r);ctx.quadraticCurveTo(0,0,r,0);
+  ctx.closePath();ctx.fill();
+  // Circle ring
+  ctx.strokeStyle='rgba(255,255,255,0.85)';ctx.lineWidth=5;
+  ctx.beginPath();ctx.arc(90,80,60,0,Math.PI*2);ctx.stroke();
+  // Nail positions
+  const N=[[90,20],[141,50],[141,110],[90,140],[39,110],[39,50]];
+  // String lines
+  ctx.strokeStyle='rgba(255,255,255,0.6)';ctx.lineWidth=1.8;
+  [[0,3],[1,4],[2,5],[0,2],[3,5]].forEach(([a,b])=>{
+    ctx.beginPath();ctx.moveTo(N[a][0],N[a][1]);ctx.lineTo(N[b][0],N[b][1]);ctx.stroke();
+  });
+  // Red current line
+  ctx.strokeStyle='#ff5c5c';ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(N[0][0],N[0][1]);ctx.lineTo(N[3][0],N[3][1]);ctx.stroke();
+  ctx.fillStyle='#ff5c5c';ctx.beginPath();ctx.arc(N[3][0],N[3][1],5,0,Math.PI*2);ctx.fill();
+  // Label
+  ctx.fillStyle='rgba(255,255,255,0.92)';ctx.font='bold 18px Arial';
+  ctx.textAlign='center';ctx.fillText('WIND',90,166);
+  // Inject as apple-touch-icon
+  const lnk=document.createElement('link');
+  lnk.rel='apple-touch-icon';lnk.href=C.toDataURL('image/png');
+  document.head.appendChild(lnk);
+})();
+</script>
+</body>
+</html>

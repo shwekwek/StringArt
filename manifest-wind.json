@@ -1,0 +1,25 @@
+{
+  "name": "Shweka Wind",
+  "short_name": "Shweka Wind",
+  "description": "Step-by-step string art winding guide by Shweka Studio",
+  "start_url": "./indexwind.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f5f7",
+  "theme_color": "#5a7af0",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "wind-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "wind-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
