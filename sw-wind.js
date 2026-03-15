@@ -2,7 +2,7 @@
 // Caches the app for fully offline use.
 // version-wind.json is NEVER cached so version checks always hit the network.
 
-const CACHE = 'shweka-wind-v1.6';
+const CACHE = 'shweka-wind-v1.7';
 const PRECACHE = [
   './indexwind.html',
   './manifest-wind.json',

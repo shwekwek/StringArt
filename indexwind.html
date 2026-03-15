@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>🧵 Shweka Wind v1.6</title>
+<title>🧵 Shweka Wind v1.7</title>
 <link rel="icon" href="wind-icon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- PWA manifest + Apple meta -->
@@ -143,7 +143,7 @@ header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;alig
 <header>
   <div class="logo">🧵 Shweka Wind</div>
   <span class="logo-sub">by Shweka Studio</span>
-  <span class="logo-sub" id="appVer" onclick="_checkForUpdate(true)" title="Tap to check for updates" style="color:var(--accent);opacity:.6;margin-left:-4px;cursor:pointer;">v1.6</span>
+  <span class="logo-sub" id="appVer" onclick="_checkForUpdate(true)" title="Tap to check for updates" style="color:var(--accent);opacity:.6;margin-left:-4px;cursor:pointer;">v1.7</span>
   <div class="hdr-right">
     <button class="hdr-btn on" id="hdrVoiceBtn" onclick="windVoiceToggle()">🔊 HE</button>
     <label class="hdr-btn" for="windFileInput">↑ Load file</label>
@@ -271,7 +271,7 @@ header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;alig
 'use strict';
 
 // ── Version — bump this (and version-wind.json + sw-wind.js CACHE) on every change ──
-const APP_VER = 'v1.6';
+const APP_VER = 'v1.7';
 document.title = '🧵 Shweka Wind ' + APP_VER;
 const _vEl = document.getElementById('appVer');
 if(_vEl) _vEl.textContent = APP_VER;
@@ -448,6 +448,7 @@ function windRender(){
   const slider=$('pbSlider');
   if(slider){ slider.max=total; slider.value=n; }
   if($('windCountTxt')) $('windCountTxt').textContent='# '+n+' of '+total+' — tap to jump';
+  _savePos();
 
   // Previous nail (dim, above main number)
   const prevEl=$('windPrevNail');
@@ -589,6 +590,51 @@ function windSetSpeed(secs){
   if(WD.playing){ clearTimeout(WD.playTimer); _windScheduleNext(); }
 }
 
+// ── State persistence (localStorage) ──
+const LS_SEQ='swk_wind_seq', LS_POS='swk_wind_pos';
+
+function _saveSeq(){
+  try{
+    const N=Math.max(...G.nails)+1;
+    localStorage.setItem(LS_SEQ,JSON.stringify({nails:G.nails,N,artName:WD.artName,fileName:WD.fileName}));
+    localStorage.setItem(LS_POS,'0');
+  }catch(e){}
+}
+
+function _savePos(){
+  try{ localStorage.setItem(LS_POS,String(WD.pos)); }catch(e){}
+}
+
+function _restoreState(){
+  try{
+    const raw=localStorage.getItem(LS_SEQ);
+    if(!raw) return;
+    const {nails,N,artName,fileName}=JSON.parse(raw);
+    if(!nails||!nails.length) return;
+    const pos=Math.min(parseInt(localStorage.getItem(LS_POS))||0, nails.length-1);
+    G.nails=nails;
+    G.nailPos=makeNails(N||Math.max(...nails)+1,500);
+    G.imgSz=500; G.done=true;
+    WD.artName=artName||''; WD.fileName=fileName||'';
+    WD.pos=pos; WD._keepPos=true;
+    const an=$('windArtName');
+    if(an){ an.textContent=WD.artName; an.style.display='block'; }
+    $('emptyState').classList.add('hidden');
+    $('cvWind').style.display='block';
+    ['windTapHint','windNailNum','windPrevNail','windStepInfo','windNav'].forEach(id=>{
+      const el=$(id); if(el) el.style.display='flex';
+    });
+    $('windBottomBar').classList.add('visible');
+    $('windNailNum').style.display='block';
+    $('windStepInfo').style.display='block';
+    $('windTapHint').style.display='block';
+    $('windScrubBar').classList.add('show');
+    $('windCountRow').classList.add('show');
+    windInit();
+    if(pos>0) _windSaveToast(`↩ Resumed "${WD.artName}" at step ${pos}`);
+  }catch(e){}
+}
+
 // ── Speed popup ──
 let _speedAutoClose;
 function _scheduleSpeedClose(){
@@ -697,6 +743,7 @@ function loadWindFile(file){
     $('windScrubBar').classList.add('show');
     $('windCountRow').classList.add('show');
 
+    _saveSeq();
     windInit();
     _windSaveToast(`✓ Loaded ${nails.length-1} lines · ${N} nails · "${WD.artName}"${savedStep?' · step '+savedStep:''}`);
   };
@@ -737,6 +784,7 @@ function loadFromPaste(){
   $('windTapHint').style.display='block';
   $('windScrubBar').classList.add('show');
   $('windCountRow').classList.add('show');
+  _saveSeq();
   windInit();
   _windSaveToast(`✓ Loaded ${nails.length-1} lines · ${N} nails · "${WD.artName}"${savedStep?' · step '+savedStep:''}`);
 }
@@ -874,6 +922,9 @@ if('mediaSession'in navigator){
 async function _keepAwake(){if(!('wakeLock'in navigator))return;try{await navigator.wakeLock.request('screen');}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')_keepAwake();});
 _keepAwake();
+
+// ── Restore last session on startup ──
+_restoreState();
 
 // ── PWA: Service Worker registration + update detection ──
 if('serviceWorker' in navigator){
