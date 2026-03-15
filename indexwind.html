@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>🧵 Shweka Wind v1.4</title>
+<title>🧵 Shweka Wind v1.5</title>
 <link rel="icon" href="wind-icon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- PWA manifest + Apple meta -->
@@ -143,7 +143,7 @@ header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;alig
 <header>
   <div class="logo">🧵 Shweka Wind</div>
   <span class="logo-sub">by Shweka Studio</span>
-  <span class="logo-sub" id="appVer" style="color:var(--accent);opacity:.6;margin-left:-4px;">v1.3</span>
+  <span class="logo-sub" id="appVer" onclick="_checkForUpdate(true)" title="Tap to check for updates" style="color:var(--accent);opacity:.6;margin-left:-4px;cursor:pointer;">v1.5</span>
   <div class="hdr-right">
     <button class="hdr-btn on" id="hdrVoiceBtn" onclick="windVoiceToggle()">🔊 HE</button>
     <label class="hdr-btn" for="windFileInput">↑ Load file</label>
@@ -230,7 +230,7 @@ header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;alig
 <!-- Update toast -->
 <div id="updateToast">
   <span id="updateToastMsg">✓ App updated</span>
-  <button onclick="window.location.reload()">Reload</button>
+  <button onclick="forceUpdate()">Update now</button>
   <button style="background:transparent;color:rgba(255,255,255,.5);padding:4px 8px;" onclick="document.getElementById('updateToast').classList.remove('show')">✕</button>
 </div>
 
@@ -270,11 +270,59 @@ header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;alig
 <script>
 'use strict';
 
-// ── Version — bump this on every change ──
-const APP_VER = 'v1.4';
+// ── Version — bump this (and version-wind.json + sw-wind.js CACHE) on every change ──
+const APP_VER = 'v1.5';
 document.title = '🧵 Shweka Wind ' + APP_VER;
 const _vEl = document.getElementById('appVer');
 if(_vEl) _vEl.textContent = APP_VER;
+
+// ── Update helpers ──
+
+// Check version-wind.json on GitHub (bypasses cache via SW).
+// manual=true → always show feedback; manual=false → silent unless update found.
+async function _checkForUpdate(manual){
+  const verEl=$('appVer');
+  if(manual && verEl){ verEl.textContent='⟳ checking…'; verEl.style.opacity='1'; }
+  try {
+    const r=await fetch('./version-wind.json?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok) throw new Error('network');
+    const {ver}=await r.json();
+    if(ver && ver!==APP_VER){
+      // Update available
+      if(verEl){ verEl.textContent=APP_VER+'→'+ver; verEl.style.opacity='1'; verEl.style.color='#e85d00'; }
+      const msg=$('updateToastMsg');
+      if(msg) msg.textContent='Version '+ver+' available — tap to update';
+      const t=$('updateToast'); if(t) t.classList.add('show');
+    } else {
+      // Up to date
+      if(verEl){ verEl.textContent=APP_VER; verEl.style.opacity='.6'; verEl.style.color=''; }
+      if(manual) _windSaveToast('✓ Already up to date ('+APP_VER+')');
+    }
+  } catch(e){
+    if(verEl){ verEl.textContent=APP_VER; verEl.style.opacity='.6'; verEl.style.color=''; }
+    if(manual) _windSaveToast('No internet — cannot check for updates');
+  }
+}
+
+// Wipe all caches + unregister SW → hard reload fetches everything fresh from network.
+async function forceUpdate(){
+  const t=$('updateToast'); if(t) t.classList.remove('show');
+  _windSaveToast('⟳ Updating…');
+  try {
+    if('serviceWorker' in navigator){
+      const regs=await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r=>r.unregister()));
+    }
+    if('caches' in window){
+      const keys=await caches.keys();
+      await Promise.all(keys.map(k=>caches.delete(k)));
+    }
+  } catch(e){}
+  window.location.reload(true);
+}
+
+// Auto-check silently on every launch (fires after page settles)
+setTimeout(()=>_checkForUpdate(false), 2500);
 
 // ── Globals (matches sa-globals.js) ──
 const $ = id => document.getElementById(id);
@@ -821,16 +869,6 @@ _keepAwake();
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
     navigator.serviceWorker.register('sw-wind.js').catch(()=>{});
-  });
-  // SW posts SW_UPDATED when a new version activates — show reload toast
-  navigator.serviceWorker.addEventListener('message', e=>{
-    if(e.data && e.data.type==='SW_UPDATED'){
-      const ver=(e.data.cache||'').replace('shweka-wind-','');
-      const msg=$('updateToastMsg');
-      if(msg) msg.textContent='✓ App updated to '+ver+' — reload to apply';
-      const t=$('updateToast');
-      if(t) t.classList.add('show');
-    }
   });
 }
 
