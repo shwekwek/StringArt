@@ -1,1 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SA v0.83 · Shweka Studio</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧵</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="sa-style.css">
+</head>
+<body class="view-image no-img">
 
+<!-- ════ MOBILE TOP BAR (≤600px only) ════ -->
+<div id="mobTopBar">
+  <span class="mob-logo">Shweka</span>
+  <div class="mob-tabs-row">
+    <button class="mob-tab-btn active" id="mbtImage" onclick="mobSetTab('image')">Image</button>
+    <button class="mob-tab-btn" id="mbtResult" onclick="mobSetTab('result')">String Art</button>
+    <button class="mob-tab-btn" id="mbtWind" onclick="_windTabClick(event)">🧵 Wind</button>
+  </div>
+  <button class="mob-gen-btn" id="mobGenBtn" disabled onclick="triggerFromBtn()">▶ Go</button>
+  <button class="mob-settings-btn" onclick="mobOpenSheet()">⚙</button>
+</div>
+
+<!-- ════ MOBILE SETTINGS SHEET ════ -->
+<div id="mobSheetBackdrop" onclick="mobCloseSheet()"></div>
+<div id="mobSheet">
+  <div id="mobSheetHandle"></div>
+  <div id="mobSheetTitle">
+    Settings
+    <button onclick="mobCloseSheet()">✕</button>
+  </div>
+  <div id="mobSheetInner">
+    <!-- panel-left contents are moved here by JS on mobile -->
+  </div>
+</div>
+<header>
+  <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:nowrap;">
+    <div class="logo" style="font-size:1.15rem;white-space:nowrap;">String Art Generator</div>
+    <span class="logo-sub" style="font-size:0.65rem;white-space:nowrap;">by Shweka Studio</span>
+    <span class="logo-sub" style="font-size:0.6rem;color:var(--accent);opacity:0.7;white-space:nowrap;">v0.83</span>
+  </div>
+</header>
+<div class="main">
+
+<!-- ── MOBILE TOP TABS ── -->
+
+<!-- ════ LEFT ════ -->
+<div class="panel panel-left">
+
+
+  <!-- GENERATE BUTTON (above tabs, unified) -->
+  <div class="section section-gen-top" id="genTopSec">
+    <button class="btn-gen btn-gen-unified" id="btnGenGreedy" disabled onclick="triggerFromBtn()">
+      <div id="btnInGreedy">▶ Generate</div>
+    </button>
+    <div class="prog-wrap" id="pwGreedy" style="display:none;">
+      <div class="prog-bg"><div class="prog-fill" id="pfGreedy"></div></div>
+      <div class="prog-text" id="ptGreedy">Starting...</div>
+    </div>
+  </div>
+
+  <!-- ALGO TABS (hidden) -->
+  <div class="algo-tabs" id="algoTabBar" style="display:none;">
+    <button class="algo-tab active-front" id="algoTabGreedy" onclick="setAlgo('greedy')">Front</button>
+    <button class="algo-tab" id="algoTabBack" onclick="setAlgo('back')">Back</button>
+  </div>
+
+  <!-- FRONT (GREEDY) PANE -->
+  <div class="algo-pane active" id="paneGreedy">
+    <div class="section">
+      <div class="ctrl">
+        <div class="ctrl-label">
+          <div class="ctrl-left">Nails<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">Nails around the circle. <b>More nails</b> = finer detail but more winding time. <b>Typical:</b> 150–300 for 30cm board.</span></span></div>
+          <span class="ctrl-val" id="vn">320</span>
+        </div>
+        <input type="range" id="sn" min="50" max="400" value="320" step="5">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">
+          <div class="ctrl-left">Max lines<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">Total thread segments. More = denser image. <b>~12–18× nail count</b> works well for portraits.</span></span></div>
+          <span class="ctrl-val" id="vl">5600</span>
+        </div>
+        <input type="range" id="sl" min="500" max="8000" value="5600" step="100">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">
+          <div class="ctrl-left">Line darkness<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">How much each line "uses up" the darkness beneath it.</span></span></div>
+          <span class="ctrl-val" id="vf">35</span>
+        </div>
+        <input type="range" id="sf" min="5" max="80" value="35" step="1">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">
+          <div class="ctrl-left">Thread thickness<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box"><b>0.1–0.3</b> = fine · <b>0.4–0.8</b> = floss · <b>1.0+</b> = yarn</span></span></div>
+          <span class="ctrl-val" id="vt">0.4</span>
+        </div>
+        <input type="range" id="st" min="0.05" max="0.7" value="0.4" step="0.05">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">
+          <div class="ctrl-left">Min nail skip<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">Skip at least this many nails. Prevents short lines. <b>~6–8% of nail count</b> is ideal.</span></span></div>
+          <span class="ctrl-val" id="vg">20</span>
+        </div>
+        <input type="range" id="sg" min="3" max="80" value="20" step="1">
+      </div>
+    </div>
+
+    <div class="section" id="statSecGreedy" style="display:none">
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-val" id="stlG">—</div><div class="stat-lbl">Lines</div></div>
+        <div class="stat-box"><div class="stat-val" id="stnG">—</div><div class="stat-lbl">Nails</div></div>
+        <div class="stat-box"><div class="stat-val" id="sttG">—</div><div class="stat-lbl">Time (s)</div></div>
+        <div class="stat-box"><div class="stat-val" id="stmG">—</div><div class="stat-lbl">~Thread m</div></div>
+      </div>
+      <div class="score-box" id="scoreBoxG">
+        <div class="score-val" id="scoreValG">—</div>
+        <div class="score-delta" id="scoreDeltaG">accuracy score</div>
+      </div>
+    </div>
+    <!-- Machine params collapsible -->
+    <div class="section">
+      <button class="collapse-toggle" onclick="toggleCollapse('machineG')">⚙ Machine &amp; Export <span class="collapse-arrow" id="machineGArrow">▸</span></button>
+      <div class="collapse-body" id="machineG" style="display:none;">
+        <!-- Physical Setup -->
+        <div class="section" style="border-top:none;padding-top:4px;">
+          <div class="sec-title">Physical Setup</div>
+          <div class="machine-input">
+            <div class="mi-row">
+              <span class="mi-lbl">Circle diameter</span>
+              <input class="mi-val" id="physDiam" type="number" value="45" min="5" max="300" step="1" oninput="updateProdTime()">
+              <span class="mi-unit">cm</span>
+            </div>
+            <div class="mi-row" style="align-items:center;gap:8px;">
+              <span class="mi-lbl">Nail type</span>
+              <div class="dual-seg">
+                <button class="ds-btn on" id="ntNail" onclick="setNailType('nail')">🔩 Nail</button>
+                <button class="ds-btn"    id="ntSun"  onclick="setNailType('sun')">☀ Sun</button>
+              </div>
+            </div>
+            <div class="mi-row" id="nailDiamRow">
+              <span class="mi-lbl">Nail diameter</span>
+              <input class="mi-val" id="nailDiam" type="number" value="1.63" min="0.1" max="20" step="0.01">
+              <span class="mi-unit">mm</span>
+            </div>
+          </div>
+          <div class="notice" id="nailTypeNote" style="margin-top:6px;">
+            🔩 <strong>Nail</strong>: string wraps around nail — offset ±<span id="nailOffsetVal">0.82</span> mm from centre line
+          </div>
+        </div>
+        <div class="section" style="border-top:none;padding-top:4px;">
+          <div class="sec-title">Thread Color</div>
+          <div class="swatches" id="swatches">
+            <div class="swatch dk on" data-c="#111111" style="background:#111" title="Black"></div>
+            <div class="swatch dk" data-c="#555555" style="background:#666" title="Dark grey"></div>
+            <div class="swatch" data-c="#cc0000" style="background:#c00" title="Red"></div>
+            <div class="swatch" data-c="#0055cc" style="background:#0055cc" title="Blue"></div>
+            <div class="swatch" data-c="#007755" style="background:#077" title="Green"></div>
+            <div class="swatch" data-c="#884400" style="background:#884400" title="Brown"></div>
+            <div class="swatch" data-c="#880088" style="background:#808" title="Purple"></div>
+            <div class="swatch" data-c="#cc6600" style="background:#c60" title="Orange"></div>
+          </div>
+          <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:.63rem;color:var(--mid);">Nail markers</span>
+            <div class="dual-seg">
+              <button class="ds-btn" id="nailsHide" onclick="setNails(false)">Hide</button>
+              <button class="ds-btn on" id="nailsShow" onclick="setNails(true)">Show</button>
+            </div>
+          </div>
+        </div>
+        <div class="section" style="border-top:none;padding-top:4px;" id="expSec">
+          <div class="sec-title">Export</div>
+          <div class="exp-grid">
+            <button class="btn-exp" id="ePNG">PNG</button>
+            <button class="btn-exp" id="eSVG">SVG</button>
+            <button class="btn-exp full ard" id="eTXT">↓ Nail Sequence (.txt)</button>
+          </div>
+          <div class="notice"><strong>TXT:</strong> nail numbers CCW from top, ready for Arduino.</div>
+        </div>
+        <div class="section" style="border-top:none;padding-top:4px;" id="prodSec">
+          <div class="sec-title">Production Time</div>
+          <div class="machine-input">
+            <div class="mi-row"><span class="mi-lbl">Motor speed</span><input class="mi-val" id="mSpeed" type="number" value="60" min="1" max="720" step="1"><span class="mi-unit">°/s</span></div>
+            <div class="mi-row"><span class="mi-lbl">Thread feed</span><input class="mi-val" id="mFeed" type="number" value="5" min="1" max="50" step="0.5"><span class="mi-unit">cm/s</span></div>
+            <div class="mi-row"><span class="mi-lbl">Dwell/nail</span><input class="mi-val" id="mDwell" type="number" value="0.3" min="0" max="5" step="0.05"><span class="mi-unit">sec</span></div>
+          </div>
+          <div class="prod-grid">
+            <div class="prod-box"><div class="prod-val" id="pTime">—</div><div class="prod-lbl">Est. total time</div></div>
+            <div class="prod-box"><div class="prod-val" id="pThread">—</div><div class="prod-lbl">Thread length</div></div>
+            <div class="prod-box"><div class="prod-val" id="pAvgDeg">—</div><div class="prod-lbl">Avg rot/step</div></div>
+            <div class="prod-box"><div class="prod-val" id="pMaxDeg">—</div><div class="prod-lbl">Max rot/step</div></div>
+            <div class="prod-box prod-full"><div class="prod-val" id="pAvgChord">—</div><div class="prod-lbl">Avg chord</div></div>
+          </div>
+          <div class="notice" id="prodBreakdown" style="font-size:.55rem;line-height:1.7;"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Smart Optimize -->
+    <div class="section" style="padding-top:0;border-top:none;">
+      <button class="btn-optimize" id="btnOptimize" disabled>✦ Smart Optimize</button>
+      <div class="rollback-row" id="rollbackRow">
+        <button class="btn-rollback" id="btnRollback">↩ Rollback</button>
+        <span class="opt-hint" id="optHint"></span>
+      </div>
+    </div>
+  </div><!-- /paneGreedy -->
+
+  <!-- BACK PANE -->
+  <div class="algo-pane" id="paneBack">
+    <div class="section">
+      <div class="ctrl">
+        <div class="ctrl-label">
+          <div class="ctrl-left">Nails<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">Nails around the circle.</span></span></div>
+          <span class="ctrl-val" id="vnB">320</span>
+        </div>
+        <input type="range" id="snB" min="50" max="400" value="320" step="5">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">
+          <div class="ctrl-left">Max lines<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">Total thread segments.</span></span></div>
+          <span class="ctrl-val" id="vlB">5600</span>
+        </div>
+        <input type="range" id="slB" min="500" max="8000" value="5600" step="100">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">
+          <div class="ctrl-left">Line darkness<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">How much each line uses up darkness.</span></span></div>
+          <span class="ctrl-val" id="vfB">35</span>
+        </div>
+        <input type="range" id="sfB" min="5" max="80" value="35" step="1">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">
+          <div class="ctrl-left">Thread thickness</div>
+          <span class="ctrl-val" id="vtB">0.4</span>
+        </div>
+        <input type="range" id="stB" min="0.05" max="0.7" value="0.4" step="0.05">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">
+          <div class="ctrl-left">Min nail skip</div>
+          <span class="ctrl-val" id="vgB">20</span>
+        </div>
+        <input type="range" id="sgB" min="3" max="80" value="20" step="1">
+      </div>
+    </div>
+    <!-- Back-specific params -->
+    <div class="section" style="border-top:none;padding-top:0;">
+      <div class="ctrl">
+        <div class="ctrl-label">
+          <div class="ctrl-left">Max chord skip<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">Maximum nails apart a back-thread can jump. Lower = shorter chords only. ∞ = any distance.</span></span></div>
+          <span class="ctrl-val" id="maxSkipV">∞</span>
+        </div>
+        <input type="range" id="maxSkip" min="10" max="999" value="999" step="1" oninput="$('maxSkipV').textContent=this.value==999?'∞':this.value">
+      </div>
+      <button class="collapse-toggle" onclick="toggleCollapse('backExtra')" style="margin-top:4px;">⚙ Advanced <span class="collapse-arrow" id="backExtraArrow">▸</span></button>
+      <div class="collapse-body" id="backExtra" style="display:none;">
+        <div class="ctrl" style="margin-top:8px;">
+          <div class="ctrl-label">
+            <div class="ctrl-left">Routing penalty<span class="tip-wrap"><span class="tip-q">i</span><span class="tip-box">Penalises long behind-board routes.</span></span></div>
+            <span class="ctrl-val" id="routePenV">0</span>
+          </div>
+          <input type="range" id="routePen" min="0" max="100" value="0" step="1" oninput="$('routePenV').textContent=this.value">
+        </div>
+      </div>
+    </div>
+    <div class="prog-wrap" id="pwBack" style="display:none;margin:0 16px 8px;">
+      <div class="prog-bg"><div class="prog-fill" id="pfBack" style="background:var(--accent2);"></div></div>
+      <div class="prog-text" id="ptBack">Starting...</div>
+    </div>
+    <div class="section" id="statSecBack" style="display:none">
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-val" id="stlB">—</div><div class="stat-lbl">Lines</div></div>
+        <div class="stat-box"><div class="stat-val" id="stnB">—</div><div class="stat-lbl">Nails</div></div>
+        <div class="stat-box"><div class="stat-val" id="sttB">—</div><div class="stat-lbl">Time (s)</div></div>
+        <div class="stat-box"><div class="stat-val" id="stmB">—</div><div class="stat-lbl">~Thread m</div></div>
+      </div>
+      <div class="score-box" id="scoreBoxB" style="border-color:rgba(10,143,110,.2);">
+        <div class="score-val" id="scoreValB" style="color:var(--accent2);">—</div>
+        <div class="score-delta" id="scoreDeltaB">accuracy score</div>
+      </div>
+    </div>
+  </div><!-- /paneBack -->
+
+
+
+  <!-- hidden legacy ids needed by JS -->
+  <div style="display:none">
+    <div id="statSec"><div id="stl"></div><div id="stn"></div><div id="stt"></div><div id="stm"></div></div>
+    <div id="scoreBox"><div id="scoreVal"></div><div id="scoreDelta"></div></div>
+    <div id="refineRow"><button id="btnRefine"></button></div>
+    <div id="legacyAlgo"></div>
+  </div>
+
+</div><!-- /left -->
+
+<!-- ════ CENTER ════ -->
+<div class="panel-center">
+  <div class="toolbar">
+    <div class="dual-seg">
+      <button class="ds-btn on" id="vmO" onclick="setView('image')">Image</button>
+      <button class="ds-btn" id="vmR" onclick="setView('result')">String Art</button>
+      <button class="ds-btn" id="vmE" onclick="setView('error')">Error map</button>
+      <button class="ds-btn" id="vmW" onclick="_windBtnClick()">🧵 Wind</button>
+    </div>
+    <div class="zoom-btns" style="display:flex;align-items:center;gap:8px;">
+      <div class="t-sep"></div>
+      <button class="t-btn" id="bZI" onclick="zoomIn()">＋</button>
+      <button class="t-btn" id="bZO" onclick="zoomOut()">－</button>
+      <button class="t-btn" id="bZR" onclick="zoomFit()">fit</button>
+      <div class="t-sep" id="backViewSep" style="display:none"></div>
+      <button class="t-btn" id="tbBackView" onclick="pbToggleView()" style="display:none;color:var(--accent2);border-color:rgba(10,143,110,.3);">↺ Flip Plate</button>
+    </div>
+  </div>
+  <div class="big-gen-wrap"><button class="btn-big-gen" onclick="onBigGenerate()">▶ Generate</button></div>
+  <div class="canvas-wrap" id="cWrap">
+    <!-- Image tab: circle IS the upload/crop zone -->
+    <label class="ph ph-upload" id="ph" for="fi">
+      <div class="ph-upload-inner" id="phInner">
+        <div class="ph-txt">Drop or tap to upload</div>
+        <div class="ph-hint">an image</div>
+        <div class="ph-upload-btn">Upload</div>
+      </div>
+    </label>
+    <!-- Image preview circle: shown on Image tab after upload -->
+    <div class="img-preview-wrap" id="imgPreviewWrap" style="display:none;" ondblclick="document.getElementById('fi').click()">
+      <canvas id="imgPreviewCanvas" class="img-preview-canvas"></canvas>
+      <div class="img-preview-ring"></div>
+      <!-- Hover overlay: click to open crop (Image tab) -->
+      <div class="img-prev-hover-ov" id="imgPrevHoverOv" onclick="openCrop()">
+        <span>✎ Adjust crop</span>
+      </div>
+    </div>
+    <!-- Zoom hint (image tab) -->
+    <div class="img-zoom-hint" id="imgZoomHint">100%</div>
+    <div class="img-help-bar" id="imgHelpBar">
+      <span id="imgHelpText">Drop an image onto the circle, or click Upload</span>
+    </div>
+    <!-- Floating controls bar: shown on image tab -->
+    <div class="img-tab-controls" id="imgTabControls">
+      <!-- After image: change + crop + reset -->
+      <label class="img-ctrl-btn has-image" id="ctrlChange" for="fi2" title="Upload new image" style="display:none;">
+        ↺ Change
+      </label>
+      <button class="img-ctrl-btn has-image" id="ctrlCrop" onclick="openCrop()" style="display:none;">
+        ✎ Crop &amp; Pan
+      </button>
+      <button class="img-ctrl-btn has-image" id="ctrlResetCrop" style="display:none;" onclick="resetCropInline()">
+        ↩ Reset
+      </button>
+    </div>
+    <!-- Wind tab overlay -->
+    <!-- Wind nail number display -->
+    <div id="windNailNum" style="display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:'Space Grotesk',sans-serif;font-size:clamp(2.5rem,8vw,5rem);font-weight:700;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,.7),0 0 40px rgba(0,0,0,.4);pointer-events:none;z-index:10;line-height:1;text-align:center;"></div>
+    <div id="windStepInfo" style="display:none;position:absolute;left:50%;bottom:26%;transform:translateX(-50%);font-family:'Space Grotesk',sans-serif;font-size:clamp(1rem,3.5vw,1.4rem);font-weight:600;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.7);pointer-events:auto;z-index:10;white-space:nowrap;background:rgba(0,0,0,0.45);padding:6px 18px;border-radius:24px;letter-spacing:0.02em;cursor:pointer;" title="Click to jump to step"></div>
+    <div id="windTapHint" style="display:none;position:absolute;left:50%;top:14%;transform:translateX(-50%);font-family:'Inter',sans-serif;font-size:0.7rem;color:rgba(255,255,255,0.6);text-shadow:0 1px 4px rgba(0,0,0,.5);pointer-events:none;z-index:10;white-space:nowrap;">tap circle to advance</div>
+    <!-- Wind artwork name (shown when loaded from .txt file) -->
+    <div id="windArtName" style="display:none;position:absolute;left:50%;top:5%;transform:translateX(-50%);font-family:'Inter',sans-serif;font-size:0.68rem;color:rgba(255,255,255,0.8);text-shadow:0 1px 4px rgba(0,0,0,.5);pointer-events:none;z-index:10;white-space:nowrap;background:rgba(0,0,0,0.35);padding:3px 12px;border-radius:20px;max-width:75%;overflow:hidden;text-overflow:ellipsis;"></div>
+    <!-- Wind speed row (above nav) -->
+    <div id="windSpeedRow" style="display:none;position:absolute;bottom:19%;left:50%;transform:translateX(-50%);z-index:12;gap:8px;align-items:center;background:rgba(0,0,0,0.4);padding:5px 14px;border-radius:20px;">
+      <span style="font-size:0.68rem;color:rgba(255,255,255,0.75);font-family:'Inter',sans-serif;pointer-events:none;">⏱</span>
+      <input id="windSpeedSlider" type="range" min="3" max="15" step="1" value="5" style="width:90px;" oninput="event.stopPropagation();windSetSpeed(+this.value)">
+      <span id="windSpeedLabel" style="font-size:0.68rem;color:rgba(255,255,255,0.9);font-family:'Inter',sans-serif;min-width:26px;pointer-events:none;">5s</span>
+    </div>
+    <!-- Wind nav buttons (Back | Play | Next) -->
+    <div id="windNav" style="display:none;position:absolute;bottom:11%;left:50%;transform:translateX(-50%);z-index:12;gap:12px;align-items:center;">
+      <button onclick="event.stopPropagation();windBack()" style="font-size:1.1rem;padding:12px 24px;border-radius:30px;border:none;background:rgba(0,0,0,0.5);color:#fff;cursor:pointer;font-family:inherit;min-width:90px;box-shadow:0 2px 12px rgba(0,0,0,.25);">◀ Back</button>
+      <button id="windPlayBtn" onclick="event.stopPropagation();windPlayToggle()" style="font-size:1.3rem;padding:0;border-radius:50%;border:none;background:rgba(232,93,0,0.85);color:#fff;cursor:pointer;font-family:inherit;width:56px;height:56px;flex-shrink:0;box-shadow:0 2px 16px rgba(180,50,0,.4);">▶</button>
+      <button onclick="event.stopPropagation();windAdvance()" style="font-size:1.1rem;padding:12px 24px;border-radius:30px;border:none;background:rgba(220,40,40,0.9);color:#fff;cursor:pointer;font-family:inherit;min-width:90px;box-shadow:0 2px 12px rgba(180,20,20,.4);">Next ▶</button>
+    </div>
+    <!-- Wind action bar: Load · Save · Voice -->
+    <div id="windActions" style="display:none;position:absolute;bottom:3%;left:50%;transform:translateX(-50%);z-index:12;gap:10px;align-items:center;">
+      <button id="windVoiceBtn" onclick="event.stopPropagation();windVoiceToggle()" style="font-size:0.82rem;padding:7px 14px;border-radius:20px;border:none;background:rgba(0,0,0,0.45);color:#fff;cursor:pointer;font-family:inherit;box-shadow:0 1px 8px rgba(0,0,0,.3);">🔊 HE</button>
+      <label for="windFileInput" style="font-size:0.82rem;padding:7px 14px;border-radius:20px;border:none;background:rgba(0,0,0,0.45);color:#fff;cursor:pointer;font-family:inherit;box-shadow:0 1px 8px rgba(0,0,0,.3);" onclick="event.stopPropagation()">↑ Load</label>
+      <button id="windSaveBtn" onclick="event.stopPropagation();windSave()" style="font-size:0.82rem;padding:7px 14px;border-radius:20px;border:none;background:rgba(0,0,0,0.45);color:#fff;cursor:pointer;font-family:inherit;box-shadow:0 1px 8px rgba(0,0,0,.3);">↓ Save</button>
+      <button id="windFindBtn" onclick="event.stopPropagation();windFindOpen()" style="font-size:0.82rem;padding:7px 14px;border-radius:20px;border:none;background:rgba(0,0,0,0.45);color:#fff;cursor:pointer;font-family:inherit;box-shadow:0 1px 8px rgba(0,0,0,.3);">? Find</button>
+    </div>
+    <!-- Wind find panel -->
+    <div id="windFindPanel" style="display:none;position:absolute;bottom:12%;left:50%;transform:translateX(-50%);z-index:13;background:rgba(10,10,30,0.92);padding:12px 16px;border-radius:18px;box-shadow:0 4px 24px rgba(0,0,0,.5);font-family:'Inter',sans-serif;min-width:240px;text-align:center;" onclick="event.stopPropagation()">
+      <div style="font-size:0.72rem;color:rgba(255,255,255,0.6);margin-bottom:8px;">Find nail sequence: from → to</div>
+      <div style="display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:10px;">
+        <input id="windFindA" type="number" min="0" placeholder="Nail A" inputmode="numeric" style="width:76px;padding:6px 8px;border-radius:9px;border:1.5px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.1);color:#fff;font-size:0.88rem;font-family:inherit;text-align:center;">
+        <span style="color:rgba(255,255,255,0.5);font-size:0.85rem;">→</span>
+        <input id="windFindB" type="number" min="0" placeholder="Nail B" inputmode="numeric" style="width:76px;padding:6px 8px;border-radius:9px;border:1.5px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.1);color:#fff;font-size:0.88rem;font-family:inherit;text-align:center;">
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center;">
+        <button onclick="windFindPrev()" style="padding:6px 14px;border-radius:10px;border:none;background:rgba(255,255,255,0.15);color:#fff;cursor:pointer;font-family:inherit;font-size:0.8rem;">◀ Prev</button>
+        <button onclick="windFindNext()" style="padding:6px 14px;border-radius:10px;border:none;background:rgba(90,122,240,0.85);color:#fff;cursor:pointer;font-family:inherit;font-size:0.8rem;">Next ▶</button>
+        <button onclick="windFindClose()" style="padding:6px 14px;border-radius:10px;border:none;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.6);cursor:pointer;font-family:inherit;font-size:0.8rem;">✕</button>
+      </div>
+      <div id="windFindStatus" style="font-size:0.7rem;color:rgba(255,255,255,0.5);margin-top:8px;min-height:1em;"></div>
+    </div>
+    <!-- Inner container gets explicit pixel size set by JS so overflow:auto actually scrolls -->
+    <div id="cvInner">
+    <!-- Main display: SVG for result view (vector), canvas for original/error views -->
+    <svg id="cvSvg" xmlns="http://www.w3.org/2000/svg" style="display:none;border-radius:50%;box-shadow:0 4px 32px rgba(0,0,0,.18);"></svg>
+    <canvas id="cvRaster" style="display:none;border-radius:50%;box-shadow:0 4px 32px rgba(0,0,0,.18);"></canvas>
+    <svg id="cvWind" xmlns="http://www.w3.org/2000/svg" style="display:none;border-radius:50%;box-shadow:0 4px 32px rgba(0,0,0,.18);cursor:pointer;"></svg>
+    </div>
+    <!-- Compare overlay SVG (radon side) -->
+    <svg id="cvCmpSvg" xmlns="http://www.w3.org/2000/svg" style="display:none;position:absolute;border-radius:50%;pointer-events:none;"></svg>
+    <div class="cmp-div" id="cDiv"></div>
+    <div class="cmp-handle" id="cHandle"></div>
+    <div class="cmp-lbl" id="cLblL">Greedy</div>
+    <div class="cmp-lbl" id="cLblR">Radon</div>
+  </div>
+</div>
+
+<!-- ════ NAIL SEQUENCE DRAWER ════ -->
+<div class="seq-drawer" id="seqDrawer">
+  <button class="seq-toggle" onclick="toggleSeqDrawer()" title="Nail sequence">
+    <span class="seq-arrow" id="seqArrow">›</span>
+    <span class="seq-label">Nail Seq</span>
+  </button>
+  <div class="seq-content">
+    <div class="seq-hdr">
+      <div class="seq-title">Nail Sequence</div>
+    </div>
+    <div id="emptyMsg" class="empty-msg">Generate to see the nail order.</div>
+    <div class="nail-wrap" id="nw" style="display:none"><div class="nail-list" id="nl"></div></div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ════ PLAYBACK BAR ════ -->
+<div id="playBar">
+  <div class="pb-left">
+    <button class="pb-btn" id="pbPlay" onclick="pbTogglePlay()" title="Play">▶</button>
+    <div class="pb-speed-wrap" id="pbSpeedWrap">
+      <button class="pb-btn pb-speed-btn" id="pbSpeedBtn" onclick="pbToggleSpeedPopup()" title="Speed">1×</button>
+      <div class="pb-speed-popup" id="pbSpeedPopup">
+        <div class="pb-speed-lbl" id="pbSpeedLbl">500/s</div>
+        <div class="pb-speed-hint">5000/s</div>
+        <input type="range" id="pbSpeedSlider" min="1" max="5000" value="500"
+          orient="vertical" oninput="pbSetSpeed(+this.value)"
+          style="margin:4px 0;">
+        <div class="pb-speed-hint">1/s</div>
+      </div>
+    </div>
+  </div>
+  <div class="pb-center">
+    <input type="range" id="pbSlider" min="0" max="100" value="100" oninput="pbScrub(+this.value)">
+  </div>
+  <div class="pb-right">
+    <span class="pb-count" id="pbCount">0 / 0</span>
+    <button class="pb-btn pb-view" id="pbViewBtn" onclick="pbToggleView()" style="display:none" title="Flip board">↺ Flip Plate</button>
+  </div>
+</div>
+
+<div id="pw" style="display:none"><div id="pf"></div><div id="pt"></div></div>
+<!-- CROP MODAL -->
+<div id="cropModal">
+  <div class="crop-title">Crop &amp; Frame</div>
+  <div class="crop-sub">Drag to pan · Scroll to zoom</div>
+  <div class="crop-cont" id="cropCont">
+    <canvas id="cropCanvas" width="380" height="380"></canvas>
+    <div class="crop-overlay"></div>
+  </div>
+  <div class="crop-controls">
+    <span class="crop-zlbl">Zoom</span>
+    <input type="range" id="cropZoom" min="0.5" max="5" step="0.05" value="1" style="width:140px;">
+    <span class="crop-zlbl" id="cropZV">1.0×</span>
+  </div>
+  <div class="crop-btns">
+    <button class="btn-ca btn-cancel" id="btnCC">Cancel</button>
+    <button class="btn-ca btn-apply" id="btnCA">Apply</button>
+  </div>
+  <div class="crop-hint">The circle shows exactly what will be generated</div>
+</div>
+<canvas id="off" style="display:none"></canvas>
+
+<!-- File inputs at body level — outside overflow:hidden containers (Android Chrome fix) -->
+<input type="file" id="fi" accept="image/*" style="display:none">
+<input type="file" id="fi2" accept="image/*" style="display:none">
+<input type="file" id="windHomeInput" accept=".txt" style="display:none" onchange="if(this.files[0]){loadWindFile(this.files[0]);this.value=''}">
+<input type="file" id="windFileInput" accept=".txt" style="display:none" onchange="if(this.files[0])loadWindFile(this.files[0]);this.value=''">
+
+<!-- Scripts in dependency order -->
+<script>
+// ── Physical Setup ──
+function setNailType(t){
+  const isNail = t==='nail';
+  document.getElementById('ntNail').classList.toggle('on', isNail);
+  document.getElementById('ntSun').classList.toggle('on', !isNail);
+  document.getElementById('nailDiamRow').style.display = isNail ? '' : 'none';
+  const note = document.getElementById('nailTypeNote');
+  if(isNail){
+    const d = parseFloat(document.getElementById('nailDiam').value)||1.63;
+    note.innerHTML = '🔩 <strong>Nail</strong>: string wraps around nail — offset ±<span id="nailOffsetVal">'+
+      (d/2).toFixed(2)+'</span> mm from centre line';
+  } else {
+    note.innerHTML = '☀ <strong>Sun</strong>: string slots between laser-cut rays — zero offset, zero tolerance';
+  }
+  if(typeof updateProdTime==='function') updateProdTime();
+}
+document.addEventListener('DOMContentLoaded', ()=>{
+  const nd = document.getElementById('nailDiam');
+  if(nd) nd.addEventListener('input', ()=>setNailType('nail'));
+});
+</script>
+<script src="sa-globals.js"></script>
+<script src="sa-render.js"></script>
+<script src="sa-wind.js"></script>
+<script src="sa-export.js"></script>
+<script src="sa-generate.js"></script>
+<script src="sa-upload.js"></script>
+<script src="sa-ui.js"></script>
+</body>
+</html>
