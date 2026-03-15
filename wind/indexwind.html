@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>🧵 Shweka Wind v1.10</title>
+<title>🧵 Shweka Wind v1.11</title>
 <link rel="icon" href="wind-icon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- PWA manifest + Apple meta -->
@@ -89,7 +89,10 @@ header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;alig
 #windSpeedPopup.open{display:flex;}
 #windSpeedPopup .sp-lbl{font-size:.6rem;color:rgba(255,255,255,.45);font-family:'Inter',sans-serif;}
 #windSpeedSlider{-webkit-appearance:slider-vertical;writing-mode:vertical-lr;direction:rtl;width:6px;height:110px;accent-color:#e85d00;cursor:pointer;}
-#windSpeedVal{font-size:.8rem;color:#fff;font-weight:700;font-family:'Inter',sans-serif;min-width:24px;text-align:center;}
+#windSpeedVal{font-size:1.3rem;color:#fff;font-weight:700;font-family:'Inter',sans-serif;min-width:32px;text-align:center;cursor:pointer;border-bottom:1.5px solid transparent;transition:border-color .15s;}
+#windSpeedVal:hover{border-bottom-color:rgba(255,255,255,.5);}
+#windSpeedInp{width:52px;background:transparent;border:none;border-bottom:1.5px solid rgba(255,255,255,.7);color:#fff;font-size:1.3rem;font-family:'Inter',sans-serif;font-weight:700;text-align:center;outline:none;-moz-appearance:textfield;}
+#windSpeedInp::-webkit-inner-spin-button,#windSpeedInp::-webkit-outer-spin-button{-webkit-appearance:none;}
 #windFindPanel{display:none;position:absolute;left:50%;transform:translateX(-50%);z-index:13;background:rgba(10,10,30,0.92);padding:12px 16px;border-radius:18px;box-shadow:0 4px 24px rgba(0,0,0,.5);font-family:'Inter',sans-serif;min-width:240px;text-align:center;}
 #windFindPanel .fp-title{font-size:0.72rem;color:rgba(255,255,255,0.6);margin-bottom:8px;}
 #windFindPanel .fp-row{display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:10px;}
@@ -144,7 +147,7 @@ header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;alig
 <header>
   <div class="logo">🧵 Shweka Wind</div>
   <span class="logo-sub">by Shweka Studio</span>
-  <span class="logo-sub" id="appVer" onclick="_checkForUpdate(true)" title="Tap to check for updates" style="color:var(--accent);opacity:.6;margin-left:-4px;cursor:pointer;">v1.9</span>
+  <span class="logo-sub" id="appVer" onclick="_checkForUpdate(true)" title="Tap to check for updates" style="color:var(--accent);opacity:.6;margin-left:-4px;cursor:pointer;font-size:0.85rem;">v1.11</span>
   <div class="hdr-right">
     <button class="hdr-btn" id="installBtn" onclick="_installApp()" style="display:none;background:var(--accent);color:#fff;border-color:var(--accent);">⬇ Install</button>
     <button class="hdr-btn on" id="hdrVoiceBtn" onclick="windVoiceToggle()">🔊 HE</button>
@@ -274,7 +277,7 @@ header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;alig
 'use strict';
 
 // ── Version — bump this (and version-wind.json + sw-wind.js CACHE) on every change ──
-const APP_VER = 'v1.10';
+const APP_VER = 'v1.11';
 document.title = '🧵 Shweka Wind ' + APP_VER;
 const _vEl = document.getElementById('appVer');
 if(_vEl) _vEl.textContent = APP_VER;
@@ -694,6 +697,31 @@ document.addEventListener('click', e=>{
   if(!e.target.closest('#windSpeedPopup,#windSpeedBtn')){ $('windSpeedPopup').classList.remove('open'); clearTimeout(_speedAutoClose); }
 });
 
+// Tap speed value to edit it directly
+let _editingSpeed=false;
+$('windSpeedVal').addEventListener('click', e=>{
+  e.stopPropagation();
+  if(_editingSpeed) return;
+  _editingSpeed=true;
+  clearTimeout(_speedAutoClose);
+  const valEl=$('windSpeedVal');
+  const cur=WD.speed/1000;
+  valEl.innerHTML='<input id="windSpeedInp" type="number" min="1" max="30" step="0.5">';
+  const inp=$('windSpeedInp');
+  inp.value=cur;
+  inp.focus(); inp.select();
+  const commit=()=>{
+    _editingSpeed=false;
+    const v=parseFloat(inp.value);
+    if(!isNaN(v)&&v>=1&&v<=30) windSetSpeed(+(Math.round(v*2)/2).toFixed(1));
+    valEl.innerHTML=(WD.speed/1000)+'s';
+    _scheduleSpeedClose();
+  };
+  inp.addEventListener('keydown',ke=>{ if(ke.key==='Enter'){ke.preventDefault();commit();} });
+  inp.addEventListener('click',ke=>ke.stopPropagation());
+  setTimeout(()=>inp.addEventListener('blur',commit),300);
+});
+
 // ── Voice ──
 function windVoiceToggle(){
   const order=['he','en','off'];
@@ -973,6 +1001,10 @@ _restoreState();
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
     navigator.serviceWorker.register('sw-wind.js').catch(()=>{});
+  });
+  // Auto-reload when a new SW version activates — progress is saved in localStorage
+  navigator.serviceWorker.addEventListener('message', e=>{
+    if(e.data && e.data.type==='SW_UPDATED') window.location.reload();
   });
 }
 

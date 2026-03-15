@@ -2,7 +2,7 @@
 // Caches the app for fully offline use.
 // version-wind.json is NEVER cached so version checks always hit the network.
 
-const CACHE = 'shweka-wind-v1.10';
+const CACHE = 'shweka-wind-v1.11';
 const PRECACHE = [
   './indexwind.html',
   './manifest-wind.json',
@@ -27,6 +27,10 @@ self.addEventListener('activate', e => {
     )
   );
   self.clients.claim();
+  // Tell all open windows to reload so they get the fresh version from new cache
+  self.clients.matchAll({type:'window'}).then(clients=>{
+    clients.forEach(c=>c.postMessage({type:'SW_UPDATED'}));
+  });
 });
 
 // Fetch: version-wind.json always goes to network (never cached).
