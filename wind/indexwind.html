@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>🧵 Shweka Wind v1.12</title>
+<title>🧵 Shweka Wind v1.13</title>
 <link rel="icon" href="wind-icon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- PWA manifest + Apple meta -->
@@ -69,7 +69,7 @@ header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;alig
 #bWindBack{font-size:1.1rem;padding:12px 24px;border-radius:30px;border:none;background:rgba(0,0,0,0.5);color:#fff;min-width:90px;box-shadow:0 2px 12px rgba(0,0,0,.25);}
 #bWindNext{font-size:1.1rem;padding:12px 24px;border-radius:30px;border:none;background:rgba(220,40,40,0.9);color:#fff;min-width:90px;box-shadow:0 2px 12px rgba(180,20,20,.4);}
 /* ── Fixed bottom action bar ── */
-#windBottomBar{display:none;align-items:center;justify-content:center;gap:8px;padding:8px 12px calc(8px + env(safe-area-inset-bottom));background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;box-shadow:0 -2px 8px rgba(0,0,0,.06);}
+#windBottomBar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:20;align-items:center;justify-content:center;gap:8px;padding:8px 12px calc(8px + env(safe-area-inset-bottom));background:var(--surface);border-top:1px solid var(--border);box-shadow:0 -2px 8px rgba(0,0,0,.06);}
 #windBottomBar.visible{display:flex;}
 /* ── Step jump modal ── */
 #stepModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:flex-end;justify-content:center;}
@@ -147,7 +147,7 @@ header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;alig
 <header>
   <div class="logo">🧵 Shweka Wind</div>
   <span class="logo-sub">by Shweka Studio</span>
-  <span class="logo-sub" id="appVer" onclick="_checkForUpdate(true)" title="Tap to check for updates" style="color:var(--accent);opacity:.6;margin-left:-4px;cursor:pointer;font-size:0.85rem;">v1.12</span>
+  <span class="logo-sub" id="appVer" onclick="_checkForUpdate(true)" title="Tap to check for updates" style="color:var(--accent);opacity:.6;margin-left:-4px;cursor:pointer;font-size:0.85rem;">v1.13</span>
   <div class="hdr-right">
     <button class="hdr-btn" id="installBtn" onclick="_installApp()" style="display:none;background:var(--accent);color:#fff;border-color:var(--accent);">⬇ Install</button>
     <button class="hdr-btn on" id="hdrVoiceBtn" onclick="windVoiceToggle()">🔊 HE</button>
@@ -277,7 +277,7 @@ header{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;alig
 'use strict';
 
 // ── Version — bump this (and version-wind.json + sw-wind.js CACHE) on every change ──
-const APP_VER = 'v1.12';
+const APP_VER = 'v1.13';
 document.title = '🧵 Shweka Wind ' + APP_VER;
 const _vEl = document.getElementById('appVer');
 if(_vEl) _vEl.textContent = APP_VER;
