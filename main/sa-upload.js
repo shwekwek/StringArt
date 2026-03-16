@@ -264,11 +264,36 @@ function _drawImgPreview(){
   } catch(e){}
 }
 
-function rotateCW(){
-  G.cropRot=((G.cropRot||0)+90)%360;
+// ── Right-click drag to rotate freely (image tab, any angle) ──
+let _rotActive=false,_rotSA=0,_rotSR=0;
+cWrapEl.addEventListener('contextmenu',e=>{
+  if(G.view==='image'&&G.img){e.preventDefault();}
+});
+cWrapEl.addEventListener('mousedown',e=>{
+  if(e.button!==2||G.view!=='image'||!G.img) return;
+  const wrap=$('imgPreviewWrap');
+  if(!wrap) return;
+  const r=wrap.getBoundingClientRect();
+  const cx=r.left+r.width/2, cy=r.top+r.height/2;
+  _rotActive=true;
+  _rotSA=Math.atan2(e.clientY-cy,e.clientX-cx)*180/Math.PI;
+  _rotSR=G.cropRot||0;
+  e.preventDefault();
+});
+window.addEventListener('mousemove',e=>{
+  if(!_rotActive||!G.img) return;
+  const wrap=$('imgPreviewWrap');
+  if(!wrap) return;
+  const r=wrap.getBoundingClientRect();
+  const cx=r.left+r.width/2, cy=r.top+r.height/2;
+  const a=Math.atan2(e.clientY-cy,e.clientX-cx)*180/Math.PI;
+  G.cropRot=_rotSR+(a-_rotSA);
   showImgPreview();
   if($('cropCanvas')) renderCropCanvas();
-}
+});
+window.addEventListener('mouseup',e=>{
+  if(e.button===2) _rotActive=false;
+});
 
 function showImgPreview(){
   if(!G.img) return;
