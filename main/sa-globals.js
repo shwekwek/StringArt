@@ -14,7 +14,7 @@ var PB={
 };
 
 const G={
-  img:null,bw:false,cropOffX:0,cropOffY:0,cropZoom:1,circleSize:0,
+  img:null,bw:false,cropOffX:0,cropOffY:0,cropZoom:1,cropRot:0,circleSize:0,
   nails:[],imgPx:null,errPx:null,imgSz:0,nailPos:null,
   color:'#111111',algo:'greedy',showNails:true,
   view:'image',zoom:1,done:false,running:false,showSeq:true,
