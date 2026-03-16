@@ -92,9 +92,13 @@ window.addEventListener('mousemove',e=>{
   const previewSz = Math.min($('cWrap').clientWidth,$('cWrap').clientHeight)-40 || 300;
   // cropOffX/Y are fractions (same space as crop modal, which divides by 380)
   // Here we divide by previewSz so panning feels 1:1 with the displayed circle
-  G.cropOffX = _panOX + (e.clientX-_panSX)/previewSz;
-  G.cropOffY = _panOY + (e.clientY-_panSY)/previewSz;
-  // Clamp to ±0.45 so image stays in frame
+  // Rotate screen-space delta into image space so panning always feels
+  // right-is-right on screen regardless of how much the image is rotated
+  const rot=(G.cropRot||0)*Math.PI/180;
+  const scrDx=(e.clientX-_panSX)/previewSz;
+  const scrDy=(e.clientY-_panSY)/previewSz;
+  G.cropOffX=_panOX+scrDx*Math.cos(rot)+scrDy*Math.sin(rot);
+  G.cropOffY=_panOY-scrDx*Math.sin(rot)+scrDy*Math.cos(rot);
   showImgPreview();
 });
 window.addEventListener('mouseup',()=>{
@@ -269,28 +273,29 @@ let _rotActive=false,_rotSA=0,_rotSR=0;
 cWrapEl.addEventListener('contextmenu',e=>{
   if(G.view==='image'&&G.img){e.preventDefault();}
 });
+// Helper: screen-space center of the circle canvas (= rendering pivot)
+function _circleCenter(){
+  const cv=$('imgPreviewCanvas');
+  if(!cv) return null;
+  const r=cv.getBoundingClientRect();
+  return {cx:r.left+r.width/2, cy:r.top+r.height/2};
+}
 cWrapEl.addEventListener('mousedown',e=>{
   if(e.button!==2||G.view!=='image'||!G.img) return;
-  const wrap=$('imgPreviewWrap');
-  if(!wrap) return;
-  const r=wrap.getBoundingClientRect();
-  const cx=r.left+r.width/2, cy=r.top+r.height/2;
+  const c=_circleCenter(); if(!c) return;
   _rotActive=true;
-  _rotSA=Math.atan2(e.clientY-cy,e.clientX-cx)*180/Math.PI;
+  _rotSA=Math.atan2(e.clientY-c.cy,e.clientX-c.cx)*180/Math.PI;
   _rotSR=G.cropRot||0;
   e.preventDefault();
 });
 window.addEventListener('mousemove',e=>{
   if(!_rotActive||!G.img) return;
-  const wrap=$('imgPreviewWrap');
-  if(!wrap) return;
-  const r=wrap.getBoundingClientRect();
-  const cx=r.left+r.width/2, cy=r.top+r.height/2;
-  const a=Math.atan2(e.clientY-cy,e.clientX-cx)*180/Math.PI;
+  const c=_circleCenter(); if(!c) return;
+  const a=Math.atan2(e.clientY-c.cy,e.clientX-c.cx)*180/Math.PI;
   G.cropRot=_rotSR+(a-_rotSA);
   showImgPreview();
   if($('cropCanvas')) renderCropCanvas();
-});
+})
 window.addEventListener('mouseup',e=>{
   if(e.button===2) _rotActive=false;
 });
