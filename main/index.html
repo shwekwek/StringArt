@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SA v0.84 · Shweka Studio</title>
+<title>SA v0.85 · Shweka Studio</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧵</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="sa-style.css">
@@ -38,7 +38,7 @@
   <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:nowrap;">
     <div class="logo" style="font-size:1.15rem;white-space:nowrap;">String Art Generator</div>
     <span class="logo-sub" style="font-size:0.65rem;white-space:nowrap;">by Shweka Studio</span>
-    <span class="logo-sub" style="font-size:0.6rem;color:var(--accent);opacity:0.7;white-space:nowrap;">v0.84</span>
+    <span class="logo-sub" style="font-size:0.6rem;color:var(--accent);opacity:0.7;white-space:nowrap;">v0.85</span>
   </div>
 </header>
 <div class="main">
@@ -345,13 +345,11 @@
       <button class="img-ctrl-btn has-image" id="ctrlCrop" onclick="openCrop()" style="display:none;">
         ✎ Crop &amp; Pan
       </button>
-      <button class="img-ctrl-btn has-image" id="ctrlRotate" style="display:none;" onclick="rotateCW()">
-        ↻ Rotate
-      </button>
-      <button class="img-ctrl-btn has-image" id="ctrlResetCrop" style="display:none;" onclick="resetCropInline()">
+            <button class="img-ctrl-btn has-image" id="ctrlResetCrop" style="display:none;" onclick="resetCropInline()">
         ↩ Reset
       </button>
     </div>
+    <div class="img-hint-row has-image" id="imgRotHint" style="display:none;">scroll to zoom  ·  right-click ↻ to rotate</div>
     <!-- Wind tab overlay -->
     <!-- Wind nail number display -->
     <div id="windNailNum" style="display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:'Space Grotesk',sans-serif;font-size:clamp(2.5rem,8vw,5rem);font-weight:700;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,.7),0 0 40px rgba(0,0,0,.4);pointer-events:none;z-index:10;line-height:1;text-align:center;"></div>
