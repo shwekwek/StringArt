@@ -213,11 +213,11 @@ function showZoomHint(){
 }
 
 function showImageControls(hasImage){
-  const change=$('ctrlChange'), crop=$('ctrlCrop'), reset=$('ctrlResetCrop'), rot=$('ctrlRotate');
+  const change=$('ctrlChange'), crop=$('ctrlCrop'), reset=$('ctrlResetCrop'), hint=$('imgRotHint');
   if(change) change.style.display = hasImage ? '' : 'none';
   if(crop)   crop.style.display   = hasImage ? '' : 'none';
   if(reset)  reset.style.display  = hasImage ? '' : 'none';
-    if(rot)    rot.style.display    = hasImage ? '' : 'none';
+  if(hint)   hint.style.display   = hasImage ? '' : 'none';
 }
 
 // ══ UNIFIED ZOOM — works on all tabs ══
