@@ -674,6 +674,19 @@ body.view-image .canvas-wrap { background: var(--bg); }
 .img-ctrl-btn.primary:hover { filter: brightness(1.1); }
 .img-ctrl-btn.has-image { display: none; } /* shown only after image loaded */
 
+/* hint row below buttons */
+.img-hint-row {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: .68rem;
+  color: var(--dim);
+  white-space: nowrap;
+  pointer-events: none;
+  letter-spacing: .01em;
+}
+
 /* zoom hint label */
 .img-zoom-hint {
   position: absolute;
