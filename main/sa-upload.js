@@ -95,8 +95,6 @@ window.addEventListener('mousemove',e=>{
   G.cropOffX = _panOX + (e.clientX-_panSX)/previewSz;
   G.cropOffY = _panOY + (e.clientY-_panSY)/previewSz;
   // Clamp to ±0.45 so image stays in frame
-  G.cropOffX = Math.max(-0.45, Math.min(0.45, G.cropOffX));
-  G.cropOffY = Math.max(-0.45, Math.min(0.45, G.cropOffY));
   showImgPreview();
 });
 window.addEventListener('mouseup',()=>{
@@ -122,7 +120,7 @@ function loadFile(f){
   rd.onload=e=>{
     const img=new Image();
     img.onload=()=>{
-      G.img=img;G.bw=true;G.cropOffX=0;G.cropOffY=0;G.cropZoom=1;
+      G.img=img;G.bw=true;G.cropOffX=0;G.cropOffY=0;G.cropZoom=1;G.cropRot=0;
       document.body.classList.remove('no-img');
       // Enable generate button
       $('btnGenGreedy').disabled=false;
@@ -191,6 +189,7 @@ function drawCropped(ctx,sz,gray,forcedRaw){
   // cropOffX/Y are normalized fractions of view size (stored independently of canvas size)
   const srcX=(img.width-view)/2 - G.cropOffX*view;
   const srcY=(img.height-view)/2 - G.cropOffY*view;
+  if(G.cropRot){ctx.translate(sz/2,sz/2);ctx.rotate(G.cropRot*Math.PI/180);ctx.translate(-sz/2,-sz/2);}
   ctx.drawImage(img,srcX,srcY,view,view,0,0,sz,sz);ctx.restore();
 }
 
@@ -209,7 +208,7 @@ cropCont.addEventListener('wheel',e=>{e.preventDefault();G.cropZoom=Math.max(.5,
 function renderCropCanvas(){const c=$('cropCanvas'),ctx=c.getContext('2d');ctx.fillStyle='#eee';ctx.fillRect(0,0,380,380);drawCropped(ctx,380,G.bw,true);}
 
 function resetCropInline(){
-  G.cropOffX=0;G.cropOffY=0;G.cropZoom=1;
+  G.cropOffX=0;G.cropOffY=0;G.cropZoom=1;G.cropRot=0;
   if($('cropZoom'))$('cropZoom').value=1;
   showZoomHint();
   showImgPreview();
@@ -236,6 +235,7 @@ function _drawImgPreview(){
   ctx.beginPath();
   ctx.arc(sz/2, sz/2, sz/2-1, 0, Math.PI*2);
   ctx.clip();
+    if(G.cropRot){ctx.translate(sz/2,sz/2);ctx.rotate(G.cropRot*Math.PI/180);ctx.translate(-sz/2,-sz/2);}
   const img=G.img;
   const base=Math.min(img.width,img.height);
   const view=base/Math.max(0.1,G.cropZoom);
@@ -262,6 +262,12 @@ function _drawImgPreview(){
       ctx.putImageData(id,0,0);
     }
   } catch(e){}
+}
+
+function rotateCW(){
+  G.cropRot=((G.cropRot||0)+90)%360;
+  showImgPreview();
+  if($('cropCanvas')) renderCropCanvas();
 }
 
 function showImgPreview(){
@@ -295,3 +301,4 @@ function openCamera(){
   };
   input.click();
 }
+r
