@@ -89,6 +89,28 @@ if(imgWrap){
     document.body.style.cursor='grabbing';
     e.preventDefault();
   });
+
+  // Touch-based pan (1 finger) — explicit touch handlers needed on mobile because
+  // the cWrapEl touchstart/touchmove listeners added in v0.87 prevent browser from
+  // synthesizing mouse events from touch on Android
+  let _tpActive=false, _tpSX=0, _tpSY=0, _tpOX=0, _tpOY=0;
+  imgWrap.addEventListener('touchstart',e=>{
+    if(G.view!=='image'||!G.img||e.touches.length!==1) return;
+    _tpActive=true;
+    _tpSX=e.touches[0].clientX; _tpSY=e.touches[0].clientY;
+    _tpOX=G.cropOffX; _tpOY=G.cropOffY;
+  },{passive:true});
+  imgWrap.addEventListener('touchmove',e=>{
+    if(!_tpActive||!G.img||e.touches.length!==1) return;
+    const previewSz=Math.min($('cWrap').clientWidth,$('cWrap').clientHeight)-40||300;
+    const rot=(G.cropRot||0)*Math.PI/180;
+    const scrDx=(e.touches[0].clientX-_tpSX)/previewSz;
+    const scrDy=(e.touches[0].clientY-_tpSY)/previewSz;
+    G.cropOffX=_tpOX+scrDx*Math.cos(rot)+scrDy*Math.sin(rot);
+    G.cropOffY=_tpOY-scrDx*Math.sin(rot)+scrDy*Math.cos(rot);
+    showImgPreview();
+  },{passive:true});
+  imgWrap.addEventListener('touchend',()=>{_tpActive=false;},{passive:true});
 }
 window.addEventListener('mousemove',e=>{
   if(!_panActive) return;
@@ -159,7 +181,7 @@ function resetResult(){
   $('emptyMsg').style.display='block';$('nw').style.display='none';
   $('btnRefine').style.display='none';
   $('rollbackRow').style.display='none';
-  if($('btnCompare')){$('btnCompare').classList.remove('active');$('btnCompare').textContent='⇄ Compare side by side';}
+  if($('btnCompare')){$('btnCompare').classList.remove('active');$('btnCompare').textContent='\u21c4 Compare side by side';}
   // prodSec is inside collapse now
 }
 
@@ -198,14 +220,14 @@ function drawCropped(ctx,sz,gray,forcedRaw){
 let cDrag=false,cSX=0,cSY=0,cOX=0,cOY=0;
 const cropCont=$('cropCont');
 if($('cropPrevWrap'))$('cropPrevWrap').addEventListener('click',()=>{if(G.img)openCrop();});
-function openCrop(){renderCropCanvas();$('cropZoom').value=G.cropZoom;$('cropZV').textContent=G.cropZoom.toFixed(1)+'×';$('cropModal').classList.add('open');}
+function openCrop(){renderCropCanvas();$('cropZoom').value=G.cropZoom;$('cropZV').textContent=G.cropZoom.toFixed(1)+'\u00d7';$('cropModal').classList.add('open');}
 $('btnCC').addEventListener('click',()=>$('cropModal').classList.remove('open'));
 $('btnCA').addEventListener('click',()=>{$('cropModal').classList.remove('open');updateBothThumbs();showImgPreview();resetResult();scheduleAutoGen();});
-$('cropZoom').addEventListener('input',()=>{G.cropZoom=parseFloat($('cropZoom').value);$('cropZV').textContent=G.cropZoom.toFixed(1)+'×';renderCropCanvas();});
+$('cropZoom').addEventListener('input',()=>{G.cropZoom=parseFloat($('cropZoom').value);$('cropZV').textContent=G.cropZoom.toFixed(1)+'\u00d7';renderCropCanvas();});
 cropCont.addEventListener('mousedown',e=>{cDrag=true;cSX=e.clientX;cSY=e.clientY;cOX=G.cropOffX;cOY=G.cropOffY;cropCont.style.cursor='grabbing';});
 window.addEventListener('mousemove',e=>{if(!cDrag)return;const csz=380;G.cropOffX=cOX+(e.clientX-cSX)/csz;G.cropOffY=cOY+(e.clientY-cSY)/csz;renderCropCanvas();});
 window.addEventListener('mouseup',()=>{cDrag=false;cropCont.style.cursor='grab';});
-cropCont.addEventListener('wheel',e=>{e.preventDefault();G.cropZoom=Math.max(.5,Math.min(5,G.cropZoom-e.deltaY*.003));$('cropZoom').value=G.cropZoom;$('cropZV').textContent=G.cropZoom.toFixed(1)+'×';renderCropCanvas();},{passive:false});
+cropCont.addEventListener('wheel',e=>{e.preventDefault();G.cropZoom=Math.max(.5,Math.min(5,G.cropZoom-e.deltaY*.003));$('cropZoom').value=G.cropZoom;$('cropZV').textContent=G.cropZoom.toFixed(1)+'\u00d7';renderCropCanvas();},{passive:false});
 function renderCropCanvas(){const c=$('cropCanvas'),ctx=c.getContext('2d');ctx.fillStyle='#eee';ctx.fillRect(0,0,380,380);drawCropped(ctx,380,G.bw,true);}
 
 function resetCropInline(){
