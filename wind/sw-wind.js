@@ -1,8 +1,8 @@
-// Shweka Wind — Service Worker v1.5
+// Shweka Wind — Service Worker v1.6
 // Caches the app for fully offline use.
 // version-wind.json is NEVER cached so version checks always hit the network.
 
-const CACHE = 'shweka-wind-v1.14';
+const CACHE = 'shweka-wind-v1.15';
 const PRECACHE = [
   './indexwind.html',
   './manifest-wind.json',
