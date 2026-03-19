@@ -57,18 +57,22 @@ cWrapEl.addEventListener('wheel',e=>{
   }
 },{passive:false});
 
-// ── Pinch to zoom on mobile (image tab) ──
-let _pinchDist=null;
+// ── Pinch to zoom + two-finger twist to rotate (image tab) ──
+let _pinchDist=null, _pinchAngle=null, _pinchRotBase=0;
 cWrapEl.addEventListener('touchstart',e=>{
   if(G.view!=='image'||!G.img||e.touches.length!==2) return;
-  _pinchDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+  const dx=e.touches[1].clientX-e.touches[0].clientX, dy=e.touches[1].clientY-e.touches[0].clientY;
+  _pinchDist = Math.hypot(dx,dy);
+  _pinchAngle = Math.atan2(dy,dx)*180/Math.PI;
+  _pinchRotBase = G.cropRot||0;
 },{passive:true});
 cWrapEl.addEventListener('touchmove',e=>{
   if(G.view!=='image'||!G.img||e.touches.length!==2||!_pinchDist) return;
-  const d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
-  const scale = d / _pinchDist;
-  G.cropZoom = Math.max(0.5, Math.min(5, G.cropZoom * scale));
+  const dx=e.touches[1].clientX-e.touches[0].clientX, dy=e.touches[1].clientY-e.touches[0].clientY;
+  const d = Math.hypot(dx,dy);
+  G.cropZoom = Math.max(0.5, Math.min(5, G.cropZoom * d/_pinchDist));
   _pinchDist = d;
+  G.cropRot = _pinchRotBase + (Math.atan2(dy,dx)*180/Math.PI - _pinchAngle);
   showZoomHint();
   showImgPreview();
 },{passive:true});
